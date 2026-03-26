@@ -7,18 +7,26 @@ import { collection, addDoc, getDocs, doc, updateDoc, getDoc, setDoc, deleteDoc 
 const renkler = ['#5B4FE8','#10B981','#F43F5E','#F59E0B','#3B82F6','#EC4899'];
 
 // TEMA - gece 21:00 - sabah 09:00 arası koyu
-function getTema() {
+function getTemaOtomatik() {
   const saat = new Date().getHours();
   return (saat >= 21 || saat < 9) ? 'dark' : 'light';
 }
 
 function useTheme() {
-  const [tema, setTema] = useState(getTema());
+  const [tercih, setTercih] = useState(() => {
+    try{return localStorage.getItem('elswayTema')||'otomatik';}catch(e){return 'otomatik';}
+  });
+  const [otomatikTema, setOtomatikTema] = useState(getTemaOtomatik());
   useEffect(() => {
-    const interval = setInterval(() => setTema(getTema()), 60000);
+    const interval = setInterval(() => setOtomatikTema(getTemaOtomatik()), 60000);
     return () => clearInterval(interval);
   }, []);
-  return tema;
+  const tema = tercih === 'otomatik' ? otomatikTema : tercih;
+  const setTema = (yeni) => {
+    setTercih(yeni);
+    try{localStorage.setItem('elswayTema', yeni);}catch(e){}
+  };
+  return { tema, tercih, setTema };
 }
 
 function getS(tema) {
@@ -59,7 +67,7 @@ function TopBar({tema, kullanici, rol, onCikis, title}) {
   return (
     <div style={{background:s.surface,borderBottom:`1px solid ${s.border}`,padding:'0 28px',height:'64px',display:'flex',alignItems:'center',gap:'16px',boxShadow:s.shadow,position:'sticky',top:0,zIndex:100}}>
       <div style={{fontWeight:'800',fontSize:'22px',background:s.accentGrad,WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'}}>
-        Elsway
+        ElsWay
       </div>
       {title&&<div style={{fontSize:'15px',fontWeight:'600',color:s.text,marginLeft:'8px'}}>{title}</div>}
       <div style={{marginLeft:'auto',display:'flex',alignItems:'center',gap:'12px'}}>
@@ -786,7 +794,7 @@ function OgrenciPaneli({tema, kullanici, ogrenciData, onCikis}){
         <div style={{background:s.accentGrad,borderRadius:'20px',padding:'24px 28px',marginBottom:'24px',display:'flex',alignItems:'center',gap:'20px',boxShadow:'0 8px 32px rgba(91,79,232,0.25)'}}>
           <div style={{flex:1}}>
             <div style={{fontSize:'22px',fontWeight:'700',color:'white'}}>Hoş geldin, {ogrenciData?.isim?.split(' ')[0]||'Öğrenci'} 👋</div>
-            <div style={{fontSize:'13px',color:'rgba(255,255,255,0.8)',marginTop:'4px'}}>{ogrenciData?.tur} · Elsway Koçluk Platformu</div>
+            <div style={{fontSize:'13px',color:'rgba(255,255,255,0.8)',marginTop:'4px'}}>{ogrenciData?.tur} · ElsWay Koçluk Platformu</div>
           </div>
           <div style={{display:'flex',gap:'12px'}}>
             {[{v:oran+'%',l:'Tamamlama'},{v:`${tam}/${program.length}`,l:'Görev'},{v:denemeler[0]?denemeler[0].toplamNet:'—',l:denemeler[0]?`Son ${denemeler[0].sinav}`:'Deneme'}].map((item,i)=>(
@@ -907,7 +915,7 @@ function OgrenciDetay({tema, ogrenci, onGeri}){
 }
 
 // ===== KOÇ PANELİ =====
-function KocPaneli({tema, kullanici, onCikis}){
+function KocPaneli({tema, tercih, setTema, kullanici, onCikis}){
   const s=getS(tema);
   const[ogrenciler,setOgrenciler]=useState([]);const[modalAcik,setModalAcik]=useState(false);const[seciliOgrenci,setSeciliOgrenci]=useState(null);const[aktifSayfa,setAktifSayfa]=useState('ana');const[yukleniyor,setYukleniyor]=useState(true);const[okunmamisMesaj,setOkunmamisMesaj]=useState(0);
   const ogrencileriGetir=async()=>{setYukleniyor(true);try{const snap=await getDocs(collection(db,'ogrenciler'));setOgrenciler(snap.docs.map(d=>({id:d.id,...d.data()})));}catch(e){}setYukleniyor(false);};
@@ -916,16 +924,16 @@ function KocPaneli({tema, kullanici, onCikis}){
   useEffect(()=>{if(ogrenciler.length>0)mesajSayisiGetir(ogrenciler);},[ogrenciler]);
   const ortTamamlama=ogrenciler.length>0?Math.round(ogrenciler.reduce((acc,o)=>acc+(o.tamamlama||0),0)/ogrenciler.length):0;
   if(seciliOgrenci)return<OgrenciDetay tema={tema} ogrenci={seciliOgrenci} onGeri={()=>setSeciliOgrenci(null)}/>;
-  if(aktifSayfa==='mesajlar')return<div style={{minHeight:'100vh',background:s.bg,fontFamily:'Inter,sans-serif'}}><TopBar tema={tema} kullanici={kullanici} rol="koc" onCikis={onCikis} title="Mesajlar"/><KocMesajlarSayfasi tema={tema} ogrenciler={ogrenciler} onGeri={()=>setAktifSayfa('ana')}/></div>;
-  if(aktifSayfa==='haftalikprogram')return<div style={{minHeight:'100vh',background:s.bg,fontFamily:'Inter,sans-serif'}}><TopBar tema={tema} kullanici={kullanici} rol="koc" onCikis={onCikis}/><HaftalikProgramSayfasi tema={tema} ogrenciler={ogrenciler} onGeri={()=>setAktifSayfa('ana')}/></div>;
-  if(aktifSayfa==='gunluktakip')return<div style={{minHeight:'100vh',background:s.bg,fontFamily:'Inter,sans-serif'}}><TopBar tema={tema} kullanici={kullanici} rol="koc" onCikis={onCikis}/><GunlukTakipSayfasi tema={tema} ogrenciler={ogrenciler} onGeri={()=>setAktifSayfa('ana')}/></div>;
-  if(aktifSayfa==='denemeyonetimi')return<div style={{minHeight:'100vh',background:s.bg,fontFamily:'Inter,sans-serif'}}><TopBar tema={tema} kullanici={kullanici} rol="koc" onCikis={onCikis}/><DenemeYonetimiSayfasi tema={tema} ogrenciler={ogrenciler} onGeri={()=>setAktifSayfa('ana')}/></div>;
-  if(aktifSayfa==='istatistikler')return<div style={{minHeight:'100vh',background:s.bg,fontFamily:'Inter,sans-serif'}}><TopBar tema={tema} kullanici={kullanici} rol="koc" onCikis={onCikis}/><IstatistiklerSayfasi tema={tema} ogrenciler={ogrenciler} onGeri={()=>setAktifSayfa('ana')}/></div>;
-  if(aktifSayfa==='hedeftakibi')return<div style={{minHeight:'100vh',background:s.bg,fontFamily:'Inter,sans-serif'}}><TopBar tema={tema} kullanici={kullanici} rol="koc" onCikis={onCikis}/><HedefTakibiSayfasi tema={tema} ogrenciler={ogrenciler} onGeri={()=>setAktifSayfa('ana')}/></div>;
-  if(aktifSayfa==='veliraporlari')return<div style={{minHeight:'100vh',background:s.bg,fontFamily:'Inter,sans-serif'}}><TopBar tema={tema} kullanici={kullanici} rol="koc" onCikis={onCikis}/><VeliRaporlariSayfasi tema={tema} ogrenciler={ogrenciler} onGeri={()=>setAktifSayfa('ana')}/></div>;
+  if(aktifSayfa==='mesajlar')return<div style={{minHeight:'100vh',background:s.bg,fontFamily:'Inter,sans-serif'}}><TopBar tema={tema} tercih={tercih} setTema={setTema} kullanici={kullanici} rol="koc" onCikis={onCikis} title="Mesajlar"/><KocMesajlarSayfasi tema={tema} ogrenciler={ogrenciler} onGeri={()=>setAktifSayfa('ana')}/></div>;
+  if(aktifSayfa==='haftalikprogram')return<div style={{minHeight:'100vh',background:s.bg,fontFamily:'Inter,sans-serif'}}><TopBar tema={tema} tercih={tercih} setTema={setTema} kullanici={kullanici} rol="koc" onCikis={onCikis}/><HaftalikProgramSayfasi tema={tema} ogrenciler={ogrenciler} onGeri={()=>setAktifSayfa('ana')}/></div>;
+  if(aktifSayfa==='gunluktakip')return<div style={{minHeight:'100vh',background:s.bg,fontFamily:'Inter,sans-serif'}}><TopBar tema={tema} tercih={tercih} setTema={setTema} kullanici={kullanici} rol="koc" onCikis={onCikis}/><GunlukTakipSayfasi tema={tema} ogrenciler={ogrenciler} onGeri={()=>setAktifSayfa('ana')}/></div>;
+  if(aktifSayfa==='denemeyonetimi')return<div style={{minHeight:'100vh',background:s.bg,fontFamily:'Inter,sans-serif'}}><TopBar tema={tema} tercih={tercih} setTema={setTema} kullanici={kullanici} rol="koc" onCikis={onCikis}/><DenemeYonetimiSayfasi tema={tema} ogrenciler={ogrenciler} onGeri={()=>setAktifSayfa('ana')}/></div>;
+  if(aktifSayfa==='istatistikler')return<div style={{minHeight:'100vh',background:s.bg,fontFamily:'Inter,sans-serif'}}><TopBar tema={tema} tercih={tercih} setTema={setTema} kullanici={kullanici} rol="koc" onCikis={onCikis}/><IstatistiklerSayfasi tema={tema} ogrenciler={ogrenciler} onGeri={()=>setAktifSayfa('ana')}/></div>;
+  if(aktifSayfa==='hedeftakibi')return<div style={{minHeight:'100vh',background:s.bg,fontFamily:'Inter,sans-serif'}}><TopBar tema={tema} tercih={tercih} setTema={setTema} kullanici={kullanici} rol="koc" onCikis={onCikis}/><HedefTakibiSayfasi tema={tema} ogrenciler={ogrenciler} onGeri={()=>setAktifSayfa('ana')}/></div>;
+  if(aktifSayfa==='veliraporlari')return<div style={{minHeight:'100vh',background:s.bg,fontFamily:'Inter,sans-serif'}}><TopBar tema={tema} tercih={tercih} setTema={setTema} kullanici={kullanici} rol="koc" onCikis={onCikis}/><VeliRaporlariSayfasi tema={tema} ogrenciler={ogrenciler} onGeri={()=>setAktifSayfa('ana')}/></div>;
   if(aktifSayfa==='ogrenciler')return(
     <div style={{minHeight:'100vh',background:s.bg,fontFamily:'Inter,sans-serif'}}>
-      <TopBar tema={tema} kullanici={kullanici} rol="koc" onCikis={onCikis} title="Öğrencilerim"/>
+      <TopBar tema={tema} tercih={tercih} setTema={setTema} kullanici={kullanici} rol="koc" onCikis={onCikis} title="Öğrencilerim"/>
       {modalAcik&&<OgrenciEkleModal tema={tema} onKapat={()=>setModalAcik(false)} onEkle={()=>{signOut(auth).then(()=>window.location.reload());}}/>}
       <div style={{padding:'28px'}}>
         <div style={{display:'flex',justifyContent:'flex-end',marginBottom:'20px'}}>
@@ -965,14 +973,14 @@ function KocPaneli({tema, kullanici, onCikis}){
 
   return(
     <div style={{minHeight:'100vh',background:s.bg,fontFamily:'Inter,sans-serif',display:'flex',flexDirection:'column'}}>
-      <TopBar tema={tema} kullanici={kullanici} rol="koc" onCikis={onCikis}/>
+      <TopBar tema={tema} tercih={tercih} setTema={setTema} kullanici={kullanici} rol="koc" onCikis={onCikis}/>
       {modalAcik&&<OgrenciEkleModal tema={tema} onKapat={()=>setModalAcik(false)} onEkle={()=>{signOut(auth).then(()=>window.location.reload());}}/>}
       <div style={{display:'flex',flex:1}}>
         <SideNav tema={tema} menu={menu} aktif={aktifSayfa} onSelect={item=>setAktifSayfa(item.key)}/>
         <div style={{flex:1,padding:'32px',overflowY:'auto'}}>
           <div style={{marginBottom:'28px'}}>
             <h1 style={{fontSize:'26px',fontWeight:'700',color:s.text}}>Hoş geldin, <span style={{background:s.accentGrad,WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'}}>Koç</span> 👋</h1>
-            <div style={{color:s.text2,fontSize:'14px',marginTop:'4px'}}>Elsway · YKS / LGS Koçluk Platformu</div>
+            <div style={{color:s.text2,fontSize:'14px',marginTop:'4px'}}>ElsWay · YKS / LGS Koçluk Platformu</div>
           </div>
           <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:'14px',marginBottom:'28px'}}>
             <StatCard tema={tema} label="Aktif Öğrenci" value={ogrenciler.length} sub="Toplam" renk="#5B4FE8" icon="👥"/>
@@ -1007,7 +1015,7 @@ function KocPaneli({tema, kullanici, onCikis}){
 }
 
 // ===== GİRİŞ EKRANI =====
-function GirisEkrani({tema, onGiris}){
+function GirisEkrani({tema, tercih, setTema, onGiris}){
   const s=getS(tema);
   const[email,setEmail]=useState('');const[sifre,setSifre]=useState('');const[hata,setHata]=useState('');const[yukleniyor,setYukleniyor]=useState(false);
   const girisYap=async()=>{setYukleniyor(true);setHata('');try{const sonuc=await signInWithEmailAndPassword(auth,email,sifre);const kd=await getDoc(doc(db,'kullanicilar',sonuc.user.uid));let rol='koc';let data=null;if(kd.exists()){rol=kd.data().rol||'ogrenci';data=kd.data();}onGiris(sonuc.user,rol,data);}catch(e){setHata('Email veya şifre hatalı!');}setYukleniyor(false);};
@@ -1068,8 +1076,12 @@ function GirisEkrani({tema, onGiris}){
           <Btn tema={tema} onClick={girisYap} disabled={yukleniyor||!email||!sifre} style={{width:'100%',padding:'14px',fontSize:'15px'}}>
             {yukleniyor?'Giriş yapılıyor...':'Giriş Yap →'}
           </Btn>
-          <div style={{textAlign:'center',marginTop:'20px',fontSize:'12px',color:s.text3}}>
-            {tema==='dark'?'🌙 Gece modu':'☀️ Gündüz modu'} · Otomatik değişir
+          <div style={{display:'flex',gap:'6px',marginTop:'20px',background:s.surface2,padding:'4px',borderRadius:'10px'}}>
+            {[{key:'otomatik',icon:'⚡',label:'Otomatik'},{key:'light',icon:'☀️',label:'Gündüz'},{key:'dark',icon:'🌙',label:'Gece'}].map(t=>(
+              <div key={t.key} onClick={()=>setTema&&setTema(t.key)} style={{flex:1,padding:'7px',borderRadius:'7px',background:tercih===t.key?s.surface:'transparent',color:tercih===t.key?s.accent:s.text3,cursor:'pointer',textAlign:'center',fontSize:'12px',fontWeight:tercih===t.key?'600':'400',transition:'all 0.15s',boxShadow:tercih===t.key?'0 1px 4px rgba(0,0,0,0.1)':'none'}}>
+                {t.icon} {t.label}
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -1079,7 +1091,7 @@ function GirisEkrani({tema, onGiris}){
 
 // ===== ANA APP =====
 function App(){
-  const tema=useTheme();
+  const {tema, tercih, setTema}=useTheme();
   const[kullanici,setKullanici]=useState(null);
   const[rol,setRol]=useState('');
   const[userData,setUserData]=useState(null);
@@ -1106,11 +1118,11 @@ function App(){
   const s=getS(tema);
   useEffect(()=>{document.body.style.background=s.bg;document.body.style.transition='background 0.5s';},[tema]);
 
-  if(yukleniyor)return<div style={{minHeight:'100vh',background:s.bg,display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'Inter,sans-serif'}}><div style={{textAlign:'center'}}><div style={{fontSize:'32px',fontWeight:'800',background:s.accentGrad,WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',marginBottom:'16px'}}>Elsway</div><div style={{color:s.text3,fontSize:'14px'}}>Yükleniyor...</div></div></div>;
+  if(yukleniyor)return<div style={{minHeight:'100vh',background:s.bg,display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'Inter,sans-serif'}}><div style={{textAlign:'center'}}><div style={{fontSize:'32px',fontWeight:'800',background:s.accentGrad,WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',marginBottom:'16px'}}>ElsWay</div><div style={{color:s.text3,fontSize:'14px'}}>Yükleniyor...</div></div></div>;
   if(kullanici&&rol==='ogrenci')return<OgrenciPaneli tema={tema} kullanici={kullanici} ogrenciData={userData} onCikis={cikisYap}/>;
   if(kullanici&&rol==='veli')return<VeliPaneli tema={tema} kullanici={kullanici} veliData={userData} onCikis={cikisYap}/>;
-  if(kullanici)return<KocPaneli tema={tema} kullanici={kullanici} onCikis={cikisYap}/>;
-  return<GirisEkrani tema={tema} onGiris={girisYap}/>;
+  if(kullanici)return<KocPaneli tema={tema} tercih={tercih} setTema={setTema} kullanici={kullanici} onCikis={cikisYap}/>;
+  return<GirisEkrani tema={tema} tercih={tercih} setTema={setTema} onGiris={girisYap}/>;
 }
 
 export default App;
