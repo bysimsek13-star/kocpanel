@@ -1,4 +1,4 @@
-/* eslint-disable react-hooks/exhaustive-deps */
+﻿/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useState } from 'react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
@@ -38,7 +38,7 @@ export default function GirisEkrani({ tema, tercih, setTema, onGiris }) {
           <div style={{ position: 'relative', zIndex: 1 }}>
             <div style={{ fontSize: '13px', fontWeight: '600', color: 'rgba(255,255,255,0.6)', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '24px' }}>YKS / LGS Koçluk Platformu</div>
             <h1 style={{ fontSize: '52px', fontWeight: '800', marginBottom: '16px', letterSpacing: '-1px', lineHeight: '1.1' }}>
-              <span style={{ color: 'white' }}>Els</span><span style={{ color: 'rgba(255,255,255,0.6)' }}>Way</span>
+              <span style={{ color: 'white' }}>Els</span><span style={{ color: 'rgba(255,255,255,0.55)' }}>way</span>
             </h1>
             <p style={{ fontSize: '18px', color: 'rgba(255,255,255,0.85)', lineHeight: '1.7', marginBottom: '48px', maxWidth: '320px' }}>
               Öğrencilerinin her adımını takip et. Başarıya giden yolu birlikte oluşturun.
@@ -70,7 +70,7 @@ export default function GirisEkrani({ tema, tercih, setTema, onGiris }) {
         <div style={{ width: '100%', maxWidth: '400px', background: s.surface, borderRadius: '24px', padding: kucukEkran ? '32px 24px' : '44px', boxShadow: s.shadow }}>
           <div style={{ textAlign: 'center', marginBottom: '32px' }}>
             <div style={{ fontSize: '34px', fontWeight: '800', letterSpacing: '-0.5px', marginBottom: '8px' }}>
-              <span style={{ color: '#5B4FE8' }}>Els</span><span style={{ color: '#8B7FF5' }}>Way</span>
+              <span style={{ color: '#5B4FE8' }}>Els</span><span style={{ color: '#8B7FF5' }}>way</span>
             </div>
             <div style={{ fontSize: '13px', color: s.text3 }}>YKS / LGS Koçluk & Danışmanlık</div>
           </div>
