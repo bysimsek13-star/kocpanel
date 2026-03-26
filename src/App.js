@@ -1,7 +1,7 @@
-/* eslint-disable react-hooks/exhaustive-deps */
+﻿/* eslint-disable react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from 'react';
 import { auth, db } from './firebase';
-import { signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
 import { collection, addDoc, getDocs, doc, updateDoc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
 
 const renkler = ['#5B4FE8','#10B981','#F43F5E','#F59E0B','#3B82F6','#EC4899'];
@@ -1061,13 +1061,33 @@ function GirisEkrani({tema, onGiris}){
 // ===== ANA APP =====
 function App(){
   const tema=useTheme();
-  const[kullanici,setKullanici]=useState(null);const[rol,setRol]=useState('');const[userData,setUserData]=useState(null);
+  const[kullanici,setKullanici]=useState(null);
+  const[rol,setRol]=useState('');
+  const[userData,setUserData]=useState(null);
+  const[yukleniyor,setYukleniyor]=useState(true);
+
+  useEffect(()=>{
+    const unsub=onAuthStateChanged(auth,async(user)=>{
+      if(user){
+        try{
+          const kd=await getDoc(doc(db,'kullanicilar',user.uid));
+          let r='koc';let d=null;
+          if(kd.exists()){r=kd.data().rol||'ogrenci';d=kd.data();}
+          setKullanici(user);setRol(r);setUserData(d);
+        }catch(e){setKullanici(user);setRol('koc');}
+      }else{setKullanici(null);setRol('');setUserData(null);}
+      setYukleniyor(false);
+    });
+    return()=>unsub();
+  },[]);
+
   const girisYap=(u,r,d)=>{setKullanici(u);setRol(r);setUserData(d);};
   const cikisYap=async()=>{await signOut(auth);setKullanici(null);setRol('');setUserData(null);};
 
   const s=getS(tema);
   useEffect(()=>{document.body.style.background=s.bg;document.body.style.transition='background 0.5s';},[tema]);
 
+  if(yukleniyor)return<div style={{minHeight:'100vh',background:s.bg,display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'Inter,sans-serif'}}><div style={{textAlign:'center'}}><div style={{fontSize:'32px',fontWeight:'800',background:s.accentGrad,WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',marginBottom:'16px'}}>Elsway</div><div style={{color:s.text3,fontSize:'14px'}}>Yükleniyor...</div></div></div>;
   if(kullanici&&rol==='ogrenci')return<OgrenciPaneli tema={tema} kullanici={kullanici} ogrenciData={userData} onCikis={cikisYap}/>;
   if(kullanici&&rol==='veli')return<VeliPaneli tema={tema} kullanici={kullanici} veliData={userData} onCikis={cikisYap}/>;
   if(kullanici)return<KocPaneli tema={tema} kullanici={kullanici} onCikis={cikisYap}/>;
