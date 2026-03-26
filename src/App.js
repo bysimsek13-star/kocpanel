@@ -1011,31 +1011,50 @@ function GirisEkrani({tema, onGiris}){
   const s=getS(tema);
   const[email,setEmail]=useState('');const[sifre,setSifre]=useState('');const[hata,setHata]=useState('');const[yukleniyor,setYukleniyor]=useState(false);
   const girisYap=async()=>{setYukleniyor(true);setHata('');try{const sonuc=await signInWithEmailAndPassword(auth,email,sifre);const kd=await getDoc(doc(db,'kullanicilar',sonuc.user.uid));let rol='koc';let data=null;if(kd.exists()){rol=kd.data().rol||'ogrenci';data=kd.data();}onGiris(sonuc.user,rol,data);}catch(e){setHata('Email veya şifre hatalı!');}setYukleniyor(false);};
+  const kucukEkran = window.innerWidth < 768;
   return(
-    <div style={{minHeight:'100vh',display:'flex',fontFamily:'Inter,sans-serif',background:s.bg}}>
+    <div style={{minHeight:'100vh',display:'flex',flexDirection:kucukEkran?'column':'row',fontFamily:'Inter,sans-serif',background:s.bg}}>
       {/* SOL */}
-      <div style={{flex:1,background:s.accentGrad,display:'flex',flexDirection:'column',justifyContent:'center',padding:'80px',position:'relative',overflow:'hidden'}}>
-        <div style={{position:'absolute',top:'-100px',right:'-100px',width:'400px',height:'400px',background:'rgba(255,255,255,0.05)',borderRadius:'50%'}}/>
-        <div style={{position:'absolute',bottom:'-80px',left:'-80px',width:'300px',height:'300px',background:'rgba(255,255,255,0.05)',borderRadius:'50%'}}/>
+      {!kucukEkran && <div style={{flex:'0 0 45%',background:s.accentGrad,display:'flex',flexDirection:'column',justifyContent:'center',padding:'60px',position:'relative',overflow:'hidden',minHeight:'100vh'}}>
+        <div style={{position:'absolute',top:'-120px',right:'-120px',width:'350px',height:'350px',background:'rgba(255,255,255,0.06)',borderRadius:'50%'}}/>
+        <div style={{position:'absolute',bottom:'-100px',left:'-100px',width:'280px',height:'280px',background:'rgba(255,255,255,0.06)',borderRadius:'50%'}}/>
+        <div style={{position:'absolute',top:'40%',right:'-60px',width:'200px',height:'200px',background:'rgba(255,255,255,0.04)',borderRadius:'50%'}}/>
         <div style={{position:'relative',zIndex:1}}>
-          <h1 style={{fontSize:'56px',fontWeight:'800',color:'white',marginBottom:'12px',letterSpacing:'-1px'}}>Elsway</h1>
-          <p style={{fontSize:'20px',color:'rgba(255,255,255,0.9)',lineHeight:'1.6'}}>Kendi yolunu oluştur.<br/>Planla. Uygula. Kazan.</p>
-          <div style={{marginTop:'48px',display:'flex',flexDirection:'column',gap:'16px'}}>
-            {['Akıllı program takibi','Deneme analizi ve net hesaplama','Koç-öğrenci-veli iletişimi','Verimlilik skoru ve raporlama'].map(f=>(
-              <div key={f} style={{display:'flex',alignItems:'center',gap:'12px'}}>
-                <div style={{width:'24px',height:'24px',background:'rgba(255,255,255,0.2)',borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'12px',color:'white',flexShrink:0}}>✓</div>
-                <div style={{color:'rgba(255,255,255,0.9)',fontSize:'15px'}}>{f}</div>
+          <div style={{fontSize:'13px',fontWeight:'600',color:'rgba(255,255,255,0.6)',letterSpacing:'2px',textTransform:'uppercase',marginBottom:'24px'}}>YKS / LGS Koçluk Platformu</div>
+          <h1 style={{fontSize:'52px',fontWeight:'800',color:'white',marginBottom:'16px',letterSpacing:'-1px',lineHeight:'1.1'}}>
+            <span style={{color:'white'}}>Els</span><span style={{color:'rgba(255,255,255,0.6)'}}>way</span>
+          </h1>
+          <p style={{fontSize:'18px',color:'rgba(255,255,255,0.85)',lineHeight:'1.7',marginBottom:'48px',maxWidth:'320px'}}>
+            Öğrencilerinin her adımını takip et. Başarıya giden yolu birlikte oluşturun.
+          </p>
+          <div style={{display:'flex',flexDirection:'column',gap:'20px'}}>
+            {[
+              {icon:'📅',baslik:'Akıllı Program Takibi',alt:'Haftalık görevler, tamamlama oranları'},
+              {icon:'📊',baslik:'Deneme Analizi',alt:'Net hesaplama, konu bazlı performans'},
+              {icon:'💬',baslik:'Anlık İletişim',alt:'Koç-öğrenci-veli mesajlaşma'},
+              {icon:'📈',baslik:'Verimlilik Skoru',alt:'Çalışma saati ve etkinlik takibi'},
+            ].map(f=>(
+              <div key={f.baslik} style={{display:'flex',alignItems:'center',gap:'16px'}}>
+                <div style={{width:'40px',height:'40px',background:'rgba(255,255,255,0.15)',borderRadius:'12px',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'18px',flexShrink:0,backdropFilter:'blur(8px)'}}>
+                  {f.icon}
+                </div>
+                <div>
+                  <div style={{color:'white',fontSize:'14px',fontWeight:'600'}}>{f.baslik}</div>
+                  <div style={{color:'rgba(255,255,255,0.6)',fontSize:'12px',marginTop:'2px'}}>{f.alt}</div>
+                </div>
               </div>
             ))}
           </div>
         </div>
-      </div>
+      </div>}
       {/* SAĞ */}
-      <div style={{flex:1,display:'flex',justifyContent:'center',alignItems:'center',padding:'40px'}}>
-        <div style={{width:'400px',background:s.surface,borderRadius:'24px',padding:'44px',boxShadow:s.shadow}}>
+      <div style={{flex:1,display:'flex',justifyContent:'center',alignItems:'center',padding:kucukEkran?'24px':'48px',minHeight:kucukEkran?'100vh':'auto'}}>
+        <div style={{width:'100%',maxWidth:'400px',background:s.surface,borderRadius:'24px',padding:kucukEkran?'32px 24px':'44px',boxShadow:s.shadow}}>
           <div style={{textAlign:'center',marginBottom:'32px'}}>
-            <div style={{fontSize:'32px',fontWeight:'800',background:s.accentGrad,WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'}}>Els<span>way</span></div>
-            <div style={{fontSize:'13px',color:s.text3,marginTop:'6px'}}>YKS / LGS Koçluk & Danışmanlık</div>
+            <div style={{fontSize:'34px',fontWeight:'800',letterSpacing:'-0.5px',marginBottom:'8px'}}>
+              <span style={{color:'#5B4FE8'}}>Els</span><span style={{color:'#8B7FF5'}}>way</span>
+            </div>
+            <div style={{fontSize:'13px',color:s.text3}}>YKS / LGS Koçluk & Danışmanlık</div>
           </div>
           <div style={{marginBottom:'16px'}}>
             <div style={{color:s.text2,fontSize:'13px',marginBottom:'7px',fontWeight:'500'}}>Email</div>
