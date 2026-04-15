@@ -1,0 +1,78 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    name: Build + Deploy + Smoke
+    runs-on: ubuntu-latest
+    needs: []  # ci.yml ile paralel değil, bağımsız — main'e push gelince ikisi de tetiklenir
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Bağımlılıkları yükle
+        run: npm ci
+
+      - name: Production build
+        run: npm run build
+
+      - name: Functions bağımlılıklarını yükle
+        run: npm ci
+        working-directory: functions
+
+      - name: Firebase deploy (hosting + functions)
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: kocpaneli
+          channelId: live
+
+      - name: Smoke test
+        run: node scripts/smoke_test.js
+        env:
+          SMOKE_URL: https://kocpaneli.web.app
+
+  e2e:
+    name: E2E Altın Yollar
+    runs-on: ubuntu-latest
+    needs: [deploy]  # Deploy bitmeden E2E başlamasın
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Bağımlılıkları yükle
+        run: npm ci
+
+      - name: Playwright browser kur
+        run: npx playwright install chromium --with-deps
+
+      - name: E2E testleri çalıştır
+        run: npx playwright test e2e/smoke_deploy.spec.js e2e/navigasyon.spec.js e2e/giris.spec.js e2e/guvenlik.spec.js e2e/koc_akislari.spec.js
+        env:
+          BASE_URL: https://kocpaneli.web.app
+          TEST_KOC_EMAIL: ${{ secrets.TEST_KOC_EMAIL }}
+          TEST_KOC_SIFRE: ${{ secrets.TEST_KOC_SIFRE }}
+          TEST_OGRNC_EMAIL: ${{ secrets.TEST_OGRNC_EMAIL }}
+          TEST_OGRNC_SIFRE: ${{ secrets.TEST_OGRNC_SIFRE }}
+
+      - name: Playwright raporunu sakla
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

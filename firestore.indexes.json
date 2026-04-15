@@ -1,4 +1,39 @@
 {
-  "indexes": [],
+  "indexes": [
+    {
+      "collectionGroup": "playlists",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "coachId",   "order": "ASCENDING"  },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "userProgress",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId",        "order": "ASCENDING" },
+        { "fieldPath": "playlistDocId", "order": "ASCENDING" },
+        { "fieldPath": "watched",       "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "bildirimler",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "aliciId",   "order": "ASCENDING"  },
+        { "fieldPath": "olusturma", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "goruntulu",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "ogrenciId",   "order": "ASCENDING"  },
+        { "fieldPath": "durum",       "order": "ASCENDING"  },
+        { "fieldPath": "olusturanAt", "order": "DESCENDING" }
+      ]
+    }
+  ],
   "fieldOverrides": []
 }

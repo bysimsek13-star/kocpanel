@@ -1,19 +1,369 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // This rule allows anyone with your Firestore database reference to view, edit,
-    // and delete all data in your Firestore database. It is useful for getting
-    // started, but it is configured to expire after 30 days because it
-    // leaves your app open to attackers. At that time, all client
-    // requests to your Firestore database will be denied.
-    //
-    // Make sure to write security rules for your app before that time, or else
-    // all client requests to your Firestore database will be denied until you Update
-    // your rules
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    function myUserData() {
+      return get(/databases/$(database)/documents/kullanicilar/$(request.auth.uid)).data;
+    }
+
+    function myRole() {
+      return myUserData().rol;
+    }
+
+    function isActive() {
+      return isAuth() && myUserData().aktif != false;
+    }
+
+    function isAdmin() {
+      return isAuth() && myRole() == 'admin';
+    }
+
+    function isKoc() {
+      return isAuth() && (myRole() == 'koc' || myRole() == 'admin');
+    }
+
+    function isOgrenci() {
+      return isAuth() && myRole() == 'ogrenci';
+    }
+
+    function isVeli() {
+      return isAuth() && myRole() == 'veli';
+    }
+
+    function isKendisi(ogrenciId) {
+      return isAuth() && request.auth.uid == ogrenciId;
+    }
+
+    function isOgrencininKocu(ogrenciId) {
+      return get(/databases/$(database)/documents/ogrenciler/$(ogrenciId)).data.kocId == request.auth.uid;
+    }
+
+    function isVelininOgrencisi(ogrenciId) {
+      return get(/databases/$(database)/documents/ogrenciler/$(ogrenciId)).data.veliUid == request.auth.uid
+        || myUserData().ogrenciUid == ogrenciId;
+    }
+
+    match /kullanicilar/{userId} {
+      allow read: if isAuth() && (
+        request.auth.uid == userId ||
+        isAdmin() ||
+        // Koç sadece kendi öğrencilerinin ve velilerinin kaydını okuyabilir
+        (isKoc() && isActive() && resource.data.kocId == request.auth.uid) ||
+        // Koç admin kullanıcılarını okuyabilir (bildirim göndermek için)
+        (isKoc() && isActive() && resource.data.rol == 'admin')
+      );
+
+      allow create: if isAdmin()
+        || (
+          isKoc() && isActive()
+          && (request.resource.data.rol == 'ogrenci' || request.resource.data.rol == 'veli')
+        );
+
+      allow update: if isAdmin()
+        || (
+          isAuth() && request.auth.uid == userId
+          && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['isim', 'email', 'sonAktif', 'fcmToken', 'onboardingTamamlandi'])
+        );
+
+      allow delete: if isAdmin();
+
+      // Günlük aktiflik kayıtları
+      match /aktivite/{gunId} {
+        allow read: if isAdmin();
+        allow write: if isAuth() && request.auth.uid == userId;
+      }
+    }
+
+    match /ogrenciler/{ogrenciId} {
+      allow read, write: if isAdmin();
+
+      // resource.data.kocId → collection query ile uyumlu (where kocId == uid)
+      allow read: if isKoc() && isActive() && resource.data.kocId == request.auth.uid;
+      // Koç sadece kendi UID'iyle kocId alanını oluşturabilir — başka koça atama engeli
+      allow create: if isKoc() && isActive() && request.resource.data.kocId == request.auth.uid;
+      allow update, delete: if isKoc() && isActive() && resource.data.kocId == request.auth.uid;
+
+      allow read: if isKendisi(ogrenciId) && isActive();
+      allow read: if isVeli() && isActive() && isVelininOgrencisi(ogrenciId);
+
+      // Öğrenci sadece aktiflik alanını günceller
+      // sonDenemeNet/sonDenemeTarih → CF denemeAggregateGuncelle
+      // gunlukDakika/girisSayisi → CF gunlukAlanlariSifirla
+      allow update: if isKendisi(ogrenciId) && isActive()
+        && request.resource.data.diff(resource.data).affectedKeys()
+           .hasOnly(['sonAktif']);
+
+      match /program/{docId} {
+        allow read, write: if isAdmin();
+        allow read, write: if isKoc() && isActive() && isOgrencininKocu(ogrenciId);
+        allow read: if isKendisi(ogrenciId) && isActive();
+        // Yeni hafta bazlı yapıda öğrenci sadece gunler alanını güncelleyebilir (tamamlandi toggle)
+        allow update: if isKendisi(ogrenciId) && isActive()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['gunler']);
+        allow read: if isVeli() && isActive() && isVelininOgrencisi(ogrenciId);
+      }
+
+      // Haftalık program (6 etüt / gün yapısı — HaftalikProgram.js, GunlukTakip BugunProgrami)
+      match /program_v2/{docId} {
+        allow read, write: if isAdmin();
+        allow read, write: if isKoc() && isActive() && isOgrencininKocu(ogrenciId);
+        allow read: if isKendisi(ogrenciId) && isActive();
+        allow read: if isVeli() && isActive() && isVelininOgrencisi(ogrenciId);
+        // Öğrenci sadece slot tamamlandı işaretlerini günceller (GunlukTakip setDoc merge)
+        allow create: if isKendisi(ogrenciId) && isActive()
+          && request.resource.data.keys().hasOnly(['tamamlandi']);
+        allow update: if isKendisi(ogrenciId) && isActive()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['tamamlandi']);
+      }
+
+      match /denemeler/{docId} {
+        allow read, write: if isAdmin();
+        allow read, write: if isKoc() && isActive() && isOgrencininKocu(ogrenciId);
+        allow read, create, update, delete: if isKendisi(ogrenciId) && isActive();
+        allow read: if isVeli() && isActive() && isVelininOgrencisi(ogrenciId);
+      }
+
+      match /mesajlar/{docId} {
+        allow read, write: if isAdmin();
+        allow read, create: if isKoc() && isActive() && isOgrencininKocu(ogrenciId);
+        allow update: if isKoc() && isActive() && isOgrencininKocu(ogrenciId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['okundu', 'okunmaZamani', 'readAt']);
+        allow read, create: if isKendisi(ogrenciId) && isActive();
+        allow update: if isKendisi(ogrenciId) && isActive()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['okundu', 'okunmaZamani', 'readAt']);
+      }
+
+      match /velimesajlar/{docId} {
+        allow read, write: if isAdmin();
+
+        allow read, create: if isKoc() && isActive() && isOgrencininKocu(ogrenciId);
+        allow update: if isKoc() && isActive() && isOgrencininKocu(ogrenciId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['okundu', 'okunmaZamani', 'readAt']);
+
+        allow read, create: if isVeli() && isActive() && isVelininOgrencisi(ogrenciId);
+        allow update: if isVeli() && isActive() && isVelininOgrencisi(ogrenciId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['okundu', 'okunmaZamani', 'readAt']);
+      }
+
+      match /calisma/{docId} {
+        allow read, write: if isAdmin();
+        allow read, write: if isKoc() && isActive() && isOgrencininKocu(ogrenciId);
+        allow read, write: if isKendisi(ogrenciId) && isActive();
+        allow read: if isVeli() && isActive() && isVelininOgrencisi(ogrenciId);
+      }
+
+      match /notlar/{docId} {
+        allow read, write: if isAdmin();
+        allow read, write: if isKoc() && isActive() && isOgrencininKocu(ogrenciId);
+      }
+
+      match /hedefler/{docId} {
+        allow read, write: if isAdmin();
+        allow read, write: if isKoc() && isActive() && isOgrencininKocu(ogrenciId);
+        allow read: if isKendisi(ogrenciId) && isActive();
+        allow read: if isVeli() && isActive() && isVelininOgrencisi(ogrenciId);
+      }
+
+      match /mufredat/{docId} {
+        allow read, write: if isAdmin();
+        allow read, write: if isKoc() && isActive() && isOgrencininKocu(ogrenciId);
+        allow read: if isKendisi(ogrenciId) && isActive();
+        allow read: if isVeli() && isActive() && isVelininOgrencisi(ogrenciId);
+      }
+
+      match /veliRaporlari/{docId} {
+        allow read, write: if isAdmin();
+        allow read, write: if isKoc() && isActive() && isOgrencininKocu(ogrenciId);
+        allow read: if isKendisi(ogrenciId) && isActive();
+        allow read: if isVeli() && isActive() && isVelininOgrencisi(ogrenciId);
+      }
+
+      match /rutin/{docId} {
+        allow read, write: if isAdmin();
+        allow read, write: if isKoc() && isActive() && isOgrencininKocu(ogrenciId);
+        allow read, write: if isKendisi(ogrenciId) && isActive();
+      }
+
+      match /gunlukSoru/{docId} {
+        allow read, write: if isAdmin();
+        allow read, write: if isKoc() && isActive() && isOgrencininKocu(ogrenciId);
+        allow read, write: if isKendisi(ogrenciId) && isActive();
+        allow read: if isVeli() && isActive() && isVelininOgrencisi(ogrenciId);
+      }
+
+
+      match /konu_takip/{docId} {
+        allow read, write: if isAdmin();
+        allow read, write: if isKoc() && isActive() && isOgrencininKocu(ogrenciId);
+        allow read: if isKendisi(ogrenciId) && isActive();
+        allow read: if isVeli() && isActive() && isVelininOgrencisi(ogrenciId);
+      }
+
+      match /senelikProgram/{yil} {
+        allow read, write: if isAdmin();
+        allow read, write: if isKoc() && isActive() && isOgrencininKocu(ogrenciId);
+        allow read: if isKendisi(ogrenciId) && isActive();
+        allow read: if isVeli() && isActive() && isVelininOgrencisi(ogrenciId);
+      }
+    }
+
+    match /bildirimler/{bildirimId} {
+      // Admin her aliciya bildirim gönderebilir.
+      // Koç: aliciId bir öğrenciyse o öğrenci kendisine ait olmalı;
+      //       öğrenci değilse (veli, admin) serbest (goruntulu session'ları olmadığından risk düşük).
+      // Öğrenci/veli: sadece kendine yazabilir (push spam koruması).
+      allow create: if isAdmin()
+        || (isKoc() && isActive()
+            && (
+              (exists(/databases/$(database)/documents/ogrenciler/$(request.resource.data.aliciId))
+                && get(/databases/$(database)/documents/ogrenciler/$(request.resource.data.aliciId)).data.kocId == request.auth.uid)
+              || !exists(/databases/$(database)/documents/ogrenciler/$(request.resource.data.aliciId))
+            ))
+        || (isAuth() && isActive() && request.resource.data.aliciId == request.auth.uid);
+      allow read:   if isAuth() && resource.data.aliciId == request.auth.uid;
+      allow update: if isAuth() && resource.data.aliciId == request.auth.uid;
+      allow delete: if isAuth() && resource.data.aliciId == request.auth.uid;
+    }
+
+    match /auditLog/{logId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin() || (isKoc() && isActive());
+    }
+
+
+    match /silmeTalepleri/{talepId} {
+      allow create: if isKoc() && isActive();
+      allow read, update: if isAdmin();
+    }
+
+    match /destekTalepleri/{talepId} {
+      allow read: if isAdmin();
+      allow create: if isAuth() && isActive();
+      allow update, delete: if isAdmin();
+    }
+
+    match /duyurular/{duyuruId} {
+      allow read: if isAuth() && isActive();
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /gunun_sozu/{hedefId} {
+      // Koç kendi yazdığı sözü kaydedebilir; admin her şeyi yapabilir
+      allow read: if isAuth() && isActive();
+      allow write: if isKoc() && isActive();
+      allow write: if isAdmin();
+    }
+
+    match /featureFlags/{flagId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /funnelGunluk/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /istemciHataKayitlari/{kayitId} {
+      allow read: if isAdmin();
+      allow create: if isAuth();
+    }
+
+    match /istemciPerformans/{kayitId} {
+      allow read: if isAdmin();
+      allow create: if isAuth();
+    }
+
+    match /sistemOzetleri/{ozetId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /yedekIsleri/{isId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /mufredat/{turId} {
+      allow read: if isAuth() && isActive();
+      allow write: if isAdmin();
+
+      match /konular/{konuId} {
+        allow read: if isAuth() && isActive();
+        allow write: if isAdmin();
+      }
+    }
+
+    // ── Kaynak Kütüphanesi ───────────────────────────────────────────────────
+    match /kutuphane/{kaynakId} {
+      allow read:   if isAuth() && isActive() && (
+        isAdmin() ||
+        resource.data.koc_uid == request.auth.uid ||
+        // Öğrenci kendi koçunun kaynaklarını okuyabilir
+        (isOgrenci() && get(/databases/$(database)/documents/ogrenciler/$(request.auth.uid)).data.kocId == resource.data.koc_uid)
+      );
+      allow create: if isKoc() && isActive() && request.resource.data.koc_uid == request.auth.uid;
+      allow update: if isActive() && (isAdmin() || resource.data.koc_uid == request.auth.uid);
+      allow delete: if isActive() && (isAdmin() || resource.data.koc_uid == request.auth.uid);
+    }
+
+    // ── YouTube Playlists ────────────────────────────────────────────────────
+    match /playlists/{playlistId} {
+      // Koç kendi playlist'ini okur/yazar; admin her şeyi
+      allow read:   if isAdmin() || (isKoc() && isActive() && resource.data.coachId == request.auth.uid);
+      // Koç kendi coachId'siyle playlist oluşturabilir — başka koça atama engeli
+      allow create: if isAdmin() || (isKoc() && isActive() && request.resource.data.coachId == request.auth.uid);
+      allow update, delete: if isAdmin() || (isKoc() && isActive() && resource.data.coachId == request.auth.uid);
+
+      // Öğrenci de videoları okuyabilir (koçunun playlist'i)
+      allow read:   if isOgrenci() && isActive();
+
+      match /videos/{videoId} {
+        allow read:  if isAuth() && isActive();
+        allow write: if isAdmin() || (isKoc() && isActive());
+      }
+    }
+
+    // ── Kullanıcı izleme ilerlemesi ──────────────────────────────────────────
+    match /userProgress/{progressId} {
+      // progressId = "{userId}_{videoId}" — sadece kendi kaydı
+      allow read, write: if isAdmin();
+      allow read:   if isAuth() && resource.data.userId == request.auth.uid;
+      // Koç kendi öğrencisinin izleme kaydını okuyabilir
+      allow read:   if isKoc() && isActive()
+        && get(/databases/$(database)/documents/ogrenciler/$(resource.data.userId)).data.kocId == request.auth.uid;
+      allow create: if isAuth() && isActive() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAuth() && isActive() && resource.data.userId == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['watched', 'watchedAt', 'watchDurationSec']);
+    }
+
+    // ── Görüntülü ders oturumları ────────────────────────────────────────────
+    match /goruntulu/{sessionId} {
+      allow read: if isAdmin()
+        || (isAuth() && isActive() && (
+          resource.data.kocId     == request.auth.uid ||
+          resource.data.ogrenciId == request.auth.uid
+        ));
+      allow create: if isKoc() && isActive()
+        && request.resource.data.kocId == request.auth.uid;
+      allow update: if isAuth() && isActive() && (
+        resource.data.kocId     == request.auth.uid ||
+        resource.data.ogrenciId == request.auth.uid
+      ) && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['durum', 'bitisTarih'])
+        // Geçerli durum geçişleri — öğrenci reddedilmiş oturumu 'aktif' yapamaz
+        && request.resource.data.durum in ['reddedildi', 'tamamlandi', 'iptal'];
+    }
+
+    // Rate limit kayıtları — sadece admin SDK (CF) yazar, istemci okuyamaz/yazamaz
+    match /rateLimits/{docId} {
+      allow read, write: if false;
+    }
+
     match /{document=**} {
-      allow read, write: if request.time < timestamp.date(2026, 4, 25);
+      allow read, write: if false;
     }
   }
 }

@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  kalite:
+    name: Lint + Format + Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Bağımlılıkları yükle (frontend)
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Format kontrolü
+        run: npm run format:check
+
+      - name: Frontend testleri (coverage ile)
+        run: npm run test:coverage
+
+      - name: Coverage raporunu artifact olarak sakla
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 7
+
+      - name: Bağımlılıkları yükle (functions)
+        run: npm ci
+        working-directory: functions
+
+      - name: Functions lint
+        run: npm run lint
+        working-directory: functions
+
+      - name: Functions testleri
+        run: npx vitest run
+        working-directory: functions
+
+  rules:
+    name: Firestore Rules Testleri
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Java kur (Firebase Emulator için)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Bağımlılıkları yükle
+        run: npm ci
+
+      - name: Firebase CLI kur
+        run: npm install -g firebase-tools
+
+      - name: Firestore Rules testleri
+        run: npm run test:rules

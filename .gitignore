@@ -2,6 +2,7 @@
 
 # dependencies
 /node_modules
+/functions/node_modules
 /.pnp
 .pnp.js
 
@@ -13,11 +14,40 @@
 
 # misc
 .DS_Store
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
 
+# ── Ortam değişkenleri (HİÇBİRİNİ commit'leme) ──────────────────────────────
+# Not: leading / olmadan alt dizinleri de kapsar (functions/.env dahil)
+.env
+.env.local
+.env.development
+.env.development.local
+.env.test
+.env.test.local
+.env.production
+.env.production.local
+.env.*.local
+
+# ── Test & E2E artifact'ları ─────────────────────────────────────────────────
+playwright-report/
+test-results/
+
+# ── Firebase / GCP gizli anahtarlar ─────────────────────────────────────────
+serviceAccount.json
+*serviceAccount*.json
+*firebase-adminsdk*.json
+*-credentials.json
+firebase-debug.log
+
+# ── Firebase CLI önbellek / deploy geçici dosyaları ──────────────────────────
+.firebase/
+.firebaserc.local
+
+# ── Log dosyaları ────────────────────────────────────────────────────────────
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+*.log
+
+# ── Proje içi zip'ler (kaynak kontrolüne girmesin) ───────────────────────────
+*.zip
+*.tar.gz

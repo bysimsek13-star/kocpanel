@@ -1,95 +1,258 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-import React, { useState } from 'react';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
-import { auth, db } from '../firebase';
-import { getS } from '../theme';
-import { Btn, Input } from '../components/Shared';
+import React, { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
+import { getFunctions, httpsCallable } from 'firebase/functions';
+import app, { db } from '../firebase';
+import { doc, updateDoc } from 'firebase/firestore';
+import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
+import { useToast } from '../components/Toast';
+import { Btn } from '../components/Shared';
+import { adminlereBildirimGonder } from './ogrenciEkleUtils';
+import { OgrenciEkleForm } from './OgrenciEkleForm';
 
-export default function OgrenciEkleModal({ tema, onKapat, onEkle }) {
-  const s = getS(tema);
+export default function OgrenciEkleModal({ onKapat, onEkle }) {
+  const { s } = useTheme();
+  const { kullanici, userData } = useAuth();
+  const toast = useToast();
+
   const [isim, setIsim] = useState('');
   const [email, setEmail] = useState('');
   const [sifre, setSifre] = useState('');
   const [veliEmail, setVeliEmail] = useState('');
   const [veliSifre, setVeliSifre] = useState('');
-  const [tur, setTur] = useState('TYT');
-  const [beklenenSaat, setBeklenenSaat] = useState(6);
+  const [veliTelefon, setVeliTelefon] = useState('');
+  const [tur, setTur] = useState('tyt_12');
+  const [dogumTarihi, setDogumTarihi] = useState('');
   const [yukleniyor, setYukleniyor] = useState(false);
   const [hata, setHata] = useState('');
+  const [pasifHesapOnayiBiliyor, setPasifHesapOnayiBiliyor] = useState(false);
+  const [pasifOnayMesaj, setPasifOnayMesaj] = useState('');
 
-  const ekle = async () => {
-    if (!isim || !email || !sifre) return;
-    if (sifre.length < 6) { setHata('Sifre en az 6 karakter!'); return; }
-    setYukleniyor(true); setHata('');
-    try {
-      const oS = await createUserWithEmailAndPassword(auth, email, sifre);
-      const oUid = oS.user.uid;
-      let vUid = null;
-      if (veliEmail && veliSifre && veliSifre.length >= 6) {
-        try {
-          const vS = await createUserWithEmailAndPassword(auth, veliEmail, veliSifre);
-          vUid = vS.user.uid;
-          await setDoc(doc(db, 'kullanicilar', vUid), { email: veliEmail, rol: 'veli', ogrenciUid: oUid, ogrenciIsim: isim, olusturma: new Date() });
-        } catch (e) { if (e.code !== 'auth/email-already-in-use') throw e; }
-      }
-      await setDoc(doc(db, 'kullanicilar', oUid), { isim, email, tur, rol: 'ogrenci', tamamlama: 0, beklenenSaat, veliEmail: veliEmail || '', veliUid: vUid || '', olusturma: new Date() });
-      await setDoc(doc(db, 'ogrenciler', oUid), { isim, email, tur, tamamlama: 0, beklenenSaat, veliEmail: veliEmail || '', olusturma: new Date() });
-      onEkle(); onKapat();
-    } catch (e) {
-      if (e.code === 'auth/email-already-in-use') setHata('Bu email zaten kullanımda!');
-      else setHata('Hata: ' + e.message);
+  useEffect(() => {
+    const kapat = e => {
+      if (e.key === 'Escape') onKapat();
+    };
+    document.addEventListener('keydown', kapat);
+    return () => document.removeEventListener('keydown', kapat);
+  }, [onKapat]);
+
+  const ekle = async (yenidenAktiveOnayiGonder = false) => {
+    if (!isim.trim() || !email.trim() || !sifre) return;
+    if (sifre.length < 6) {
+      setHata('Şifre en az 6 karakter olmalı!');
+      return;
     }
-    setYukleniyor(false);
+
+    setYukleniyor(true);
+    setHata('');
+
+    try {
+      const functions = getFunctions(app, 'europe-west1');
+      const kullaniciOlustur = httpsCallable(functions, 'kullaniciOlustur');
+
+      const payload = {
+        isim: isim.trim(),
+        email: email.trim(),
+        sifre,
+        rol: 'ogrenci',
+        kocId: kullanici.uid,
+        tur,
+        beklenenSaat: 6,
+        dogumTarihi: dogumTarihi || null,
+        yenidenAktiveEt: yenidenAktiveOnayiGonder,
+      };
+
+      if (veliEmail.trim() && veliSifre) {
+        if (veliSifre.length < 6) {
+          setHata('Veli şifresi en az 6 karakter olmalı!');
+          setYukleniyor(false);
+          return;
+        }
+        payload.veliEmail = veliEmail.trim();
+        payload.veliSifre = veliSifre;
+      }
+
+      const sonuc = await kullaniciOlustur(payload);
+
+      if (sonuc?.data?.durum === 'pasif_hesap_mevcut') {
+        setPasifHesapOnayiBiliyor(true);
+        setPasifOnayMesaj(sonuc.data.mesaj);
+        setYukleniyor(false);
+        return;
+      }
+
+      if (sonuc?.data?.durum === 'olusturuldu' || sonuc?.data?.durum === 'yeniden_aktive_edildi') {
+        if (veliTelefon.trim() && sonuc.data.uid) {
+          try {
+            await updateDoc(doc(db, 'ogrenciler', sonuc.data.uid), {
+              veliTelefon: veliTelefon.trim(),
+            });
+          } catch (e) {
+            console.error(e);
+          }
+        }
+        await adminlereBildirimGonder(kullanici, userData, sonuc.data.uid, isim.trim());
+        toast('Öğrenci başarıyla eklendi/aktive edildi!');
+        onEkle();
+        onKapat();
+      }
+    } catch (e) {
+      console.error('Öğrenci ekleme hatası:', e);
+      setHata(e.message.includes('already-exists') ? e.message : e.message || 'İşlem başarısız.');
+    } finally {
+      setYukleniyor(false);
+    }
   };
 
-  return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, overflowY: 'auto', backdropFilter: 'blur(4px)' }}>
-      <div style={{ background: s.surface, border: `1px solid ${s.border}`, borderRadius: '20px', padding: '36px', width: '440px', margin: '20px', boxShadow: s.shadow }}>
-        <div style={{ color: s.text, fontSize: '18px', fontWeight: '700', marginBottom: '24px' }}>Yeni Ogrenci Ekle</div>
+  const overlay = {
+    position: 'fixed',
+    inset: 0,
+    background: 'rgba(0,0,0,0.6)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1000,
+    backdropFilter: 'blur(4px)',
+  };
 
-        <div style={{ color: s.accent, fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>Ogrenci Bilgileri</div>
-        {[{ l: 'Ad Soyad', v: isim, fn: setIsim, p: 'Ad Soyad', t: 'text' }, { l: 'Email', v: email, fn: setEmail, p: 'email@ornek.com', t: 'email' }, { l: 'Sifre', v: sifre, fn: setSifre, p: 'En az 6 karakter', t: 'password' }].map(f => (
-          <div key={f.l} style={{ marginBottom: '12px' }}>
-            <div style={{ color: s.text2, fontSize: '12px', marginBottom: '5px', fontWeight: '500' }}>{f.l}</div>
-            <Input tema={tema} type={f.t} value={f.v} onChange={e => f.fn(e.target.value)} placeholder={f.p} />
+  if (pasifHesapOnayiBiliyor) {
+    return (
+      <div role="dialog" aria-modal="true" style={overlay}>
+        <div
+          style={{
+            background: s.surface,
+            border: `1px solid ${s.border}`,
+            borderRadius: 20,
+            padding: 36,
+            width: 420,
+            maxWidth: '95vw',
+            margin: 20,
+            boxShadow: s.shadow,
+          }}
+        >
+          <div style={{ fontSize: 32, textAlign: 'center', marginBottom: 16 }}>⏸️</div>
+          <div
+            style={{
+              color: s.text,
+              fontSize: 17,
+              fontWeight: 700,
+              marginBottom: 12,
+              textAlign: 'center',
+            }}
+          >
+            Pasif Hesap Bulundu
           </div>
-        ))}
-
-        <div style={{ marginBottom: '12px' }}>
-          <div style={{ color: s.text2, fontSize: '12px', marginBottom: '5px', fontWeight: '500' }}>Gunluk Beklenen Calisma</div>
-          <div style={{ display: 'flex', gap: '6px' }}>
-            {[4, 5, 6, 7, 8].map(n => (
-              <div key={n} onClick={() => setBeklenenSaat(n)} style={{ flex: 1, padding: '9px', borderRadius: '9px', border: beklenenSaat === n ? `2px solid ${s.accent}` : `1px solid ${s.border}`, background: beklenenSaat === n ? s.accentSoft : s.surface2, color: beklenenSaat === n ? s.accent : s.text2, cursor: 'pointer', textAlign: 'center', fontSize: '13px', fontWeight: '600' }}>{n}s</div>
-            ))}
+          <div
+            style={{
+              color: s.text2,
+              fontSize: 14,
+              marginBottom: 24,
+              lineHeight: 1.6,
+              textAlign: 'center',
+            }}
+          >
+            {pasifOnayMesaj}
           </div>
-        </div>
-
-        <div style={{ marginBottom: '16px' }}>
-          <div style={{ color: s.text2, fontSize: '12px', marginBottom: '5px', fontWeight: '500' }}>Sinav Turu</div>
-          <div style={{ display: 'flex', gap: '8px' }}>
-            {['TYT', 'TYT+AYT', 'LGS'].map(t => (
-              <div key={t} onClick={() => setTur(t)} style={{ flex: 1, padding: '10px', borderRadius: '10px', border: tur === t ? `2px solid ${s.accent}` : `1px solid ${s.border}`, background: tur === t ? s.accentSoft : s.surface2, color: tur === t ? s.accent : s.text2, cursor: 'pointer', textAlign: 'center', fontSize: '13px', fontWeight: '500' }}>{t}</div>
-            ))}
-          </div>
-        </div>
-
-        <div style={{ borderTop: `1px solid ${s.border}`, paddingTop: '16px', marginBottom: '16px' }}>
-          <div style={{ color: '#10B981', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '12px' }}>Veli (Istege Bagli)</div>
-          {[{ l: 'Veli Email', v: veliEmail, fn: setVeliEmail, p: 'veli@email.com', t: 'email' }, { l: 'Veli Sifre', v: veliSifre, fn: setVeliSifre, p: 'En az 6 karakter', t: 'password' }].map(f => (
-            <div key={f.l} style={{ marginBottom: '10px' }}>
-              <div style={{ color: s.text2, fontSize: '12px', marginBottom: '5px', fontWeight: '500' }}>{f.l}</div>
-              <Input tema={tema} type={f.t} value={f.v} onChange={e => f.fn(e.target.value)} placeholder={f.p} />
+          <div
+            style={{
+              background: s.surface2,
+              borderRadius: 12,
+              padding: '12px 16px',
+              marginBottom: 20,
+              fontSize: 13,
+              color: s.text2,
+            }}
+          >
+            <div>
+              <b style={{ color: s.text }}>Email:</b> {email}
             </div>
-          ))}
+            <div style={{ marginTop: 4 }}>
+              <b style={{ color: s.text }}>Şifre:</b> yeniden aktivasyonda korunur
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 10 }}>
+            <Btn
+              onClick={() => {
+                setPasifHesapOnayiBiliyor(false);
+                setPasifOnayMesaj('');
+              }}
+              variant="ghost"
+              style={{ flex: 1 }}
+            >
+              İptal
+            </Btn>
+            <Btn
+              onClick={() => {
+                setPasifHesapOnayiBiliyor(false);
+                setPasifOnayMesaj('');
+                ekle(true);
+              }}
+              style={{ flex: 2 }}
+            >
+              {yukleniyor ? 'Aktive ediliyor...' : 'Evet, Aktive Et'}
+            </Btn>
+          </div>
         </div>
+      </div>
+    );
+  }
 
-        {hata && <div style={{ color: '#F43F5E', fontSize: '13px', marginBottom: '14px', padding: '10px 14px', background: 'rgba(244,63,94,0.1)', borderRadius: '8px' }}>{hata}</div>}
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <Btn tema={tema} onClick={onKapat} variant="ghost" style={{ flex: 1 }}>Iptal</Btn>
-          <Btn tema={tema} onClick={ekle} disabled={!isim || !email || !sifre || yukleniyor} style={{ flex: 2 }}>{yukleniyor ? 'Ekleniyor...' : 'Ekle'}</Btn>
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="ogrenci-modal-baslik"
+      style={{ ...overlay, overflowY: 'auto' }}
+    >
+      <div
+        style={{
+          background: s.surface,
+          border: `1px solid ${s.border}`,
+          borderRadius: 20,
+          padding: 36,
+          width: 440,
+          maxWidth: '95vw',
+          margin: 20,
+          boxShadow: s.shadow,
+          maxHeight: '90vh',
+          overflowY: 'auto',
+        }}
+      >
+        <div
+          id="ogrenci-modal-baslik"
+          style={{ color: s.text, fontSize: 18, fontWeight: 700, marginBottom: 24 }}
+        >
+          Yeni Öğrenci Ekle
         </div>
+        <OgrenciEkleForm
+          isim={isim}
+          setIsim={setIsim}
+          email={email}
+          setEmail={setEmail}
+          sifre={sifre}
+          setSifre={setSifre}
+          veliEmail={veliEmail}
+          setVeliEmail={setVeliEmail}
+          veliSifre={veliSifre}
+          setVeliSifre={setVeliSifre}
+          veliTelefon={veliTelefon}
+          setVeliTelefon={setVeliTelefon}
+          tur={tur}
+          setTur={setTur}
+          dogumTarihi={dogumTarihi}
+          setDogumTarihi={setDogumTarihi}
+          hata={hata}
+          yukleniyor={yukleniyor}
+          onKapat={onKapat}
+          onEkle={() => ekle(false)}
+          s={s}
+        />
       </div>
     </div>
   );
 }
+
+OgrenciEkleModal.propTypes = {
+  onKapat: PropTypes.func.isRequired,
+  onEkle: PropTypes.func.isRequired,
+};

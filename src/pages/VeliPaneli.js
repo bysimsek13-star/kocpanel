@@ -1,103 +1,213 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-import React, { useState, useEffect } from 'react';
-import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
-import { db } from '../firebase';
-import { getS } from '../theme';
-import TopBar from '../components/TopBar';
-import { Card, StatCard } from '../components/Shared';
+import React, { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
+import { useMobil } from '../hooks/useMediaQuery';
+import ElsWayLogo from '../components/ElsWayLogo';
+import TemaSecici from '../components/TemaSecici';
+import { EmptyState } from '../components/Shared';
+import DuyuruMerkezi from '../components/DuyuruMerkezi';
+import VeliMesajlar from './VeliMesajlar';
+import VeliProgram from './VeliProgram';
+import DenemeListesi from '../ogrenci/DenemeListesi';
+import { BildirimZili, BildirimPaneli } from '../components/BildirimSistemi';
+import { useVeliPaneliVeri } from '../veli/useVeliPaneliVeri';
+import { VeliAnaSayfa } from '../veli/VeliAnaSayfa';
+import { PATHS, sayfaGetir, VeliSolMenu, VeliAltTabBar } from '../veli/VeliNav';
 
-export default function VeliPaneli({ tema, kullanici, veliData, onCikis }) {
-  const s = getS(tema);
-  const [ogrenciData, setOgrenciData] = useState(null);
-  const [program, setProgram] = useState([]);
-  const [denemeler, setDenemeler] = useState([]);
-  const [yukleniyor, setYukleniyor] = useState(true);
+export default function VeliPaneli() {
+  const { s } = useTheme();
+  const { kullanici, userData, cikisYap } = useAuth();
+  const mobil = useMobil();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const [aktif, setAktif] = useState(sayfaGetir(location.pathname));
+  const [bildirimAcik, setBildirimAcik] = useState(false);
+
+  const {
+    ogrenciId,
+    ogrenci,
+    denemeler,
+    calisma,
+    veliRaporlari,
+    okunmamisMesaj,
+    setOkunmamisMesaj,
+    yukleniyor,
+  } = useVeliPaneliVeri(kullanici, userData);
 
   useEffect(() => {
-    const getir = async () => {
-      try {
-        if (veliData?.ogrenciUid) {
-          const os = await getDoc(doc(db, 'kullanicilar', veliData.ogrenciUid));
-          if (os.exists()) setOgrenciData(os.data());
-          const ps = await getDocs(collection(db, 'ogrenciler', veliData.ogrenciUid, 'program'));
-          setProgram(ps.docs.map(d => ({ id: d.id, ...d.data() })));
-          const ds = await getDocs(collection(db, 'ogrenciler', veliData.ogrenciUid, 'denemeler'));
-          const dl = ds.docs.map(d => ({ id: d.id, ...d.data() }));
-          dl.sort((a, b) => new Date(b.tarih) - new Date(a.tarih));
-          setDenemeler(dl);
-        }
-      } catch (e) { }
-      setYukleniyor(false);
-    };
-    getir();
-  }, []);
+    setAktif(sayfaGetir(location.pathname));
+  }, [location.pathname]);
 
-  const tam = program.filter(p => p.tamamlandi).length;
-  const oran = program.length > 0 ? Math.round((tam / program.length) * 100) : 0;
+  useEffect(() => {
+    if (location.pathname === '/veli' || location.pathname === '/veli/') {
+      navigate(PATHS.ana, { replace: true });
+    }
+  }, [location.pathname, navigate]);
+
+  const git = sayfa => {
+    if (sayfa === 'mesajlar') setOkunmamisMesaj(0);
+    navigate(PATHS[sayfa] || PATHS.ana);
+  };
+
+  const GeriTusu = ({ baslik }) => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+      <button
+        onClick={() => git('ana')}
+        style={{
+          background: s.surface2,
+          border: `1px solid ${s.border}`,
+          borderRadius: 10,
+          padding: '8px 14px',
+          cursor: 'pointer',
+          color: s.text2,
+          fontSize: 13,
+          fontWeight: 600,
+        }}
+      >
+        ← Geri
+      </button>
+      <div style={{ fontSize: 18, fontWeight: 700, color: s.text }}>{baslik}</div>
+    </div>
+  );
+
+  const renderSayfa = () => {
+    if (aktif === 'denemeler')
+      return (
+        <>
+          <GeriTusu baslik="Denemeler" />
+          {ogrenciId ? (
+            <DenemeListesi
+              ogrenciId={ogrenciId}
+              readOnly
+              ogrenciTur={ogrenci?.tur}
+              ogrenciSinif={ogrenci?.sinif}
+            />
+          ) : (
+            <EmptyState mesaj="Öğrenci bulunamadı" icon="📝" />
+          )}
+        </>
+      );
+    if (aktif === 'program')
+      return ogrenciId ? (
+        <VeliProgram ogrenciId={ogrenciId} onGeri={() => git('ana')} />
+      ) : (
+        <EmptyState mesaj="Öğrenci bulunamadı" icon="📅" />
+      );
+    if (aktif === 'mesajlar')
+      return (
+        <>
+          <GeriTusu baslik="Koç Mesajları" />
+          <VeliMesajlar ogrenciId={ogrenciId} onGeri={() => git('ana')} />
+        </>
+      );
+    if (aktif === 'duyurular')
+      return (
+        <>
+          <GeriTusu baslik="Duyurular" />
+          <DuyuruMerkezi title="" />
+        </>
+      );
+    return (
+      <VeliAnaSayfa
+        ogrenci={ogrenci}
+        denemeler={denemeler}
+        calisma={calisma}
+        veliRaporlari={veliRaporlari}
+        okunmamisMesaj={okunmamisMesaj}
+        yukleniyor={yukleniyor}
+        ogrenciId={ogrenciId}
+        userData={userData}
+        git={git}
+        s={s}
+        mobil={mobil}
+      />
+    );
+  };
 
   return (
-    <div style={{ minHeight: '100vh', background: s.bg, fontFamily: 'Inter,sans-serif' }}>
-      <TopBar tema={tema} kullanici={kullanici} rol="veli" onCikis={onCikis} title="Veli Paneli" />
-      <div style={{ padding: '28px', maxWidth: '900px', margin: '0 auto' }}>
-        {yukleniyor ? (
-          <div style={{ textAlign: 'center', padding: '60px', color: s.text3 }}>Yükleniyor...</div>
-        ) : !ogrenciData ? (
-          <div style={{ textAlign: 'center', padding: '60px', color: s.text2 }}>Bilgi bulunamadı.</div>
-        ) : (
-          <>
-            {/* BANNER */}
-            <div style={{ background: s.accentGrad, borderRadius: '20px', padding: '28px 32px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '24px', boxShadow: '0 8px 32px rgba(91,79,232,0.3)' }}>
-              <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '800', fontSize: '22px', backdropFilter: 'blur(8px)' }}>
-                {ogrenciData.isim?.split(' ').map(n => n[0]).join('').slice(0, 2)}
-              </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: '22px', fontWeight: '700', color: 'white' }}>{ogrenciData.isim}</div>
-                <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.8)', marginTop: '4px' }}>{ogrenciData.tur} · {ogrenciData.email}</div>
-              </div>
-              <div style={{ display: 'flex', gap: '20px' }}>
-                <div style={{ textAlign: 'center', background: 'rgba(255,255,255,0.15)', borderRadius: '14px', padding: '14px 20px', backdropFilter: 'blur(8px)' }}>
-                  <div style={{ fontSize: '28px', fontWeight: '800', color: 'white' }}>{oran}%</div>
-                  <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.8)' }}>Görev</div>
-                </div>
-                {denemeler[0] && (
-                  <div style={{ textAlign: 'center', background: 'rgba(255,255,255,0.15)', borderRadius: '14px', padding: '14px 20px', backdropFilter: 'blur(8px)' }}>
-                    <div style={{ fontSize: '28px', fontWeight: '800', color: 'white' }}>{denemeler[0].toplamNet}</div>
-                    <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.8)' }}>Son Net</div>
-                  </div>
-                )}
-              </div>
+    <div style={{ minHeight: '100vh', background: s.bg, fontFamily: 'Inter, sans-serif' }}>
+      {/* Üst çubuk */}
+      <div
+        style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 50,
+          background: s.topBarBg,
+          borderBottom: `1px solid ${s.topBarBorder}`,
+          padding: mobil ? '10px 14px' : '10px 20px',
+          minHeight: 60,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 10,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <ElsWayLogo size="bar" variant="onDark" />
+          <span style={{ fontSize: 13, color: s.topBarMuted, fontWeight: 600 }}>Veli</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <TemaSecici variant="bar" onDarkBar />
+          <BildirimZili onClick={() => setBildirimAcik(v => !v)} />
+          {okunmamisMesaj > 0 && (
+            <div
+              onClick={() => git('mesajlar')}
+              style={{
+                background: 'rgba(244,63,94,.12)',
+                color: '#F43F5E',
+                fontSize: 11,
+                fontWeight: 600,
+                borderRadius: 20,
+                padding: '4px 10px',
+                cursor: 'pointer',
+                border: `1px solid ${s.topBarBorder}`,
+              }}
+            >
+              {okunmamisMesaj} mesaj
             </div>
-
-            {/* STAT KARTLAR */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '14px', marginBottom: '24px' }}>
-              <StatCard tema={tema} label="Toplam Görev" value={program.length} sub="Bu hafta" renk="#5B4FE8" icon="📋" />
-              <StatCard tema={tema} label="Tamamlanan" value={tam} sub="Görev" renk="#10B981" icon="✅" />
-              <StatCard tema={tema} label="Deneme Sayısı" value={denemeler.length} sub="Toplam" renk="#F59E0B" icon="📊" />
-            </div>
-
-            {/* HAFTALIK PROGRAM */}
-            <Card tema={tema}>
-              <div style={{ padding: '16px 20px', borderBottom: `1px solid ${s.border}` }}>
-                <div style={{ color: s.text, fontWeight: '600' }}>📅 Haftalık Program</div>
-              </div>
-              <div style={{ padding: '16px 20px' }}>
-                {program.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '20px', color: s.text3 }}>Program henüz eklenmemiş</div>
-                ) : program.map(p => (
-                  <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 0', borderBottom: `1px solid ${s.border}` }}>
-                    <div style={{ width: '20px', height: '20px', borderRadius: '6px', background: p.tamamlandi ? '#10B981' : s.surface2, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', color: 'white', flexShrink: 0 }}>{p.tamamlandi && '✓'}</div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: '13px', color: p.tamamlandi ? s.text3 : s.text, textDecoration: p.tamamlandi ? 'line-through' : 'none' }}>{p.gorev}</div>
-                      <div style={{ fontSize: '11px', color: s.text3 }}>{p.ders}</div>
-                    </div>
-                    <div style={{ fontSize: '11px', fontWeight: '600', color: p.tamamlandi ? '#10B981' : '#F59E0B' }}>{p.tamamlandi ? '✓ Tamamlandı' : 'Bekliyor'}</div>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          </>
-        )}
+          )}
+          <button
+            onClick={cikisYap}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: s.topBarMuted,
+              fontSize: 12,
+              cursor: 'pointer',
+            }}
+          >
+            Çıkış
+          </button>
+        </div>
       </div>
+      <BildirimPaneli acik={bildirimAcik} onKapat={() => setBildirimAcik(false)} />
+
+      <div style={{ display: 'flex' }}>
+        {!mobil && (
+          <VeliSolMenu
+            aktif={aktif}
+            git={git}
+            okunmamisMesaj={okunmamisMesaj}
+            s={s}
+            ogrenci={ogrenci}
+            userData={userData}
+          />
+        )}
+        <div
+          style={{
+            flex: 1,
+            minWidth: 0,
+            padding: mobil ? '16px 16px 88px' : '28px 32px',
+            maxWidth: mobil ? '100%' : 860,
+          }}
+        >
+          {renderSayfa()}
+        </div>
+      </div>
+
+      {mobil && <VeliAltTabBar aktif={aktif} git={git} okunmamisMesaj={okunmamisMesaj} s={s} />}
     </div>
   );
 }

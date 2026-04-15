@@ -1,68 +1,201 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-import React, { useState, useEffect } from 'react';
-import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
-import { db } from '../firebase';
-import { getS, renkler, verimlilikDurum } from '../theme';
-import { Card, Btn } from '../components/Shared';
+import React from 'react';
+import PropTypes from 'prop-types';
+import { useTheme } from '../context/ThemeContext';
+import { useMobil } from '../hooks/useMediaQuery';
+import { LoadingState } from '../components/Shared';
+import { GUNLER } from '../utils/programAlgoritma';
+import { ogrenciBaglaminiCoz } from '../utils/ogrenciBaglam';
+import { VideoIzleModal } from './VideoIzleModal';
+import { SlotModal, GunKolonu } from './ProgramBilesenleri';
+import { useHaftalikProgram, bosSlot } from './useHaftalikProgram';
+import { HaftalikProgramHeader } from './HaftalikProgramHeader';
+import { HaftalikProgramKopyalaModal } from './HaftalikProgramKopyalaModal';
 
-export default function HaftalikProgramSayfasi({ tema, ogrenciler, onGeri }) {
-  const s = getS(tema);
-  const [veriler, setVeriler] = useState({});
-  const [yukleniyor, setYukleniyor] = useState(true);
+const SLOT_SAYISI = 6;
 
-  useEffect(() => {
-    const getir = async () => {
-      const obj = {};
-      for (const o of ogrenciler) {
-        try {
-          const snap = await getDocs(collection(db, 'ogrenciler', o.id, 'program'));
-          obj[o.id] = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        } catch (e) { }
-      }
-      setVeriler(obj); setYukleniyor(false);
-    };
-    getir();
-  }, []);
+// VideoIzleModal re-exported for backward compat (used by BugunProgramKart)
+export { VideoIzleModal };
+
+export default function HaftalikProgramSayfasi({
+  ogrenciler = [],
+  ogrenci: ogrenciProp,
+  onGeri,
+  readOnly = false,
+  initialOffset = 0,
+  compact = false,
+}) {
+  const { s } = useTheme();
+  const mobil = useMobil();
+
+  const {
+    secilenOgrenci,
+    setSecilenOgrenci,
+    haftaOffset,
+    setHaftaOffset,
+    hafta,
+    tamamlandiMap,
+    yukleniyor,
+    duzenleme,
+    setDuzenleme,
+    modal,
+    setModal,
+    videoModal,
+    setVideoModal,
+    kaydetiliyor,
+    kopyalaModal,
+    setKopyalaModal,
+    kopyalaHedef,
+    setKopyalaHedef,
+    kopyalaniyor,
+    slotKopya,
+    setSlotKopya,
+    haftaKey,
+    bugunGun,
+    modalSlot,
+    slotGuncelle,
+    togglTamamla,
+    haftayiKopyala,
+    haftayaTasi,
+    kocUid,
+    toast,
+  } = useHaftalikProgram({ ogrenciler, ogrenciProp, readOnly, initialOffset });
+
+  const programBaglam = ogrenciBaglaminiCoz({
+    tur: secilenOgrenci?.tur,
+    sinif: secilenOgrenci?.sinif,
+  });
+  const programModuEtiket =
+    programBaglam.programModu === 'sinav_programi'
+      ? 'Sınav Programı'
+      : programBaglam.programModu === 'gecis_programi'
+        ? 'Alan Hazırlık Programı'
+        : 'Gelişim Programı';
+  const programModuRenk =
+    programBaglam.programModu === 'sinav_programi'
+      ? '#F43F5E'
+      : programBaglam.programModu === 'gecis_programi'
+        ? '#F59E0B'
+        : '#10B981';
 
   return (
-    <div style={{ padding: '28px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-        <Btn tema={tema} onClick={onGeri} variant="outline" style={{ padding: '8px 16px' }}>Geri</Btn>
-        <h2 style={{ fontSize: '20px', fontWeight: '700', color: s.text }}>Haftalik Program</h2>
-      </div>
-      {yukleniyor ? <div style={{ textAlign: 'center', padding: '60px', color: s.text3 }}>Yukleniyor...</div> :
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(320px,1fr))', gap: '16px' }}>
-          {ogrenciler.map((o, i) => {
-            const prog = veriler[o.id] || [];
-            const tam = prog.filter(p => p.tamamlandi).length;
-            const oran = prog.length > 0 ? Math.round((tam / prog.length) * 100) : 0;
-            return (
-              <Card key={o.id} tema={tema}>
-                <div style={{ padding: '16px 20px', borderBottom: `1px solid ${s.border}`, display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: `${renkler[i % renkler.length]}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: renkler[i % renkler.length], fontWeight: '700', fontSize: '13px' }}>
-                    {o.isim.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                  </div>
-                  <div style={{ flex: 1 }}><div style={{ color: s.text, fontWeight: '600' }}>{o.isim}</div><div style={{ color: s.text2, fontSize: '12px' }}>{o.tur}</div></div>
-                  <div style={{ fontSize: '20px', fontWeight: '700', color: oran >= 80 ? '#10B981' : oran >= 50 ? '#F59E0B' : '#F43F5E' }}>{oran}%</div>
-                </div>
-                <div style={{ padding: '16px 20px' }}>
-                  <div style={{ height: '6px', background: s.surface3, borderRadius: '6px', overflow: 'hidden', marginBottom: '12px' }}>
-                    <div style={{ height: '100%', width: oran + '%', background: oran >= 80 ? '#10B981' : oran >= 50 ? '#F59E0B' : '#F43F5E', borderRadius: '6px', transition: 'width 0.5s' }} />
-                  </div>
-                  {prog.length === 0 ? <div style={{ color: s.text3, fontSize: '12px', textAlign: 'center' }}>Program eklenmedi</div> :
-                    prog.slice(0, 5).map(p => (
-                      <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '7px 0', borderBottom: `1px solid ${s.border}` }}>
-                        <div style={{ width: '18px', height: '18px', borderRadius: '5px', background: p.tamamlandi ? '#10B981' : s.surface3, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', color: 'white', flexShrink: 0 }}>{p.tamamlandi && 'v'}</div>
-                        <div style={{ flex: 1, fontSize: '13px', color: p.tamamlandi ? s.text3 : s.text, textDecoration: p.tamamlandi ? 'line-through' : 'none' }}>{p.gorev}</div>
-                        <div style={{ fontSize: '11px', color: s.text3, background: s.surface2, padding: '2px 8px', borderRadius: '20px' }}>{p.ders}</div>
-                      </div>
-                    ))}
-                  {prog.length > 5 && <div style={{ fontSize: '12px', color: s.text3, textAlign: 'center', marginTop: '8px' }}>+{prog.length - 5} gorev daha</div>}
-                </div>
-              </Card>
-            );
-          })}
-        </div>}
+    <div style={{ fontFamily: 'Inter, sans-serif' }}>
+      <HaftalikProgramHeader
+        compact={compact}
+        readOnly={readOnly}
+        ogrenciler={ogrenciler}
+        secilenOgrenci={secilenOgrenci}
+        setSecilenOgrenci={setSecilenOgrenci}
+        haftaOffset={haftaOffset}
+        setHaftaOffset={setHaftaOffset}
+        haftaKey={haftaKey}
+        kaydetiliyor={kaydetiliyor}
+        duzenleme={duzenleme}
+        setDuzenleme={setDuzenleme}
+        setKopyalaModal={setKopyalaModal}
+        setKopyalaHedef={setKopyalaHedef}
+        slotKopya={slotKopya}
+        setSlotKopya={setSlotKopya}
+        programModuEtiket={programModuEtiket}
+        programModuRenk={programModuRenk}
+        onGeri={onGeri}
+        s={s}
+        toast={toast}
+      />
+
+      {yukleniyor ? (
+        <LoadingState />
+      ) : (
+        <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+          <div style={{ display: 'flex', gap: 8, minWidth: mobil ? GUNLER.length * 168 : 0 }}>
+            {GUNLER.map(gun => (
+              <GunKolonu
+                key={gun}
+                gunAdi={gun}
+                slotlar={hafta[gun] || Array.from({ length: SLOT_SAYISI }, bosSlot)}
+                duzenleme={duzenleme}
+                tamamlandiMap={Object.fromEntries(
+                  Array.from({ length: SLOT_SAYISI }, (_, i) => [i, !!tamamlandiMap[`${gun}_${i}`]])
+                )}
+                onSlotClick={(g, i) => setModal({ gun: g, slotIndex: i })}
+                onToggle={(g, i) => togglTamamla(g, i)}
+                onVideoAc={videolar => setVideoModal(videolar)}
+                onKopyala={slot => {
+                  setSlotKopya(slot);
+                  toast('Slot kopyalandı — yapıştırmak için boş kutuya tıkla');
+                }}
+                onYapistir={(g, i) => {
+                  if (slotKopya) {
+                    slotGuncelle(g, i, { ...slotKopya });
+                    setSlotKopya(null);
+                    toast('Yapıştırıldı ✓');
+                  }
+                }}
+                onHizliSil={(g, i) => {
+                  slotGuncelle(g, i, bosSlot());
+                  toast('Slot silindi');
+                }}
+                slotKopya={slotKopya}
+                bugunMu={gun === bugunGun && haftaOffset === 0}
+                s={s}
+                mobil={mobil}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {videoModal && (
+        <VideoIzleModal
+          videolar={videoModal}
+          onKapat={() => setVideoModal(null)}
+          izleyenUid={kocUid}
+          s={s}
+          mobil={mobil}
+        />
+      )}
+
+      {kopyalaModal && (
+        <HaftalikProgramKopyalaModal
+          haftaKey={haftaKey}
+          haftaOffset={haftaOffset}
+          kopyalaHedef={kopyalaHedef}
+          setKopyalaHedef={setKopyalaHedef}
+          kopyalaniyor={kopyalaniyor}
+          haftayiKopyala={haftayiKopyala}
+          onKapat={() => setKopyalaModal(false)}
+          s={s}
+        />
+      )}
+
+      {modal && modalSlot && (
+        <SlotModal
+          slot={modalSlot}
+          gunAdi={modal.gun}
+          slotIndex={modal.slotIndex}
+          onKaydet={form => {
+            slotGuncelle(modal.gun, modal.slotIndex, form);
+            setModal(null);
+            toast('Kaydedildi ✓');
+          }}
+          onSil={() => {
+            slotGuncelle(modal.gun, modal.slotIndex, bosSlot());
+            setModal(null);
+          }}
+          onKapat={() => setModal(null)}
+          onHaftayaTasi={readOnly ? null : haftayaTasi}
+          kocUid={readOnly ? null : kocUid}
+          s={s}
+        />
+      )}
     </div>
   );
 }
+
+HaftalikProgramSayfasi.propTypes = {
+  ogrenciler: PropTypes.arrayOf(PropTypes.object),
+  ogrenci: PropTypes.object,
+  onGeri: PropTypes.func.isRequired,
+  readOnly: PropTypes.bool,
+  initialOffset: PropTypes.number,
+  compact: PropTypes.bool,
+};

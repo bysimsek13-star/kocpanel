@@ -1,119 +1,531 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-import React, { useState, useEffect } from 'react';
-import { collection, addDoc, getDocs } from 'firebase/firestore';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import PropTypes from 'prop-types';
+import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase';
-import { getS, TYT_DERSLER, AYT_DERSLER, netHesapla } from '../theme';
-import { Card, Btn } from '../components/Shared';
+import { useTheme } from '../context/ThemeContext';
+import { turdenBransDersler } from '../utils/sinavUtils';
+import { Btn, LoadingState, EmptyState } from '../components/Shared';
 
-function DenemeModal({ tema, ogrenciId, onKapat, onEkle }) {
-  const s = getS(tema);
-  const [sinav, setSinav] = useState('TYT');
-  const [tarih, setTarih] = useState(new Date().toISOString().split('T')[0]);
-  const [veriler, setVeriler] = useState({});
-  const [yukleniyor, setYukleniyor] = useState(false);
-  const dersler = sinav === 'TYT' ? TYT_DERSLER : AYT_DERSLER;
-  const guncelle = (dersId, tip, deger) => setVeriler(prev => ({ ...prev, [dersId]: { ...prev[dersId], [tip]: parseInt(deger) || 0 } }));
-  const kaydet = async () => {
-    setYukleniyor(true);
-    try {
-      const netler = {}; let top = 0;
-      dersler.forEach(d => { const dy = veriler[d.id] || {}; const net = parseFloat(netHesapla(dy.d || 0, dy.y || 0)); netler[d.id] = { d: dy.d || 0, y: dy.y || 0, b: dy.b || 0, net }; top += net; });
-      await addDoc(collection(db, 'ogrenciler', ogrenciId, 'denemeler'), { sinav, tarih, netler, toplamNet: top.toFixed(2), olusturma: new Date() });
-      onEkle(); onKapat();
-    } catch (e) { alert(e.message); }
-    setYukleniyor(false);
-  };
+import DersKarti from './deneme/DersKarti';
+import { GenelNetGrafik, DenemeKart } from './deneme/DenemeKart';
+import BransBolum from './deneme/BransBolum';
+import DenemeModal from './deneme/DenemeModal';
+
+// ─── BRANŞ KONU ANALİZİ ───────────────────────────────────────────────────────
+function BransKonuAnalizi({ denemeler, ogrenciTur, ogrenciSinif, s }) {
+  const dersSetim = turdenBransDersler(ogrenciTur, ogrenciSinif);
+  const konuSkoru = useMemo(() => {
+    const map = {};
+    denemeler.forEach(den => {
+      Object.entries(den.netler || {}).forEach(([dersId, dv]) => {
+        if (!map[dersId]) map[dersId] = {};
+        const kd = dv.konuDetay || {};
+        if (Object.keys(kd).length > 0) {
+          Object.entries(kd).forEach(([konu, v]) => {
+            if (!map[dersId][konu]) map[dersId][konu] = { yanlis: 0, bos: 0, dogru: 0 };
+            const yanlis = v.yanlis || 0;
+            const bos = v.bos || 0;
+            const dogru = Math.max(0, (v.soru || 0) - yanlis - bos);
+            map[dersId][konu].yanlis += yanlis;
+            map[dersId][konu].bos += bos;
+            map[dersId][konu].dogru += dogru;
+          });
+        } else {
+          (dv.yanlisKonular || []).forEach(k => {
+            if (!map[dersId][k]) map[dersId][k] = { yanlis: 0, bos: 0, dogru: 0 };
+            map[dersId][k].yanlis += 1;
+          });
+          (dv.bosKonular || []).forEach(k => {
+            if (!map[dersId][k]) map[dersId][k] = { yanlis: 0, bos: 0, dogru: 0 };
+            map[dersId][k].bos += 1;
+          });
+        }
+      });
+    });
+    const result = {};
+    Object.entries(map).forEach(([dersId, konular]) => {
+      const liste = Object.entries(konular)
+        .map(([konu, v]) => ({ konu, skor: v.yanlis * 2 + v.bos - v.dogru, ...v }))
+        .filter(k => k.skor > 0)
+        .sort((a, b) => b.skor - a.skor)
+        .slice(0, 6);
+      if (liste.length > 0) result[dersId] = liste;
+    });
+    return result;
+  }, [denemeler]);
+
+  const derslerVeri = dersSetim.filter(d => konuSkoru[d.id]);
+
+  if (derslerVeri.length === 0) {
+    return (
+      <EmptyState
+        mesaj="Konu analizi için henüz veri yok — denemeler girilirken konu detayı ekleyin"
+        icon="📚"
+      />
+    );
+  }
+
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, overflowY: 'auto', backdropFilter: 'blur(4px)' }}>
-      <div style={{ background: s.surface, border: `1px solid ${s.border}`, borderRadius: '20px', padding: '32px', width: '560px', margin: '20px', maxHeight: '90vh', overflowY: 'auto', boxShadow: s.shadow }}>
-        <div style={{ color: s.text, fontSize: '18px', fontWeight: '700', marginBottom: '20px' }}>Deneme Sonucu Gir</div>
-        <div style={{ display: 'flex', gap: '10px', marginBottom: '16px' }}>
-          {['TYT', 'AYT'].map(t => (<div key={t} onClick={() => { setSinav(t); setVeriler({}); }} style={{ flex: 1, padding: '10px', borderRadius: '10px', border: sinav === t ? `2px solid ${s.accent}` : `1px solid ${s.border}`, background: sinav === t ? s.accentSoft : s.surface2, color: sinav === t ? s.accent : s.text2, cursor: 'pointer', textAlign: 'center', fontSize: '14px', fontWeight: '600' }}>{t}</div>))}
-          <input type="date" value={tarih} onChange={e => setTarih(e.target.value)} style={{ flex: 1, background: s.surface2, border: `1px solid ${s.border}`, borderRadius: '10px', padding: '10px 12px', color: s.text, fontSize: '13px', outline: 'none' }} />
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px 80px 80px 80px', gap: '6px', marginBottom: '20px' }}>
-          <div style={{ padding: '8px 10px', background: s.surface2, borderRadius: '8px', fontSize: '11px', color: s.text3, fontWeight: '600' }}>DERS</div>
-          {['DOGRU', 'YANLIS', 'BOS', 'NET'].map((h, i) => (<div key={h} style={{ padding: '8px', background: s.surface2, borderRadius: '8px', fontSize: '11px', fontWeight: '600', textAlign: 'center', color: i === 0 ? '#10B981' : i === 1 ? '#F43F5E' : i === 2 ? s.text3 : s.accent }}>{h}</div>))}
-          {dersler.map(ders => {
-            const dy = veriler[ders.id] || {}; const net = netHesapla(dy.d || 0, dy.y || 0);
-            return (
-              <React.Fragment key={ders.id}>
-                <div style={{ padding: '8px 12px', background: s.surface2, borderRadius: '8px', fontSize: '13px', color: ders.renk, fontWeight: '500', display: 'flex', alignItems: 'center' }}>{ders.label}</div>
-                <input type="number" min="0" max={ders.toplam} placeholder="0" value={dy.d || ''} onChange={e => guncelle(ders.id, 'd', e.target.value)} style={{ background: s.bg, border: '1px solid #10B981', borderRadius: '8px', padding: '8px', color: '#10B981', fontSize: '13px', outline: 'none', textAlign: 'center', width: '100%', boxSizing: 'border-box' }} />
-                <input type="number" min="0" max={ders.toplam} placeholder="0" value={dy.y || ''} onChange={e => guncelle(ders.id, 'y', e.target.value)} style={{ background: s.bg, border: '1px solid #F43F5E', borderRadius: '8px', padding: '8px', color: '#F43F5E', fontSize: '13px', outline: 'none', textAlign: 'center', width: '100%', boxSizing: 'border-box' }} />
-                <input type="number" min="0" max={ders.toplam} placeholder="0" value={dy.b || ''} onChange={e => guncelle(ders.id, 'b', e.target.value)} style={{ background: s.bg, border: `1px solid ${s.border}`, borderRadius: '8px', padding: '8px', color: s.text2, fontSize: '13px', outline: 'none', textAlign: 'center', width: '100%', boxSizing: 'border-box' }} />
-                <div style={{ background: s.accentSoft, borderRadius: '8px', padding: '8px', fontSize: '15px', fontWeight: '700', color: s.accent, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{net}</div>
-              </React.Fragment>
-            );
-          })}
-          <div style={{ padding: '10px 12px', background: s.accentSoft, borderRadius: '8px', fontSize: '13px', fontWeight: '700', color: s.text, border: `1px solid ${s.accent}`, display: 'flex', alignItems: 'center' }}>TOPLAM NET</div>
-          <div /><div /><div />
-          <div style={{ padding: '10px', background: s.accentSoft, borderRadius: '8px', fontSize: '18px', fontWeight: '800', color: s.accent, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1px solid ${s.accent}` }}>
-            {dersler.reduce((acc, ders) => { const dy = veriler[ders.id] || {}; return acc + parseFloat(netHesapla(dy.d || 0, dy.y || 0)); }, 0).toFixed(2)}
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fill, minmax(270px, 1fr))',
+        gap: 14,
+      }}
+    >
+      {derslerVeri.map(ders => {
+        const konular = konuSkoru[ders.id];
+        const maks = konular[0].skor;
+        return (
+          <div
+            key={ders.id}
+            style={{
+              background: s.surface2,
+              borderRadius: 14,
+              padding: '16px 18px',
+              border: `1px solid ${s.border}`,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+              <div
+                style={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: '50%',
+                  background: ders.renk,
+                  flexShrink: 0,
+                }}
+              />
+              <span style={{ fontSize: 13, fontWeight: 700, color: s.text }}>{ders.label}</span>
+              <span style={{ marginLeft: 'auto', fontSize: 11, color: s.text3, fontWeight: 500 }}>
+                {konular.length} konu
+              </span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+              {konular.map((k, i) => {
+                const oran = Math.round((k.skor / maks) * 100);
+                const renk = i < 2 ? s.danger || '#ef4444' : i < 4 ? s.uyari || '#f59e0b' : s.text3;
+                return (
+                  <div key={k.konu}>
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        marginBottom: 3,
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: 11,
+                          color: s.text,
+                          fontWeight: 500,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          maxWidth: 155,
+                        }}
+                        title={k.konu}
+                      >
+                        {k.konu}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: 10,
+                          fontWeight: 600,
+                          color: renk,
+                          flexShrink: 0,
+                          marginLeft: 6,
+                          letterSpacing: '0.03em',
+                        }}
+                      >
+                        {k.yanlis > 0 ? `${k.yanlis}Y` : ''}
+                        {k.bos > 0 ? ` ${k.bos}B` : ''}
+                        {k.dogru > 0 ? ` ${k.dogru}D` : ''}
+                      </span>
+                    </div>
+                    <div
+                      style={{
+                        height: 6,
+                        background: s.surface3 || s.border,
+                        borderRadius: 4,
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <div
+                        style={{
+                          height: '100%',
+                          width: `${oran}%`,
+                          background: renk,
+                          borderRadius: 4,
+                          transition: 'width 0.5s',
+                        }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <Btn tema={tema} onClick={onKapat} variant="ghost" style={{ flex: 1 }}>Iptal</Btn>
-          <Btn tema={tema} onClick={kaydet} disabled={yukleniyor} style={{ flex: 2 }}>{yukleniyor ? 'Kaydediliyor...' : 'Kaydet'}</Btn>
-        </div>
-      </div>
+        );
+      })}
     </div>
   );
 }
 
-export default function DenemeListesi({ tema, ogrenciId }) {
-  const s = getS(tema);
+// ─── ANA BİLEŞEN ──────────────────────────────────────────────────────────────
+export default function DenemeListesi({
+  ogrenciId,
+  readOnly = false,
+  konuAnalizGoster = false,
+  kocId = null,
+  ogrenciTur = null,
+  ogrenciSinif = null,
+}) {
+  const { s } = useTheme();
   const [denemeler, setDenemeler] = useState([]);
   const [modalAcik, setModalAcik] = useState(false);
-  const [secili, setSecili] = useState(null);
+  const [duzenleHedef, setDuzenleHedef] = useState(null);
+  const [silOnay, setSilOnay] = useState(null);
+  const [acikId, setAcikId] = useState(null);
   const [yukleniyor, setYukleniyor] = useState(true);
-  const getir = async () => {
+  const [bolum, setBolum] = useState('genel'); // genel | brans
+
+  const getir = useCallback(async () => {
     try {
       const snap = await getDocs(collection(db, 'ogrenciler', ogrenciId, 'denemeler'));
-      const liste = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      liste.sort((a, b) => new Date(b.tarih) - new Date(a.tarih));
-      setDenemeler(liste);
-    } catch (e) { }
+      const l = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      l.sort((a, b) => new Date(b.tarih) - new Date(a.tarih));
+      setDenemeler(l);
+    } catch (e) {
+      console.error(e);
+    }
     setYukleniyor(false);
+  }, [ogrenciId]);
+
+  useEffect(() => {
+    getir();
+  }, [getir]);
+
+  const sil = async id => {
+    try {
+      await deleteDoc(doc(db, 'ogrenciler', ogrenciId, 'denemeler', id));
+      getir();
+    } catch (e) {
+      console.error(e);
+    }
+    setSilOnay(null);
   };
-  useEffect(() => { getir(); }, []);
+
+  const ogrenciDersleri = turdenBransDersler(ogrenciTur, ogrenciSinif);
+
+  const dersNoktaMap = useMemo(() => {
+    const map = {};
+    ogrenciDersleri.forEach(d => {
+      map[d.id] = [];
+    });
+    denemeler.forEach(deneme => {
+      if (deneme.denemeTuru !== 'brans') {
+        Object.entries(deneme.netler || {}).forEach(([dersId, v]) => {
+          if (!map[dersId]) map[dersId] = [];
+          map[dersId].push({
+            net: parseFloat(v.net) || 0,
+            tarih: deneme.tarih,
+            sinav: deneme.sinav,
+            tur: 'genel',
+            etiket: `${deneme.sinav} ${deneme.tarih?.slice(5) || ''}`,
+          });
+        });
+      } else {
+        Object.entries(deneme.netler || {}).forEach(([dersId, v]) => {
+          if (!map[dersId]) map[dersId] = [];
+          map[dersId].push({
+            net: parseFloat(v.net) || 0,
+            tarih: deneme.tarih,
+            sinav: deneme.sinav,
+            tur: 'brans',
+            etiket: `Branş ${deneme.tarih?.slice(5) || ''}`,
+          });
+        });
+      }
+    });
+    Object.keys(map).forEach(k => {
+      map[k].sort((a, b) => new Date(a.tarih) - new Date(b.tarih));
+    });
+    return map;
+  }, [denemeler, ogrenciDersleri]);
+
+  const derslerVeriVar = ogrenciDersleri.filter(d => (dersNoktaMap[d.id] || []).length > 0);
+  const bransVarMiDersler = ogrenciDersleri.filter(d => {
+    const n = dersNoktaMap[d.id] || [];
+    return n.some(x => x.tur === 'brans');
+  });
+  const genelDenemeler = denemeler.filter(d => d.denemeTuru !== 'brans');
+  const bransDenemeler = denemeler.filter(d => d.denemeTuru === 'brans');
+
+  if (yukleniyor) return <LoadingState />;
+
   return (
     <div>
-      {modalAcik && <DenemeModal tema={tema} ogrenciId={ogrenciId} onKapat={() => setModalAcik(false)} onEkle={getir} />}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-        <div style={{ fontWeight: '700', fontSize: '16px', color: s.text }}>Deneme Sonuclari</div>
-        <Btn tema={tema} onClick={() => setModalAcik(true)} style={{ padding: '8px 16px', fontSize: '13px' }}>+ Deneme Ekle</Btn>
+      {(modalAcik || duzenleHedef) && (
+        <DenemeModal
+          ogrenciId={ogrenciId}
+          onKapat={() => {
+            setModalAcik(false);
+            setDuzenleHedef(null);
+          }}
+          onEkle={getir}
+          mevcutDeneme={duzenleHedef}
+          kocId={kocId}
+          ogrenciTur={ogrenciTur}
+          ogrenciSinif={ogrenciSinif}
+        />
+      )}
+
+      {/* Silme onay modalı */}
+      {silOnay && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.55)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1100,
+          }}
+          onClick={() => setSilOnay(null)}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: s.surface,
+              border: `1px solid ${s.border}`,
+              borderRadius: 16,
+              padding: 28,
+              width: 340,
+              maxWidth: '90vw',
+              boxShadow: s.shadow,
+            }}
+          >
+            <div style={{ fontSize: 15, fontWeight: 700, color: s.text, marginBottom: 8 }}>
+              Denemeyi sil
+            </div>
+            <div style={{ fontSize: 13, color: s.text2, marginBottom: 20 }}>
+              <b>{silOnay.sinav}</b> ({silOnay.tarih}) denemesi silinecek. Bu işlem geri alınamaz.
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <button
+                onClick={() => setSilOnay(null)}
+                style={{
+                  flex: 1,
+                  padding: '10px 0',
+                  borderRadius: 10,
+                  border: `1px solid ${s.border}`,
+                  background: s.surface2,
+                  color: s.text2,
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  fontSize: 13,
+                }}
+              >
+                İptal
+              </button>
+              <button
+                onClick={() => sil(silOnay.id)}
+                style={{
+                  flex: 1,
+                  padding: '10px 0',
+                  borderRadius: 10,
+                  border: 'none',
+                  background: s.tehlika,
+                  color: '#fff',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  fontSize: 13,
+                }}
+              >
+                Sil
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: 20,
+          flexWrap: 'wrap',
+          gap: 10,
+        }}
+      >
+        <div style={{ fontSize: 20, fontWeight: 700, color: s.text }}>Denemeler</div>
+        {!readOnly && (
+          <Btn onClick={() => setModalAcik(true)} style={{ padding: '8px 16px', fontSize: 13 }}>
+            + Deneme Ekle
+          </Btn>
+        )}
       </div>
-      {yukleniyor ? <div style={{ textAlign: 'center', padding: '20px', color: s.text3 }}>Yukleniyor...</div> :
-        denemeler.length === 0 ? <Card tema={tema} style={{ padding: '40px', textAlign: 'center' }}><div style={{ fontSize: '40px', marginBottom: '12px' }}>Henuz deneme yok</div></Card> :
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {denemeler.map(d => (
-              <Card key={d.id} tema={tema}>
-                <div onClick={() => setSecili(secili === d.id ? null : d.id)} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px 20px', cursor: 'pointer' }}>
-                  <div style={{ background: s.accentSoft, color: s.accent, padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '700' }}>{d.sinav}</div>
-                  <div style={{ fontSize: '13px', color: s.text2 }}>{d.tarih}</div>
-                  <div style={{ marginLeft: 'auto', fontSize: '22px', fontWeight: '800', color: s.accent }}>{d.toplamNet}</div>
-                  <div style={{ fontSize: '12px', color: s.text3 }}>net</div>
-                  <div style={{ color: s.text3 }}>{secili === d.id ? 'v' : '>'}</div>
-                </div>
-                {secili === d.id && (
-                  <div style={{ padding: '16px 20px', borderTop: `1px solid ${s.border}`, display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(130px,1fr))', gap: '8px' }}>
-                    {Object.entries(d.netler || {}).map(([dersId, v]) => {
-                      const dl = [...TYT_DERSLER, ...AYT_DERSLER].find(x => x.id === dersId);
-                      return (
-                        <div key={dersId} style={{ background: s.surface2, borderRadius: '10px', padding: '12px 14px' }}>
-                          <div style={{ fontSize: '11px', color: s.text3, marginBottom: '4px' }}>{dl?.label || dersId}</div>
-                          <div style={{ fontSize: '18px', fontWeight: '700', color: dl?.renk || s.accent }}>{v.net}</div>
-                          <div style={{ fontSize: '10.5px', color: s.text3, marginTop: '2px' }}>{v.d}D - {v.y}Y - {v.b}B</div>
-                        </div>
-                      );
-                    })}
-                  </div>
+
+      {denemeler.length === 0 ? (
+        <EmptyState mesaj="Henüz deneme kaydı yok" icon="📊" />
+      ) : (
+        <>
+          {/* Ders özet kartları */}
+          {derslerVeriVar.length > 0 && (
+            <div style={{ marginBottom: 24 }}>
+              <div
+                style={{
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: s.text3,
+                  marginBottom: 12,
+                  textTransform: 'uppercase',
+                  letterSpacing: '.05em',
+                }}
+              >
+                Ders bazlı özet
+              </div>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fill,minmax(160px,1fr))',
+                  gap: 10,
+                }}
+              >
+                {derslerVeriVar.map(d => (
+                  <DersKarti
+                    key={d.id}
+                    dersId={d.id}
+                    dersLabel={d.label}
+                    dersRenk={d.renk}
+                    dersMax={d.toplam}
+                    noktalar={dersNoktaMap[d.id] || []}
+                    s={s}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Bölüm seçimi */}
+          <div
+            style={{
+              display: 'flex',
+              borderBottom: `2px solid ${s.border}`,
+              marginBottom: 20,
+              gap: 0,
+            }}
+          >
+            {[
+              {
+                k: 'genel',
+                l: `${ogrenciTur?.includes('lgs') ? 'LGS' : 'Genel'} Denemeler (${genelDenemeler.length})`,
+              },
+              {
+                k: 'brans',
+                l: `Branş (${bransDenemeler.length} deneme · ${bransVarMiDersler.length} ders)`,
+              },
+              ...(konuAnalizGoster ? [{ k: 'konu', l: '🔍 Konu Analizi' }] : []),
+            ].map(tab => (
+              <button
+                key={tab.k}
+                type="button"
+                onClick={() => setBolum(tab.k)}
+                style={{
+                  padding: '10px 20px',
+                  border: 'none',
+                  background: 'transparent',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  position: 'relative',
+                  color: bolum === tab.k ? s.accent : s.text3,
+                }}
+              >
+                {tab.l}
+                {bolum === tab.k && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      bottom: -2,
+                      left: 0,
+                      right: 0,
+                      height: 2,
+                      background: s.accent,
+                      borderRadius: 2,
+                    }}
+                  />
                 )}
-              </Card>
+              </button>
             ))}
           </div>
-      }
+
+          {bolum === 'genel' && (
+            <>
+              <GenelNetGrafik denemeler={denemeler} s={s} />
+              {genelDenemeler.length === 0 ? (
+                <EmptyState mesaj="Genel deneme kaydı yok" icon="📋" />
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {genelDenemeler.map(d => (
+                    <DenemeKart
+                      key={d.id}
+                      deneme={d}
+                      acik={acikId === d.id}
+                      onToggle={() => setAcikId(acikId === d.id ? null : d.id)}
+                      onDuzenle={!readOnly ? () => setDuzenleHedef(d) : undefined}
+                      onSil={!readOnly ? () => setSilOnay(d) : undefined}
+                      s={s}
+                    />
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+
+          {bolum === 'brans' && (
+            <>
+              {bransVarMiDersler.length === 0 ? (
+                <EmptyState mesaj="Branş denemesi verisi yok" icon="📚" />
+              ) : (
+                bransVarMiDersler.map(d => (
+                  <BransBolum
+                    key={d.id}
+                    dersId={d.id}
+                    dersLabel={d.label}
+                    dersRenk={d.renk}
+                    dersMax={d.toplam}
+                    denemeler={denemeler}
+                    onSil={!readOnly ? den => setSilOnay(den) : undefined}
+                    s={s}
+                  />
+                ))
+              )}
+            </>
+          )}
+
+          {bolum === 'konu' && konuAnalizGoster && (
+            <BransKonuAnalizi denemeler={denemeler} ogrenciTur={ogrenciTur} s={s} />
+          )}
+        </>
+      )}
     </div>
   );
 }
+
+export function DenemeAnaliz() {
+  return null;
+}
+
+DenemeListesi.propTypes = {
+  ogrenciId: PropTypes.string.isRequired,
+  readOnly: PropTypes.bool,
+  konuAnalizGoster: PropTypes.bool,
+  kocId: PropTypes.string,
+  ogrenciTur: PropTypes.string,
+  ogrenciSinif: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
+};

@@ -1,33 +1,50 @@
 {
-  "name": "kocpanel",
-  "version": "0.1.0",
+  "name": "elsway",
+  "version": "1.0.0",
   "private": true,
   "dependencies": {
-    "@testing-library/dom": "^10.4.1",
-    "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.3.2",
-    "@testing-library/user-event": "^13.5.0",
+    "agora-rtc-sdk-ng": "^4.24.3",
     "firebase": "^12.11.0",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "react-scripts": "5.0.1",
-    "web-vitals": "^2.1.4"
+    "prop-types": "^15.8.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^7.13.2",
+    "recharts": "^3.8.1",
+    "web-vitals": "^4.2.0"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
-  },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ],
-    "rules": {
-      "react-hooks/exhaustive-deps": "off",
-      "unicode-bom": "off"
-    }
+    "start": "vite",
+    "build": "node -e \"const fs=require('fs');const f='public/sw.js';fs.writeFileSync(f,fs.readFileSync(f,'utf8').replace(/elsway-v[^']+/,'elsway-v'+Date.now()))\" && vite build",
+    "preview": "vite preview",
+    "prepare": "husky",
+    "test": "vitest run",
+    "test:ci": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:cf": "cd functions && npx vitest run",
+    "test:rules": "firebase emulators:exec --only firestore \"vitest run --config vitest.rules.config.mjs\"",
+    "test:rules:manual": "vitest run --config vitest.rules.config.mjs",
+    "emulator:start": "firebase emulators:start --only firestore",
+    "lint": "eslint src --ext .js,.jsx --max-warnings 0",
+    "lint:fix": "eslint src --ext .js,.jsx --fix",
+    "format": "prettier --write \"src/**/*.{js,jsx,css}\"",
+    "format:check": "prettier --check \"src/**/*.{js,jsx,css}\"",
+    "audit:zip": "git archive --format=zip --output=elsway-audit.zip HEAD",
+    "test:e2e": "npm run build && playwright test",
+    "test:e2e:koc": "playwright test e2e/koc_akislari.spec.js",
+    "test:e2e:guvenlik": "playwright test e2e/guvenlik.spec.js",
+    "test:e2e:smoke": "playwright test e2e/smoke_deploy.spec.js",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:report": "playwright show-report",
+    "test:tam": "npm test && npm run test:e2e:smoke",
+    "smoke": "node scripts/smoke_test.js",
+    "deploy": "npm run build && firebase deploy && npm run smoke",
+    "deploy:hosting": "npm run build && firebase deploy --only hosting && npm run smoke",
+    "deploy:full": "npm run build && firebase deploy --only hosting,functions && npm run smoke",
+    "lighthouse": "npm run build && lhci autorun",
+    "lighthouse:assert": "lhci assert --config=lighthouserc.js",
+    "audit:deps": "npm audit --audit-level=high",
+    "audit:full": "npm audit"
   },
   "browserslist": {
     "production": [
@@ -40,5 +57,28 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@babel/eslint-parser": "^7.27.0",
+    "@babel/preset-react": "^7.27.1",
+    "@firebase/rules-unit-testing": "^5.0.0",
+    "@lhci/cli": "^0.15.1",
+    "@playwright/test": "^1.59.1",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
+    "@vitejs/plugin-react": "^4.3.0",
+    "@vitest/coverage-v8": "^2.1.9",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-react": "^7.37.0",
+    "eslint-plugin-react-hooks": "^4.6.2",
+    "firebase-admin": "^13.7.0",
+    "husky": "^9.1.7",
+    "jsdom": "^29.0.2",
+    "prettier": "^3.5.3",
+    "sharp": "^0.34.5",
+    "vite": "^5.4.0",
+    "vitest": "^2.1.9"
   }
 }

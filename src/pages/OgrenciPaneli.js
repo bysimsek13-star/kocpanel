@@ -1,123 +1,331 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-import React, { useState, useEffect } from 'react';
-import { collection, getDocs, doc, updateDoc } from 'firebase/firestore';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { doc, updateDoc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase';
-import { getS } from '../theme';
-import TopBar from '../components/TopBar';
-import { Card } from '../components/Shared';
-import DenemeListesi from '../ogrenci/DenemeListesi';
-import CalismaKarti from '../ogrenci/CalismaKarti';
-import Mesajlar from '../ogrenci/Mesajlar';
-import { KocNotlariOgrenci } from '../ogrenci/KocNotlari';
+import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
+import { useMobil, useTablet } from '../hooks/useMediaQuery';
+import ElsWayLogo from '../components/ElsWayLogo';
+import TemaSecici from '../components/TemaSecici';
+import { LoadingState } from '../components/Shared';
+import DestekTalebiModal from '../components/DestekTalebiModal';
+import { BildirimZili, BildirimPaneli } from '../components/BildirimSistemi';
+import { PATHS, BASLIK, SolMenu, AltTabBar } from '../ogrenci/OgrenciNav';
+import KutlamaEkrani from '../ogrenci/KutlamaEkrani';
+import { useOgrenciPaneliVeri } from './OgrenciPaneliVeri';
+import { OgrenciSayfaIcerigi } from './OgrenciPaneliSayfa';
 
-export default function OgrenciPaneli({ tema, kullanici, ogrenciData, onCikis }) {
-  const s = getS(tema);
-  const [program, setProgram] = useState([]);
-  const [denemeler, setDenemeler] = useState([]);
-  const [yukleniyor, setYukleniyor] = useState(true);
-  const [aktifSekme, setAktifSekme] = useState('program');
+const VideoGorusme = React.lazy(() => import('../components/VideoGorusme'));
 
-  const getir = async () => {
-    try {
-      const ps = await getDocs(collection(db, 'ogrenciler', kullanici.uid, 'program'));
-      setProgram(ps.docs.map(d => ({ id: d.id, ...d.data() })));
-      const ds = await getDocs(collection(db, 'ogrenciler', kullanici.uid, 'denemeler'));
-      const dl = ds.docs.map(d => ({ id: d.id, ...d.data() }));
-      dl.sort((a, b) => new Date(b.tarih) - new Date(a.tarih));
-      setDenemeler(dl);
-    } catch (e) { }
-    setYukleniyor(false);
-  };
+const sayfaGetir = p => Object.entries(PATHS).find(([, path]) => p.startsWith(path))?.[0] || 'ana';
 
-  useEffect(() => { getir(); }, []);
+export default function OgrenciPaneli() {
+  const { s } = useTheme();
+  const { kullanici, userData, cikisYap } = useAuth();
+  const mobil = useMobil();
+  const tablet = useTablet();
+  const darEkran = mobil || tablet;
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const gorevTamamla = async (id, mevcut) => {
-    try {
-      await updateDoc(doc(db, 'ogrenciler', kullanici.uid, 'program', id), { tamamlandi: !mevcut });
-      await getir();
-    } catch (e) { }
-  };
+  const [destekAcik, setDestekAcik] = useState(false);
+  const [bildirimAcik, setBildirimAcik] = useState(false);
+  const [gelenCagri, setGelenCagri] = useState(null);
+  const [aktifGorusme, setAktifGorusme] = useState(null);
 
-  const tam = program.filter(p => p.tamamlandi).length;
-  const oran = program.length > 0 ? Math.round((tam / program.length) * 100) : 0;
-  const beklenenSaat = ogrenciData?.beklenenSaat || 6;
+  const {
+    yukleniyor,
+    okunmamis,
+    mesajlariOku,
+    gununSozu,
+    bugunSoruVar,
+    programOran,
+    ogrenciTur,
+    ogrenciSinif,
+    kutlamaTema,
+    kutlamaGoster,
+    setKutlamaGoster,
+    kutlamaMesaj,
+  } = useOgrenciPaneliVeri(kullanici, userData);
 
-  const sekmeler = [
-    { key: 'program', label: 'Program' },
-    { key: 'denemeler', label: 'Denemeler' },
-    { key: 'calisma', label: 'Calisma' },
-    { key: 'mesajlar', label: 'Mesajlar' },
-    { key: 'notlar', label: 'Notlar' },
-  ];
+  const aktifSayfa = useMemo(() => sayfaGetir(location.pathname), [location.pathname]);
+
+  useEffect(() => {
+    if (location.pathname === '/ogrenci' || location.pathname === '/ogrenci/')
+      navigate(PATHS.ana, { replace: true });
+  }, [location.pathname, navigate]);
+
+  useEffect(() => {
+    document.title = `${BASLIK[aktifSayfa] || 'Öğrenci'} | ElsWay`;
+  }, [aktifSayfa]);
+
+  // Bildirimden gelen ?cagri=SESSION_ID parametresini karşıla
+  useEffect(() => {
+    const sessionId = searchParams.get('cagri');
+    if (!sessionId) return;
+    setSearchParams({}, { replace: true });
+    getDoc(doc(db, 'goruntulu', sessionId))
+      .then(snap => {
+        if (!snap.exists()) return;
+        const sd = snap.data();
+        if (sd.ogrenciId !== kullanici.uid) return;
+        if (sd.durum === 'bekliyor') setGelenCagri({ id: snap.id, ...sd });
+        else if (sd.durum === 'aktif') setAktifGorusme({ id: snap.id, ...sd });
+      })
+      .catch(() => {});
+  }, [searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const onNav = useCallback(
+    sayfa => {
+      navigate(PATHS[sayfa] || PATHS.ana);
+      if (sayfa === 'mesajlar') mesajlariOku();
+    },
+    [navigate, mesajlariOku]
+  );
+
+  if (aktifGorusme) {
+    return (
+      <React.Suspense
+        fallback={
+          <div style={{ padding: 40, textAlign: 'center', color: s.text3, fontSize: 14 }}>
+            Görüşme yükleniyor...
+          </div>
+        }
+      >
+        <VideoGorusme
+          session={aktifGorusme}
+          kullanici={kullanici}
+          karsıIsim={aktifGorusme.kocIsim || 'Koçun'}
+          onKapat={() => setAktifGorusme(null)}
+        />
+      </React.Suspense>
+    );
+  }
 
   return (
-    <div style={{ minHeight: '100vh', background: s.bg, fontFamily: 'Inter,sans-serif' }}>
-      <TopBar tema={tema} kullanici={kullanici} rol="ogrenci" onCikis={onCikis} />
-      <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '24px' }}>
-        {/* BANNER */}
-        <div style={{ background: s.accentGrad, borderRadius: '20px', padding: '24px 28px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '20px', boxShadow: '0 8px 32px rgba(91,79,232,0.25)' }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: '22px', fontWeight: '700', color: 'white' }}>
-              Hos geldin, {ogrenciData?.isim?.split(' ')[0] || 'Ogrenci'} 
+    <div style={{ minHeight: '100vh', background: s.bg, fontFamily: 'Inter, sans-serif' }}>
+      {kutlamaGoster && (
+        <KutlamaEkrani
+          tema={kutlamaTema}
+          mesaj={kutlamaMesaj}
+          onKapat={() => setKutlamaGoster(false)}
+        />
+      )}
+
+      {/* Gelen görüntülü ders daveti */}
+      {gelenCagri && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 1200,
+            background: 'rgba(0,0,0,0.75)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 20,
+          }}
+        >
+          <div
+            style={{
+              background: s.surface,
+              border: `1px solid ${s.border}`,
+              borderRadius: 24,
+              padding: '32px 28px',
+              maxWidth: 360,
+              width: '100%',
+              textAlign: 'center',
+              boxShadow: s.shadow,
+            }}
+          >
+            <div
+              style={{
+                width: 80,
+                height: 80,
+                borderRadius: '50%',
+                margin: '0 auto 20px',
+                background: 'linear-gradient(135deg, #5B4FE8, #818CF8)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: 36,
+                boxShadow: '0 0 0 12px rgba(91,79,232,0.15)',
+                animation: 'ringPulse 1.4s ease-in-out infinite',
+              }}
+            >
+              📹
             </div>
-            <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.8)', marginTop: '4px' }}>{ogrenciData?.tur} · ElsWay</div>
-          </div>
-          <div style={{ display: 'flex', gap: '12px' }}>
-            {[
-              { v: oran + '%', l: 'Tamamlama' },
-              { v: `${tam}/${program.length}`, l: 'Gorev' },
-              { v: denemeler[0] ? denemeler[0].toplamNet : '—', l: denemeler[0] ? `Son ${denemeler[0].sinav}` : 'Deneme' }
-            ].map((item, i) => (
-              <div key={i} style={{ background: 'rgba(255,255,255,0.15)', borderRadius: '12px', padding: '12px 18px', textAlign: 'center', backdropFilter: 'blur(8px)' }}>
-                <div style={{ fontSize: '22px', fontWeight: '800', color: 'white' }}>{item.v}</div>
-                <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.75)' }}>{item.l}</div>
-              </div>
-            ))}
+            <div style={{ fontSize: 18, fontWeight: 800, color: s.text, marginBottom: 6 }}>
+              Görüntülü Ders Daveti
+            </div>
+            <div style={{ fontSize: 14, color: s.text2, marginBottom: 28 }}>
+              <strong>{gelenCagri.kocIsim || 'Koçun'}</strong> sizi görüntülü derse davet ediyor.
+            </div>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button
+                onClick={async () => {
+                  try {
+                    await updateDoc(doc(db, 'goruntulu', gelenCagri.id), { durum: 'reddedildi' });
+                  } catch (e) {
+                    console.error(e);
+                  }
+                  setGelenCagri(null);
+                }}
+                style={{
+                  flex: 1,
+                  background: s.surface2,
+                  border: `1px solid ${s.border}`,
+                  borderRadius: 12,
+                  padding: '12px',
+                  color: s.text2,
+                  cursor: 'pointer',
+                  fontSize: 13,
+                  fontWeight: 700,
+                }}
+              >
+                Reddet
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    await updateDoc(doc(db, 'goruntulu', gelenCagri.id), { durum: 'aktif' });
+                  } catch (e) {
+                    console.error(e);
+                  }
+                  setAktifGorusme(gelenCagri);
+                  setGelenCagri(null);
+                }}
+                style={{
+                  flex: 2,
+                  background: 'linear-gradient(135deg, #10B981, #059669)',
+                  border: 'none',
+                  borderRadius: 12,
+                  padding: '12px',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  fontSize: 13,
+                  fontWeight: 700,
+                  boxShadow: '0 4px 16px rgba(16,185,129,0.35)',
+                }}
+              >
+                Katıl 📹
+              </button>
+            </div>
           </div>
         </div>
+      )}
 
-        {/* SEKMELER */}
-        <div style={{ display: 'flex', gap: '6px', marginBottom: '20px', background: s.surface2, padding: '4px', borderRadius: '12px', width: 'fit-content' }}>
-          {sekmeler.map(sek => (
-            <div key={sek.key} onClick={() => setAktifSekme(sek.key)}
-              style={{ padding: '8px 16px', borderRadius: '9px', background: aktifSekme === sek.key ? s.surface : 'transparent', color: aktifSekme === sek.key ? s.accent : s.text2, cursor: 'pointer', fontSize: '13px', fontWeight: aktifSekme === sek.key ? '600' : '400', transition: 'all 0.15s', boxShadow: aktifSekme === sek.key ? s.shadow : 'none' }}>
-              {sek.label}
-            </div>
-          ))}
+      {/* Üst Bar */}
+      <div
+        style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 50,
+          background: s.topBarBg,
+          borderBottom: `1px solid ${s.topBarBorder}`,
+          padding: mobil ? '10px 14px' : '10px 20px',
+          minHeight: 60,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: 10,
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <ElsWayLogo size="bar" variant="onDark" />
+          <span
+            style={{ fontSize: 13, color: s.topBarMuted, fontWeight: 600, letterSpacing: '0.02em' }}
+          >
+            Öğrenci
+          </span>
         </div>
-
-        {/* PROGRAM */}
-        {aktifSekme === 'program' && (
-          <Card tema={tema}>
-            <div style={{ padding: '16px 20px', borderBottom: `1px solid ${s.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ fontWeight: '700', fontSize: '15px', color: s.text }}>Gunluk Programim</div>
-              <div style={{ fontSize: '13px', color: s.text2 }}>{tam}/{program.length} · <span style={{ color: oran >= 80 ? '#10B981' : oran >= 50 ? '#F59E0B' : '#F43F5E', fontWeight: '600' }}>{oran}%</span></div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <TemaSecici variant="bar" onDarkBar />
+          <BildirimZili onClick={() => setBildirimAcik(v => !v)} />
+          {okunmamis > 0 && (
+            <div
+              onClick={() => onNav('mesajlar')}
+              style={{
+                background: s.tehlikaSoft,
+                color: s.tehlika,
+                fontSize: 11,
+                fontWeight: 600,
+                borderRadius: 20,
+                padding: '4px 10px',
+                cursor: 'pointer',
+                border: `1px solid ${s.topBarBorder}`,
+              }}
+            >
+              {okunmamis} mesaj
             </div>
-            <div style={{ padding: '16px 20px' }}>
-              {yukleniyor ? <div style={{ textAlign: 'center', padding: '20px', color: s.text3 }}>Yukleniyor...</div> :
-                program.length === 0 ? <div style={{ textAlign: 'center', padding: '40px', color: s.text2 }}>Kocun henuz program eklemedi</div> :
-                  program.map(p => (
-                    <div key={p.id} onClick={() => gorevTamamla(p.id, p.tamamlandi)}
-                      style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px', borderRadius: '10px', cursor: 'pointer', marginBottom: '4px', transition: 'background 0.15s', background: p.tamamlandi ? `${s.surface2}80` : 'transparent' }}
-                      onMouseEnter={e => e.currentTarget.style.background = s.surface2}
-                      onMouseLeave={e => e.currentTarget.style.background = p.tamamlandi ? `${s.surface2}80` : 'transparent'}>
-                      <div style={{ width: '24px', height: '24px', borderRadius: '7px', border: p.tamamlandi ? 'none' : `2px solid ${s.border}`, background: p.tamamlandi ? '#10B981' : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', flexShrink: 0, color: 'white', transition: 'all 0.15s' }}>{p.tamamlandi && 'v'}</div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: '14px', color: p.tamamlandi ? s.text3 : s.text, textDecoration: p.tamamlandi ? 'line-through' : 'none', fontWeight: '500' }}>{p.gorev}</div>
-                        <div style={{ fontSize: '12px', color: s.text3, marginTop: '2px' }}>{p.ders}</div>
-                      </div>
-                      <div style={{ fontSize: '12px', color: p.tamamlandi ? '#10B981' : s.text3, fontWeight: '500' }}>{p.tamamlandi ? 'Tamamlandi' : 'Tamamla'}</div>
-                    </div>
-                  ))}
-            </div>
-          </Card>
-        )}
-
-        {aktifSekme === 'denemeler' && <DenemeListesi tema={tema} ogrenciId={kullanici.uid} />}
-        {aktifSekme === 'calisma' && <CalismaKarti tema={tema} ogrenciId={kullanici.uid} beklenenSaat={beklenenSaat} gorevOrani={oran} onKaydet={getir} />}
-        {aktifSekme === 'mesajlar' && <Mesajlar tema={tema} ogrenciId={kullanici.uid} gonderen="ogrenci" />}
-        {aktifSekme === 'notlar' && <KocNotlariOgrenci tema={tema} ogrenciId={kullanici.uid} />}
+          )}
+          <button
+            onClick={cikisYap}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: s.topBarMuted,
+              fontSize: 12,
+              fontWeight: 500,
+              cursor: 'pointer',
+            }}
+          >
+            Çıkış
+          </button>
+        </div>
       </div>
+      <BildirimPaneli acik={bildirimAcik} onKapat={() => setBildirimAcik(false)} />
+
+      <div style={{ display: 'flex' }}>
+        {!darEkran && (
+          <SolMenu
+            aktif={aktifSayfa}
+            onNav={onNav}
+            okunmamis={okunmamis}
+            userData={userData}
+            ogrenciTur={ogrenciTur}
+            s={s}
+            programOran={programOran}
+          />
+        )}
+        <div
+          style={{
+            flex: 1,
+            minWidth: 0,
+            padding: mobil ? '16px 16px 88px' : tablet ? '20px 24px 88px' : '28px 36px',
+            maxWidth: darEkran ? '100%' : 860,
+          }}
+        >
+          <React.Suspense fallback={<LoadingState />}>
+            <OgrenciSayfaIcerigi
+              aktifSayfa={aktifSayfa}
+              yukleniyor={yukleniyor}
+              setDestekAcik={setDestekAcik}
+              ogrenciTur={ogrenciTur}
+              ogrenciSinif={ogrenciSinif}
+              gununSozu={gununSozu}
+              bugunSoruVar={bugunSoruVar}
+              okunmamis={okunmamis}
+              programOran={programOran}
+              userData={userData}
+              kullanici={kullanici}
+              onNav={onNav}
+              s={s}
+              mobil={mobil}
+            />
+          </React.Suspense>
+        </div>
+      </div>
+
+      {darEkran && <AltTabBar aktif={aktifSayfa} onNav={onNav} okunmamis={okunmamis} s={s} />}
+      <DestekTalebiModal
+        acik={destekAcik}
+        onClose={() => setDestekAcik(false)}
+        varsayilanRol="ogrenci"
+      />
     </div>
   );
 }

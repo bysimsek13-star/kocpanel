@@ -1,0 +1,6 @@
+// Bu dosya artık aktif değildir.
+// Firebase deploy edilen rules dosyası: proje kökündeki /firestore.rules
+// firebase.json → "rules": "firestore.rules"
+//
+// Bu dosyayı düzenlemeyin — deploy'a girmez.
+// Tüm rules değişiklikleri /firestore.rules üzerinde yapılmalıdır.

@@ -1,94 +1,89 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-import React, { useState, useEffect } from 'react';
-import { collection, addDoc, getDocs } from 'firebase/firestore';
+import React, { useState, useEffect, useCallback } from 'react';
+import PropTypes from 'prop-types';
+import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
-import { getS } from '../theme';
-import { Card, Btn } from '../components/Shared';
+import { useTheme } from '../context/ThemeContext';
+import { Card, EmptyState } from '../components/Shared';
+import { ETIKETLER } from './kocNotlariSabitleri';
+import KocNotEkleForm from './KocNotEkleForm';
+import { NotKarti, KocNotlariOgrenci } from './KocNotKarti';
 
-// Koç tarafından not ekleme bileşeni
-export function KocNotlari({ tema, ogrenciId }) {
-  const s = getS(tema);
-  const [notlar, setNotlar] = useState([]);
-  const [yeniNot, setYeniNot] = useState('');
-  const [yukleniyor, setYukleniyor] = useState(false);
+export { KocNotlariOgrenci };
 
-  const getir = async () => {
+export function KocNotlari({ ogrenciId }) {
+  const { s } = useTheme();
+  const [kayitlar, setKayitlar] = useState([]);
+  const [filtre, setFiltre] = useState('hepsi');
+  const [yukleniyor, setYukleniyor] = useState(true);
+
+  const getir = useCallback(async () => {
     try {
       const snap = await getDocs(collection(db, 'ogrenciler', ogrenciId, 'notlar'));
       const liste = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       liste.sort((a, b) => (b.olusturma?.seconds || 0) - (a.olusturma?.seconds || 0));
-      setNotlar(liste);
-    } catch (e) { }
-  };
-
-  useEffect(() => { getir(); }, []);
-
-  const kaydet = async () => {
-    if (!yeniNot.trim()) return;
-    setYukleniyor(true);
-    try {
-      await addDoc(collection(db, 'ogrenciler', ogrenciId, 'notlar'), { not: yeniNot, olusturma: new Date() });
-      setYeniNot('');
-      await getir();
-    } catch (e) { alert(e.message); }
+      setKayitlar(liste);
+    } catch (e) {
+      console.error(e);
+    }
     setYukleniyor(false);
-  };
+  }, [ogrenciId]);
+
+  useEffect(() => {
+    getir();
+  }, [getir]);
+
+  const filtrelenmis = kayitlar.filter(k => {
+    if (filtre === 'hepsi') return true;
+    if (filtre === 'gorusme') return k.tip === 'gorusme';
+    return k.etiket === filtre;
+  });
+
+  const filtreler = [
+    { key: 'hepsi', label: 'Hepsi' },
+    { key: 'gorusme', label: '🗣 Görüşmeler' },
+    ...ETIKETLER.filter(e => e.key !== 'gorusme').map(e => ({ key: e.key, label: e.label })),
+  ];
 
   return (
-    <Card tema={tema} style={{ padding: '20px' }}>
-      <div style={{ fontWeight: '700', fontSize: '15px', color: getS(tema).text, marginBottom: '16px' }}>📝 Koç Notları</div>
-      <textarea
-        value={yeniNot} onChange={e => setYeniNot(e.target.value)}
-        placeholder="Yeni not ekle..."
-        style={{ width: '100%', background: s.surface2, border: `1px solid ${s.border}`, borderRadius: '10px', padding: '12px 14px', color: s.text, fontSize: '13px', outline: 'none', resize: 'vertical', minHeight: '80px', boxSizing: 'border-box', fontFamily: 'Inter,sans-serif', transition: 'border 0.15s' }}
-        onFocus={e => e.target.style.borderColor = s.accent}
-        onBlur={e => e.target.style.borderColor = s.border}
-      />
-      <Btn tema={tema} onClick={kaydet} disabled={!yeniNot.trim() || yukleniyor} style={{ marginTop: '10px', width: '100%' }}>
-        {yukleniyor ? 'Kaydediliyor...' : 'Not Ekle'}
-      </Btn>
-      {notlar.length > 0 && (
-        <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {notlar.map(n => (
-            <div key={n.id} style={{ background: s.surface2, borderRadius: '10px', padding: '14px', borderLeft: `3px solid ${s.accent}` }}>
-              <div style={{ fontSize: '11px', color: s.text3, marginBottom: '6px' }}>{n.olusturma?.toDate ? n.olusturma.toDate().toLocaleDateString('tr-TR') : ''}</div>
-              <div style={{ fontSize: '13px', color: s.text, lineHeight: '1.6' }}>{n.not}</div>
-            </div>
-          ))}
+    <Card style={{ padding: 20 }}>
+      <div style={{ fontWeight: 700, fontSize: 15, color: s.text, marginBottom: 16 }}>
+        📝 Notlar & Görüşmeler
+      </div>
+      <KocNotEkleForm ogrenciId={ogrenciId} onEklendi={getir} s={s} />
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
+        {filtreler.map(f => (
+          <div
+            key={f.key}
+            onClick={() => setFiltre(f.key)}
+            style={{
+              padding: '4px 12px',
+              borderRadius: 20,
+              fontSize: 11,
+              fontWeight: filtre === f.key ? 700 : 400,
+              cursor: 'pointer',
+              background: filtre === f.key ? s.accentSoft : s.surface2,
+              color: filtre === f.key ? s.accent : s.text3,
+              border: filtre === f.key ? `1px solid ${s.accent}` : `1px solid ${s.border}`,
+            }}
+          >
+            {f.label} {filtre === f.key && `(${filtrelenmis.length})`}
+          </div>
+        ))}
+      </div>
+      {yukleniyor ? (
+        <div style={{ color: s.text3, fontSize: 13, textAlign: 'center', padding: 12 }}>
+          Yükleniyor...
         </div>
+      ) : filtrelenmis.length === 0 ? (
+        <EmptyState mesaj="Kayıt yok" icon="📝" />
+      ) : (
+        filtrelenmis.map(k => (
+          <NotKarti key={k.id} kayit={k} ogrenciId={ogrenciId} onSilindi={getir} s={s} />
+        ))
       )}
     </Card>
   );
 }
 
-// Öğrenci tarafından koç notlarını görüntüleme bileşeni
-export function KocNotlariOgrenci({ tema, ogrenciId }) {
-  const s = getS(tema);
-  const [notlar, setNotlar] = useState([]);
-
-  useEffect(() => {
-    const getir = async () => {
-      try {
-        const snap = await getDocs(collection(db, 'ogrenciler', ogrenciId, 'notlar'));
-        const liste = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        liste.sort((a, b) => (b.olusturma?.seconds || 0) - (a.olusturma?.seconds || 0));
-        setNotlar(liste);
-      } catch (e) { }
-    };
-    getir();
-  }, []);
-
-  return (
-    <Card tema={tema} style={{ padding: '20px' }}>
-      <div style={{ fontWeight: '700', fontSize: '15px', color: s.text, marginBottom: '16px' }}>📝 Koçumdan Notlar</div>
-      {notlar.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '20px', color: s.text3 }}>Henüz not yok</div>
-      ) : notlar.map(n => (
-        <div key={n.id} style={{ background: s.surface2, borderRadius: '10px', padding: '14px', marginBottom: '10px', borderLeft: `3px solid ${s.accent}` }}>
-          <div style={{ fontSize: '11px', color: s.text3, marginBottom: '6px' }}>{n.olusturma?.toDate ? n.olusturma.toDate().toLocaleDateString('tr-TR') : ''}</div>
-          <div style={{ fontSize: '13px', color: s.text, lineHeight: '1.6' }}>{n.not}</div>
-        </div>
-      ))}
-    </Card>
-  );
-}
+KocNotlari.propTypes = { ogrenciId: PropTypes.string.isRequired };
+KocNotlariOgrenci.propTypes = { ogrenciId: PropTypes.string.isRequired };

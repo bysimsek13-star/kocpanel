@@ -1,70 +1,96 @@
-# Getting Started with Create React App
+# ElsWay — Koçluk Yönetim Platformu
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+LGS ve YKS'ya hazırlanan öğrenciler için koç, öğrenci, veli ve admin panellerinden oluşan gerçek zamanlı koçluk takip sistemi.
 
-## Available Scripts
+**Canlı:** https://kocpaneli.web.app
 
-In the project directory, you can run:
+---
 
-### `npm start`
+## Teknoloji
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+- **Frontend:** React 18 + Vite
+- **Backend / DB:** Firebase Firestore
+- **Auth:** Firebase Authentication
+- **Fonksiyonlar:** Firebase Cloud Functions (europe-west1)
+- **Hosting:** Firebase Hosting
+- **Bildirim:** Firebase Cloud Messaging (FCM)
+- **Görüntülü görüşme:** Agora RTC
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+---
 
-### `npm test`
+## Geliştirme
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+```bash
+npm install
+npm run dev        # geliştirme sunucusu (localhost:5173)
+npm test           # Vitest test suite
+npm run build      # production build
+firebase deploy    # hosting + functions deploy
+```
 
-### `npm run build`
+### Cloud Functions
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+```bash
+cd functions
+npm install
+npm run test:cf    # CF unit testleri
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+---
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## Ortam Değişkenleri
 
-### `npm run eject`
+Proje kökünde `.env.local` dosyası oluştur (`.env` şablonuna bak):
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+```
+VITE_FIREBASE_API_KEY=...
+VITE_FIREBASE_AUTH_DOMAIN=...
+VITE_FIREBASE_PROJECT_ID=...
+VITE_FIREBASE_STORAGE_BUCKET=...
+VITE_FIREBASE_MESSAGING_SENDER_ID=...
+VITE_FIREBASE_APP_ID=...
+VITE_RECAPTCHA_SITE_KEY=...
+```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+`functions/.env` dosyasında:
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+```
+AGORA_APP_ID=...
+AGORA_APP_CERT=...
+GEMINI_API_KEY=...
+```
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+**Hiçbir secret dosyasını commit'leme.** `.gitignore` bu dosyaları zaten dışlamaktadır.
 
-## Learn More
+---
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## Kullanıcı Rolleri
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+| Rol | Panel | Yetkiler |
+|---|---|---|
+| `admin` | YoneticiPaneli | Tüm koç/öğrenci yönetimi, sistem durumu, audit log |
+| `koc` | KocPaneli | Öğrenci takibi, program, deneme, veli raporu |
+| `ogrenci` | OgrenciPaneli | Program görüntüleme, rutin, deneme, mesaj |
+| `veli` | VeliPaneli | Öğrenci durumu izleme, koç raporu okuma |
 
-### Code Splitting
+---
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## Proje Yapısı
 
-### Analyzing the Bundle Size
+Detaylı mimari ve geliştirme notları için `CLAUDE.md` ve `ROADMAP_AI.md` dosyalarına bak.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+---
 
-### Making a Progressive Web App
+## Test
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+```bash
+npm test                  # tüm frontend testleri (Vitest)
+npm run test:coverage     # coverage raporu
+npm run test:cf           # Cloud Functions testleri
+```
 
-### Advanced Configuration
+Firestore Rules testleri için Java gereklidir:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+```bash
+npm run test:rules        # Firebase emülatör üzerinde rules testleri
+```

@@ -1,65 +1,219 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-import React, { useState, useEffect } from 'react';
-import { collection, addDoc, getDocs } from 'firebase/firestore';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import PropTypes from 'prop-types';
+import {
+  collection,
+  addDoc,
+  onSnapshot,
+  query,
+  orderBy,
+  limit,
+  doc,
+  updateDoc,
+  serverTimestamp,
+} from 'firebase/firestore';
 import { db } from '../firebase';
-import { getS } from '../theme';
-import { Card, Btn, Input } from '../components/Shared';
+import { useTheme } from '../context/ThemeContext';
+import { useToast } from '../components/Toast';
+import { Btn } from '../components/Shared';
+import { isUnread, readPatch, unreadPatch } from '../utils/readState';
+import { bildirimOlustur } from '../components/BildirimSistemi';
 
-export default function Mesajlar({ tema, ogrenciId, gonderen }) {
-  const s = getS(tema);
+const LIMIT = 80; // Son 80 mesaj
+
+export default function Mesajlar({
+  ogrenciId,
+  gonderen,
+  aliciId = null,
+  aliciIsim: _aliciIsim = '',
+}) {
+  const { s } = useTheme();
+  const toast = useToast();
   const [mesajlar, setMesajlar] = useState([]);
   const [yeniMesaj, setYeniMesaj] = useState('');
   const [yukleniyor, setYukleniyor] = useState(false);
+  const scrollRef = useRef(null);
+  const okunduIsaretlendi = useRef(new Set()); // Zaten işaretlenenleri takip et
 
-  const getir = async () => {
-    try {
-      const snap = await getDocs(collection(db, 'ogrenciler', ogrenciId, 'mesajlar'));
-      const liste = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      liste.sort((a, b) => (a.olusturma?.seconds || 0) - (b.olusturma?.seconds || 0));
-      setMesajlar(liste);
-    } catch (e) { }
-  };
+  // Realtime — limit'li
+  useEffect(() => {
+    const q = query(
+      collection(db, 'ogrenciler', ogrenciId, 'mesajlar'),
+      orderBy('olusturma', 'desc'),
+      limit(LIMIT)
+    );
+    const unsub = onSnapshot(
+      q,
+      snap => {
+        // desc + reverse → son LIMIT mesajı kronolojik sırada göster
+        setMesajlar(snap.docs.map(d => ({ id: d.id, ...d.data() })).reverse());
+      },
+      err => console.error(err)
+    );
+    return () => unsub();
+  }, [ogrenciId]);
 
-  useEffect(() => { getir(); }, [ogrenciId]);
+  // Scroll en alta
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [mesajlar]);
 
-  const gonder = async () => {
+  // Okundu işaretleme — sadece yeni okunmamışlar için, bir kez
+  useEffect(() => {
+    if (!mesajlar.length) return;
+    const karsi = gonderen === 'koc' ? 'ogrenci' : 'koc';
+    const yeniOkunmamislar = mesajlar.filter(
+      m => m.gonderen === karsi && isUnread(m) && !okunduIsaretlendi.current.has(m.id)
+    );
+    if (!yeniOkunmamislar.length) return;
+
+    yeniOkunmamislar.forEach(m => {
+      okunduIsaretlendi.current.add(m.id);
+      updateDoc(doc(db, 'ogrenciler', ogrenciId, 'mesajlar', m.id), readPatch()).catch(() => {});
+    });
+    // okunmamisMesajSayisi → mesajOkunduAzalt CF her okundu update'inde azaltır
+  }, [mesajlar, gonderen, ogrenciId]);
+
+  const gonder = useCallback(async () => {
     if (!yeniMesaj.trim()) return;
     setYukleniyor(true);
     try {
-      await addDoc(collection(db, 'ogrenciler', ogrenciId, 'mesajlar'), { mesaj: yeniMesaj, gonderen, olusturma: new Date() });
+      await addDoc(collection(db, 'ogrenciler', ogrenciId, 'mesajlar'), {
+        mesaj: yeniMesaj.trim(),
+        gonderen,
+        ...unreadPatch(),
+        olusturma: serverTimestamp(),
+      });
       setYeniMesaj('');
-      await getir();
-    } catch (e) { alert(e.message); }
+      if (aliciId) {
+        bildirimOlustur({
+          aliciId,
+          tip: 'yeni_mesaj',
+          baslik: 'Yeni mesaj',
+          mesaj: yeniMesaj.trim().slice(0, 80),
+          route: gonderen === 'koc' ? '/ogrenci/mesajlar' : '/koc/ogrenciler',
+        }).catch(() => {});
+      }
+    } catch {
+      toast('Gönderilemedi', 'error');
+    }
     setYukleniyor(false);
-  };
+  }, [yeniMesaj, ogrenciId, gonderen, toast, aliciId]);
+
+  const karsıIsim = gonderen === 'ogrenci' ? 'Koç' : 'Öğrenci';
 
   return (
-    <Card tema={tema} style={{ display: 'flex', flexDirection: 'column', height: '520px' }}>
-      <div style={{ flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: 'calc(100vh - 220px)',
+        minHeight: 420,
+        maxHeight: 700,
+        background: s.surface,
+        border: `1px solid ${s.border}`,
+        borderRadius: 16,
+        overflow: 'hidden',
+      }}
+    >
+      {/* Mesaj listesi */}
+      <div
+        ref={scrollRef}
+        style={{
+          flex: 1,
+          overflowY: 'auto',
+          padding: '16px 18px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 8,
+        }}
+      >
         {mesajlar.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '60px', color: s.text3 }}>
-            <div style={{ fontSize: '40px', marginBottom: '12px' }}>💬</div>
-            <div>Henüz mesaj yok</div>
+          <div style={{ textAlign: 'center', color: s.text3, fontSize: 13, marginTop: 40 }}>
+            Henüz mesaj yok
           </div>
-        ) : mesajlar.map(m => {
-          const benim = m.gonderen === gonderen;
-          return (
-            <div key={m.id} style={{ display: 'flex', flexDirection: 'column', alignItems: benim ? 'flex-end' : 'flex-start' }}>
-              <div style={{ maxWidth: '75%', background: benim ? s.accentGrad : s.surface2, borderRadius: benim ? '18px 18px 4px 18px' : '18px 18px 18px 4px', padding: '12px 16px', boxShadow: s.shadow }}>
-                <div style={{ fontSize: '14px', color: benim ? 'white' : s.text, lineHeight: '1.6' }}>{m.mesaj}</div>
+        ) : (
+          mesajlar.map(m => {
+            const benimMesajim = m.gonderen === gonderen;
+            return (
+              <div
+                key={m.id}
+                style={{
+                  display: 'flex',
+                  justifyContent: benimMesajim ? 'flex-end' : 'flex-start',
+                }}
+              >
+                <div
+                  style={{
+                    maxWidth: '72%',
+                    padding: '10px 14px',
+                    borderRadius: 14,
+                    background: benimMesajim ? s.accent : s.surface2,
+                    color: benimMesajim ? '#fff' : s.text,
+                    border: benimMesajim ? 'none' : `1px solid ${s.border}`,
+                    borderBottomRightRadius: benimMesajim ? 4 : 14,
+                    borderBottomLeftRadius: benimMesajim ? 14 : 4,
+                  }}
+                >
+                  <div style={{ fontSize: 13, lineHeight: 1.5 }}>{m.mesaj}</div>
+                  <div style={{ fontSize: 10, marginTop: 4, opacity: 0.65, textAlign: 'right' }}>
+                    {m.olusturma?.toDate?.()
+                      ? m.olusturma
+                          .toDate()
+                          .toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
+                      : ''}
+                    {benimMesajim && !isUnread(m) && ' ✓'}
+                  </div>
+                </div>
               </div>
-              <div style={{ fontSize: '11px', color: s.text3, marginTop: '4px' }}>
-                <span style={{ color: benim ? s.accent : '#10B981', fontWeight: '600' }}>{m.gonderen === 'koc' ? 'Koç' : 'Öğrenci'}</span>
-                {' · '}{m.olusturma?.toDate ? m.olusturma.toDate().toLocaleString('tr-TR', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' }) : ''}
-              </div>
-            </div>
-          );
-        })}
+            );
+          })
+        )}
       </div>
-      <div style={{ padding: '16px', borderTop: `1px solid ${s.border}`, display: 'flex', gap: '10px' }}>
-        <Input tema={tema} value={yeniMesaj} onChange={e => setYeniMesaj(e.target.value)} placeholder="Mesaj yaz... (Enter)" type="text" />
-        <Btn tema={tema} onClick={gonder} disabled={!yeniMesaj.trim() || yukleniyor}>{yukleniyor ? '...' : 'Gönder →'}</Btn>
+
+      {/* Giriş alanı */}
+      <div
+        style={{
+          padding: '12px 16px',
+          borderTop: `1px solid ${s.border}`,
+          display: 'flex',
+          gap: 10,
+          background: s.surface,
+        }}
+      >
+        <input
+          value={yeniMesaj}
+          onChange={e => setYeniMesaj(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && !e.shiftKey && gonder()}
+          placeholder={`${karsıIsim}'a mesaj yaz...`}
+          style={{
+            flex: 1,
+            background: s.surface2,
+            border: `1px solid ${s.border}`,
+            borderRadius: 10,
+            padding: '10px 14px',
+            color: s.text,
+            fontSize: 13,
+            outline: 'none',
+            resize: 'none',
+          }}
+        />
+        <Btn
+          onClick={gonder}
+          disabled={yukleniyor || !yeniMesaj.trim()}
+          style={{ padding: '10px 16px', fontSize: 13, flexShrink: 0 }}
+        >
+          Gönder
+        </Btn>
       </div>
-    </Card>
+    </div>
   );
 }
+
+Mesajlar.propTypes = {
+  ogrenciId: PropTypes.string.isRequired,
+  gonderen: PropTypes.string.isRequired,
+  aliciId: PropTypes.string,
+  aliciIsim: PropTypes.string,
+};
