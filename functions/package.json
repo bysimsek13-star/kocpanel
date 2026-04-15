@@ -20,7 +20,7 @@
   },
   "devDependencies": {
     "eslint": "^8.57.1",
-    "firebase-functions-test": "^3.1.0",
+    "firebase-functions-test": "^3.4.1",
     "vitest": "^2.1.9"
   },
   "private": true,
