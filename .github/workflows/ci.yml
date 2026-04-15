@@ -40,7 +40,7 @@ jobs:
           retention-days: 7
 
       - name: Bağımlılıkları yükle (functions)
-        run: npm ci
+        run: npm ci --legacy-peer-deps
         working-directory: functions
 
       - name: Functions lint
