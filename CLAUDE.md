@@ -300,3 +300,31 @@ Her görevde şu adımlar zorunludur:
 5. Tekrar `npm test` — hepsi yeşil olunca görev biter
 
 Test yoksa görev tamamlanmış sayılmaz.
+
+## Operasyonel Hatırlatıcılar
+
+### Her geliştirme oturumunda
+- GitHub Actions sekmesini kontrol et: https://github.com/bysimsek13-star/kocpanel/actions
+- Kırmızı run varsa önce onu düzelt, yeni özelliğe geçme
+
+### Her commit öncesi
+- main'e direkt yazma — önce branch aç, PR ile merge et
+- Pre-commit hook otomatik çalışır (lint + format + test)
+
+### 6 ayda bir
+- Firebase Console → Service Accounts → key'i yenile → GitHub Secret'ı güncelle
+- npm audit --audit-level=high çalıştır, kritik güvenlik açığı var mı bak
+
+### Yeni özellik eklerken
+- CLAUDE.md dosya boyutu limitlerini kontrol et (bileşen 250 satır, util 200 satır)
+- Değiştirdiğin her dosya için en az 1 test ekle
+- npm test -- --run yeşil görene kadar commit etme
+
+### Son kontrol tarihleri
+- Pipeline kurulumu: 2026-04-16 ✓
+- Firebase key son yenileme: (henüz yapılmadı — ilk yenileme tarihi buraya yazılacak)
+- Son npm audit: 2026-04-16 ✓
+- Son Firestore rules gözden geçirme: 2026-04-16 ✓
+
+Bu tarihleri güncellemek için:
+  "CLAUDE.md dosyasındaki son kontrol tarihlerini güncelle, [işlem] için bugünün tarihini yaz"
