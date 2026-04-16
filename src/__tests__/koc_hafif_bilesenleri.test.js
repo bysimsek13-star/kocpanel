@@ -235,6 +235,22 @@ describe('VeliRaporlari', () => {
       renderWithProviders(<VeliRaporlari ogrenciler={ogrenciler} onGeri={vi.fn()} />)
     ).not.toThrow();
   });
+
+  it('tarih filtresi select görünür ve seçenekleri içerir', () => {
+    renderWithProviders(<VeliRaporlari ogrenciler={ogrenciler} onGeri={vi.fn()} />);
+    const select = screen.getByRole('combobox', { name: /tarih filtresi/i });
+    expect(select).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Tümü' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Son 1 Ay' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Son 1 Hafta' })).toBeInTheDocument();
+  });
+
+  it('filtre değiştirilince select güncellenir', () => {
+    renderWithProviders(<VeliRaporlari ogrenciler={ogrenciler} onGeri={vi.fn()} />);
+    const select = screen.getByRole('combobox', { name: /tarih filtresi/i });
+    fireEvent.change(select, { target: { value: 'son1hafta' } });
+    expect(select.value).toBe('son1hafta');
+  });
 });
 
 // ─── VideoIzleModal ───────────────────────────────────────────────────────────

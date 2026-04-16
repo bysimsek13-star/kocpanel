@@ -1,183 +1,35 @@
-import React, { useState } from 'react';
-import { collection, getDocs, getDoc, addDoc, serverTimestamp, doc } from 'firebase/firestore';
-import { db } from '../firebase';
-import { useAuth } from '../context/AuthContext';
-import { renkler } from '../data/konular';
-import { useToast } from '../components/Toast';
+import React from 'react';
+import PropTypes from 'prop-types';
 import { Card, Btn, Avatar } from '../components/Shared';
+import { renkler } from '../data/konular';
 import { formatDateShort } from '../utils/timelineUtils';
-import { bildirimOlustur } from '../components/BildirimSistemi';
-import { GUNLER, haftaBaslangici } from '../utils/programAlgoritma';
-import { addDays, waMetniOlustur } from './veliRaporlariUtils';
+import { useRaporKarti } from './useRaporKarti';
 
 export default function RaporKarti({ ogrenci, data, index, onTelefonGuncelle, s }) {
-  const { userData } = useAuth();
-  const toast = useToast();
+  const {
+    telefonDuzenle,
+    setTelefonDuzenle,
+    telefonInput,
+    setTelefonInput,
+    yukleniyor,
+    kocNotu,
+    setKocNotu,
+    onizleme,
+    telefonKaydet,
+    raporOlustur,
+    waGonder,
+    yazdirRapor,
+  } = useRaporKarti({ ogrenci, data, onTelefonGuncelle });
+
   const rapor = data?.sonRapor || null;
   const netEtiket =
     data?.netDegisim == null ? '—' : `${data.netDegisim >= 0 ? '+' : ''}${data.netDegisim}`;
-
-  const [telefonDuzenle, setTelefonDuzenle] = useState(false);
-  const [telefonInput, setTelefonInput] = useState(ogrenci.veliTelefon || '');
-  const [yukleniyor, setYukleniyor] = useState(false);
-  const [kocNotu, setKocNotu] = useState('');
-  const [onizleme, setOnizleme] = useState('');
-  const [waMesaji, setWaMesaji] = useState('');
-
   const telefon = ogrenci.veliTelefon?.replace(/\D/g, '') || '';
-
-  const telefonKaydet = () => {
-    onTelefonGuncelle(ogrenci.id, telefonInput.trim());
-    setTelefonDuzenle(false);
-  };
-
-  const raporOlustur = async () => {
-    setYukleniyor(true);
-    try {
-      const gecenHafta = new Date();
-      gecenHafta.setDate(gecenHafta.getDate() - 7);
-      const secilenHafta = haftaBaslangici(gecenHafta);
-      const haftaBitis = addDays(secilenHafta, 6);
-
-      const [progDoc, calismaSnap, denSnap] = await Promise.all([
-        getDoc(doc(db, 'ogrenciler', ogrenci.id, 'program_v2', secilenHafta)),
-        getDocs(collection(db, 'ogrenciler', ogrenci.id, 'calisma')),
-        getDocs(collection(db, 'ogrenciler', ogrenci.id, 'denemeler')),
-      ]);
-
-      const progData = progDoc.exists() ? progDoc.data() : {};
-      const hafta = progData.hafta || {};
-      const tamamlandiFlat = progData.tamamlandi || {};
-
-      const calismaMap = {};
-      calismaSnap.docs.forEach(d => {
-        calismaMap[d.id] = Number(d.data().saat) || 0;
-      });
-
-      const gunTarihleri = GUNLER.map((_, i) => addDays(secilenHafta, i));
-      const soruSnaps = await Promise.all(
-        gunTarihleri.map(t => getDoc(doc(db, 'ogrenciler', ogrenci.id, 'gunlukSoru', t)))
-      );
-
-      const gunVerileri = GUNLER.map((gunAdi, i) => {
-        const tarih = gunTarihleri[i];
-        const slotlar = hafta[gunAdi] || [];
-        const tamamlandi = {};
-        slotlar.forEach((_, idx) => {
-          tamamlandi[idx] = !!tamamlandiFlat[`${gunAdi}_${idx}`];
-        });
-        const soruData = soruSnaps[i].exists() ? soruSnaps[i].data() : null;
-        const soruToplam = soruData
-          ? Object.values(soruData.dersler || {}).reduce(
-              (s, r) => s + (r.d || 0) + (r.y || 0) + (r.b || 0),
-              0
-            )
-          : 0;
-        return {
-          tarih,
-          gunAdi,
-          slotlar,
-          tamamlandi,
-          calismaSaat: calismaMap[tarih] || 0,
-          soruToplam,
-          soruData,
-        };
-      });
-
-      const toplamSaat = gunVerileri.reduce((a, g) => a + g.calismaSaat, 0);
-      const calismaGun = gunVerileri.filter(g => g.calismaSaat > 0).length;
-      const doluSlotlar = gunVerileri.flatMap(g => g.slotlar.filter(sl => sl.tip));
-      const tamamlananSayi = gunVerileri.reduce(
-        (acc, g) => acc + g.slotlar.filter((sl, i) => sl.tip && g.tamamlandi[i]).length,
-        0
-      );
-      const gorevOran = doluSlotlar.length
-        ? Math.round((tamamlananSayi / doluSlotlar.length) * 100)
-        : 0;
-
-      const buHaftaDen = denSnap.docs
-        .map(d => ({ id: d.id, ...d.data() }))
-        .filter(d => d.tarih >= secilenHafta && d.tarih <= haftaBitis)
-        .sort((a, b) => new Date(b.tarih) - new Date(a.tarih));
-      const sonDeneme =
-        buHaftaDen[0] ||
-        denSnap.docs
-          .map(d => ({ ...d.data() }))
-          .sort((a, b) => new Date(b.tarih || 0) - new Date(a.tarih || 0))[0];
-
-      const ozet = {
-        calismaGun,
-        toplamSaat: toplamSaat.toFixed(1),
-        gorevOran,
-        sonDenemeNet: sonDeneme ? Number(sonDeneme.toplamNet) || null : null,
-      };
-
-      const mesaj = waMetniOlustur({
-        ogrenci,
-        secilenHafta,
-        haftaBitis,
-        gunVerileri,
-        denemeler: buHaftaDen,
-        kocNotu,
-        ozet,
-      });
-      setWaMesaji(mesaj);
-      setOnizleme(mesaj);
-
-      await addDoc(collection(db, 'ogrenciler', ogrenci.id, 'veliRaporlari'), {
-        haftaBaslangic: secilenHafta,
-        haftaBitis,
-        ozetMetni: `${calismaGun} gün, ${toplamSaat.toFixed(1)} saat, %${gorevOran} görev tamamlandı.`,
-        kocNotu: kocNotu.trim(),
-        calismaGunSayisi: calismaGun,
-        toplamSaat: Number(toplamSaat.toFixed(1)),
-        gorevTamamlama: gorevOran,
-        sonDenemeNet: ozet.sonDenemeNet,
-        olusturma: serverTimestamp(),
-        kaynak: 'detayli_koc',
-        kocIsim: userData?.isim || '',
-      });
-      if (ogrenci.veliUid) {
-        bildirimOlustur({
-          aliciId: ogrenci.veliUid,
-          tip: 'veli_raporu_hazir',
-          baslik: 'Haftalık rapor hazırlandı',
-          mesaj: `${ogrenci.isim} için haftalık rapor hazırlandı.`,
-          ogrenciId: ogrenci.id,
-          ogrenciIsim: ogrenci.isim || '',
-          route: '/veli/mesajlar',
-        }).catch(() => {});
-      }
-      toast(`${ogrenci.isim} için rapor oluşturuldu ✅`);
-    } catch (e) {
-      toast(e.message || 'Hata', 'error');
-    }
-    setYukleniyor(false);
-  };
-
-  const waGonder = () => {
-    if (!telefon) return;
-    const mesaj =
-      waMesaji ||
-      waMetniOlustur({
-        ogrenci,
-        secilenHafta: '',
-        haftaBitis: '',
-        gunVerileri: [],
-        denemeler: [],
-        kocNotu,
-        ozet: {
-          calismaGun: data?.calismaGunSayisi ?? 0,
-          toplamSaat: data?.toplamSaat ?? 0,
-          gorevOran: data?.gorevTamamlama ?? 0,
-          sonDenemeNet: data?.sonDenemeNet,
-        },
-      });
-    window.open(`https://wa.me/${telefon}?text=${encodeURIComponent(mesaj)}`, '_blank');
-  };
+  const pdfGorunur = !!(onizleme || rapor);
 
   return (
     <Card style={{ padding: 18 }}>
+      {/* Başlık */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14 }}>
         <Avatar isim={ogrenci.isim} renk={renkler[index % renkler.length]} boyut={44} />
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -201,6 +53,7 @@ export default function RaporKarti({ ogrenci, data, index, onTelefonGuncelle, s 
         </div>
       </div>
 
+      {/* KPI grid */}
       <div
         style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8, marginBottom: 14 }}
       >
@@ -224,6 +77,7 @@ export default function RaporKarti({ ogrenci, data, index, onTelefonGuncelle, s 
         ))}
       </div>
 
+      {/* Telefon satırı */}
       <div style={{ marginBottom: 12 }}>
         {telefonDuzenle ? (
           <div style={{ display: 'flex', gap: 6 }}>
@@ -296,6 +150,7 @@ export default function RaporKarti({ ogrenci, data, index, onTelefonGuncelle, s 
         )}
       </div>
 
+      {/* Koç notu */}
       <div style={{ marginBottom: 12 }}>
         <textarea
           value={kocNotu}
@@ -318,6 +173,7 @@ export default function RaporKarti({ ogrenci, data, index, onTelefonGuncelle, s 
         />
       </div>
 
+      {/* WA Önizleme */}
       {onizleme && (
         <div
           id="rapor-icerik"
@@ -349,6 +205,7 @@ export default function RaporKarti({ ogrenci, data, index, onTelefonGuncelle, s 
         </div>
       )}
 
+      {/* Eylem butonları */}
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
         <Btn
           onClick={raporOlustur}
@@ -358,9 +215,9 @@ export default function RaporKarti({ ogrenci, data, index, onTelefonGuncelle, s 
         >
           {yukleniyor ? '⏳ Hazırlanıyor...' : onizleme ? '🔄 Yenile' : '📝 Rapor Oluştur'}
         </Btn>
-        {onizleme && (
+        {pdfGorunur && (
           <Btn
-            onClick={() => window.print()}
+            onClick={() => yazdirRapor(rapor)}
             variant="outline"
             style={{ padding: '8px 10px', fontSize: 12 }}
           >
@@ -368,7 +225,7 @@ export default function RaporKarti({ ogrenci, data, index, onTelefonGuncelle, s 
           </Btn>
         )}
         <button
-          onClick={waGonder}
+          onClick={() => waGonder()}
           disabled={!telefon || (!onizleme && !rapor)}
           style={{
             flex: 2,
@@ -402,3 +259,11 @@ export default function RaporKarti({ ogrenci, data, index, onTelefonGuncelle, s 
     </Card>
   );
 }
+
+RaporKarti.propTypes = {
+  ogrenci: PropTypes.object.isRequired,
+  data: PropTypes.object,
+  index: PropTypes.number.isRequired,
+  onTelefonGuncelle: PropTypes.func.isRequired,
+  s: PropTypes.object.isRequired,
+};

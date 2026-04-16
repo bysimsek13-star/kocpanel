@@ -1,5 +1,27 @@
 import { GUN_ETIKET } from '../utils/programAlgoritma';
 
+// Kaydedilmiş rapordan yazdırılabilir metin üret (PDF / yeni pencere)
+export function raporMetniOlustur(rapor, ogrenciIsim) {
+  const satirlar = ['📋 ElsWay Haftalık Koç Raporu'];
+  if (ogrenciIsim) satirlar.push(`Öğrenci: ${ogrenciIsim}`);
+  if (rapor.haftaBaslangic)
+    satirlar.push(`Dönem: ${rapor.haftaBaslangic} → ${rapor.haftaBitis || '—'}`);
+  satirlar.push('');
+  if (rapor.calismaGunSayisi != null) satirlar.push(`📅 Çalışma: ${rapor.calismaGunSayisi} gün`);
+  if (rapor.toplamSaat != null) satirlar.push(`⏱ Süre: ${rapor.toplamSaat} saat`);
+  if (rapor.gorevTamamlama != null) satirlar.push(`✅ Görev: %${rapor.gorevTamamlama}`);
+  if (rapor.sonDenemeNet != null) satirlar.push(`📊 Son net: ${rapor.sonDenemeNet}`);
+  if (rapor.ozetMetni) {
+    satirlar.push('');
+    satirlar.push(`📝 ${rapor.ozetMetni}`);
+  }
+  if (rapor.kocNotu) {
+    satirlar.push('');
+    satirlar.push(`Koç notu: ${rapor.kocNotu}`);
+  }
+  return satirlar.join('\n');
+}
+
 export function addDays(str, n) {
   const d = new Date(str + 'T00:00:00');
   d.setDate(d.getDate() + n);

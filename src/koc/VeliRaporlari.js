@@ -11,12 +11,19 @@ import { haftaBaslangici, programV2ToGorevler } from '../utils/programAlgoritma'
 import { logIstemciHatasi } from '../utils/izleme';
 import RaporKarti from './RaporKarti';
 
+const FILTRE_SECENEKLERI = [
+  { deger: 'tumu', etiket: 'Tümü' },
+  { deger: 'son1ay', etiket: 'Son 1 Ay' },
+  { deger: 'son1hafta', etiket: 'Son 1 Hafta' },
+];
+
 export default function VeliRaporlariSayfasi({ ogrenciler, onGeri }) {
   const { s } = useTheme();
   const mobil = useMobil();
   const toast = useToast();
   const [veriler, setVeriler] = useState({});
   const [yukleniyor, setYukleniyor] = useState(true);
+  const [filtre, setFiltre] = useState('tumu');
 
   const getir = async () => {
     setYukleniyor(true);
@@ -83,6 +90,20 @@ export default function VeliRaporlariSayfasi({ ogrenciler, onGeri }) {
     [veriler]
   );
 
+  const filtrelenmisOgrenciler = useMemo(() => {
+    if (filtre === 'tumu' || yukleniyor) return ogrenciler;
+    const simdi = new Date();
+    return ogrenciler.filter(o => {
+      const sonRapor = veriler[o.id]?.sonRapor;
+      if (!sonRapor) return false;
+      const raporTarihi = new Date((sonRapor.haftaBitis || sonRapor.olusturma || '') + 'T00:00:00');
+      const gunFark = (simdi - raporTarihi) / (1000 * 60 * 60 * 24);
+      if (filtre === 'son1hafta') return gunFark <= 7;
+      if (filtre === 'son1ay') return gunFark <= 30;
+      return true;
+    });
+  }, [ogrenciler, veriler, filtre, yukleniyor]);
+
   return (
     <div style={{ padding: mobil ? 16 : 28 }}>
       <div
@@ -98,6 +119,26 @@ export default function VeliRaporlariSayfasi({ ogrenciler, onGeri }) {
           ← Geri
         </Btn>
         <h2 style={{ fontSize: 20, fontWeight: 700, color: s.text, margin: 0 }}>Veli Raporları</h2>
+        <select
+          value={filtre}
+          onChange={e => setFiltre(e.target.value)}
+          aria-label="Tarih filtresi"
+          style={{
+            fontSize: 11,
+            background: s.surface2,
+            border: `1px solid ${s.border}`,
+            borderRadius: 8,
+            padding: '5px 10px',
+            color: s.text2,
+            cursor: 'pointer',
+          }}
+        >
+          {FILTRE_SECENEKLERI.map(f => (
+            <option key={f.deger} value={f.deger}>
+              {f.etiket}
+            </option>
+          ))}
+        </select>
         <div style={{ marginLeft: 'auto', fontSize: 12, color: s.text3, fontWeight: 600 }}>
           {raporBekleyen} öğrenci için rapor bekliyor
         </div>
@@ -107,6 +148,8 @@ export default function VeliRaporlariSayfasi({ ogrenciler, onGeri }) {
         <LoadingState />
       ) : ogrenciler.length === 0 ? (
         <EmptyState mesaj="Henüz öğrenci yok" icon="📋" />
+      ) : filtrelenmisOgrenciler.length === 0 ? (
+        <EmptyState mesaj="Bu dönemde rapor bulunamadı" icon="📋" />
       ) : (
         <div
           style={{
@@ -115,7 +158,7 @@ export default function VeliRaporlariSayfasi({ ogrenciler, onGeri }) {
             gap: 16,
           }}
         >
-          {ogrenciler.map((o, i) => (
+          {filtrelenmisOgrenciler.map((o, i) => (
             <RaporKarti
               key={o.id}
               ogrenci={o}
