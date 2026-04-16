@@ -301,6 +301,33 @@ Her görevde şu adımlar zorunludur:
 
 Test yoksa görev tamamlanmış sayılmaz.
 
+### Test yazma standardı
+
+**Mock obje üretimi — factory kullan:**
+```js
+// YANLIŞ
+const koc = { uid: 'k1', isim: 'Test', rol: 'koc', aktif: true, ... };
+
+// DOĞRU
+import { makeKoc, makeOgrenci, makeDeneme } from './factories';
+const koc = makeKoc({ uid: 'k1' });         // sadece farkı override et
+const ogrenci = makeOgrenci({ tur: 'lgs' }); // geri kalan default gelir
+```
+
+Factory dosyaları: `src/__tests__/factories/index.js`
+— `makeKoc`, `makeOgrenci`, `makeVeli`, `makeAdmin`, `makeHaftalikProgram`, `makeDeneme`
+
+**Kapsam önceliği:**
+1. Saf fonksiyon (util) → birim testi, her dal için ayrı case
+2. Bileşen → en az render testi; kullanıcı etkileşimi varsa etkileşim testi
+3. Hook → `renderHook` ile state/side-effect doğrulaması
+4. Firestore rules → `src/__tests__/firestore_rules.test.js`'e ekle
+
+**Yasak:**
+- `console.log` bırakma — test çıktısını kirletir
+- `setTimeout` / `sleep` ile zamanlama hilelemek — `waitFor` kullan
+- Aynı senaryoyu iki farklı dosyada test etmek — tek yer seç
+
 ## Operasyonel Hatırlatıcılar
 
 ### Her geliştirme oturumunda
