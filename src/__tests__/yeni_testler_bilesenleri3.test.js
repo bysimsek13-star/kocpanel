@@ -4,6 +4,7 @@
  *         DuyuruMerkezi, SinavTakvimi, PlaylistDetay, VideoGorusme
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { makeKoc } from './factories';
 import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 
@@ -455,7 +456,7 @@ describe('VideoGorusme', () => {
     ogrenciId: 'ogr1',
     kocId: 'koc1',
   };
-  const mockKullanici = { uid: 'koc1', rol: 'koc' };
+  const mockKullanici = makeKoc({ uid: 'koc1' });
 
   it('render olur (bağlanıyor durumu)', async () => {
     // Agora mock'u join hiçbir şey döndürmesin

@@ -13,6 +13,7 @@ import React from 'react';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
 import { renderWithProviders, renderSade, mockS } from './testUtils';
+import { makeKoc } from './factories';
 
 afterEach(() => cleanup());
 
@@ -115,7 +116,7 @@ import OgrenciRutinKarti from '../koc/gunluk/OgrenciRutinKarti';
 import RutinGirisFormu from '../koc/gunluk/RutinGirisFormu';
 import GuncelleModal from '../koc/hedef/GuncelleModal';
 
-const mockKullanici = { uid: 'test-uid', email: 'test@test.com' };
+const mockKullanici = makeKoc({ uid: 'test-uid', email: 'test@test.com' });
 const ogrenciler = [
   { id: 'o1', isim: 'Ali Yılmaz', tur: 'tyt_12' },
   { id: 'o2', isim: 'Zeynep Kaya', tur: 'lgs' },

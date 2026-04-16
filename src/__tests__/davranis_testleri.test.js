@@ -24,15 +24,16 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { renderWithProviders, renderSade, mockS } from './testUtils';
+import { makeKoc } from './factories';
 
 afterEach(() => cleanup());
 
 // ─── AuthContext override: canEdit + isAdmin ─────────────────────────────────
 vi.mock('../context/AuthContext', () => ({
   useAuth: () => ({
-    kullanici: { uid: 'test-uid', email: 'test@test.com' },
+    kullanici: makeKoc({ uid: 'test-uid', email: 'test@test.com' }),
     rol: 'koc',
-    userData: { uid: 'test-uid', isim: 'Test Koç', rol: 'koc' },
+    userData: makeKoc({ uid: 'test-uid' }),
     yukleniyor: false,
     cikisYap: vi.fn(),
     canEdit: vi.fn(() => true),

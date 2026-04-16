@@ -14,6 +14,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { screen, waitFor, cleanup, fireEvent, render, act } from '@testing-library/react';
 import { renderHook } from '@testing-library/react';
 import { renderWithProviders, mockS } from './testUtils';
+import { makeKoc } from './factories';
 
 afterEach(() => cleanup());
 
@@ -174,9 +175,9 @@ import TopluIslemlerSayfasi from '../koc/TopluIslemler';
 // AuthContext'e canEdit ekliyoruz — OgrenciDetay bunu kullanıyor
 vi.mock('../context/AuthContext', () => ({
   useAuth: () => ({
-    kullanici: { uid: 'test-uid', email: 'test@test.com' },
+    kullanici: makeKoc({ uid: 'test-uid', email: 'test@test.com' }),
     rol: 'koc',
-    userData: { uid: 'test-uid', isim: 'Test Kullanıcı', rol: 'koc' },
+    userData: makeKoc({ uid: 'test-uid', isim: 'Test Kullanıcı' }),
     yukleniyor: false,
     cikisYap: vi.fn(),
     canEdit: vi.fn(() => true),
@@ -185,7 +186,7 @@ vi.mock('../context/AuthContext', () => ({
   AuthProvider: ({ children }) => children,
 }));
 
-const mockKullanici = { uid: 'test-uid', email: 'test@test.com' };
+const mockKullanici = makeKoc({ uid: 'test-uid', email: 'test@test.com' });
 const ogrenciler = [
   { id: 'o1', isim: 'Ali Yılmaz', tur: 'tyt_12' },
   { id: 'o2', isim: 'Zeynep Kaya', tur: 'lgs' },

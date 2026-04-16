@@ -62,3 +62,19 @@ function tamamlandiIsaretle(program, tamamlananKeys = []) {
 }
 
 export { slotBuild, boshHaftaBuild, programBuild, doluHaftaBuild, tamamlandiIsaretle, GUNLER };
+
+// ─── make* alias ──────────────────────────────────────────────────────────────
+export const makeHaftalikProgram = (override = {}) => ({
+  hafta: '2026-04-14',
+  gunler: {
+    pazartesi: [{ tip: 'mat', baslik: 'Türev', sure: 60, tamamlandi: false }],
+    sali: [],
+    carsamba: [],
+    persembe: [],
+    cuma: [],
+    cumartesi: [],
+    pazar: [],
+  },
+  tamamlandi: {},
+  ...override,
+});

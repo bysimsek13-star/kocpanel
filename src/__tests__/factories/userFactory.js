@@ -82,3 +82,51 @@ function ogrenciListesiBuild(count = 3, overrides = {}) {
 }
 
 export { kullaniciBuild, kocBuild, ogrenciBuild, veliBuild, adminBuild, ogrenciListesiBuild };
+
+// ─── make* alias'ları (kısa isimler) ─────────────────────────────────────────
+export const makeKoc = (override = {}) => ({
+  uid: 'koc-uid-1',
+  isim: 'Test Koç',
+  email: 'koc@test.com',
+  rol: 'koc',
+  aktif: true,
+  sonGiris: null,
+  ...override,
+});
+
+export const makeOgrenci = (override = {}) => ({
+  uid: 'ogrenci-uid-1',
+  isim: 'Test Öğrenci',
+  email: 'ogrenci@test.com',
+  rol: 'ogrenci',
+  kocId: 'koc-uid-1',
+  aktif: true,
+  tur: 'sayisal',
+  riskDurumu: 'yok',
+  riskPuan: 0,
+  sonDenemeNet: null,
+  sonDenemeTarih: null,
+  haftalikTamamlamaOrani: 0,
+  sonCalismaTarihi: null,
+  toplamCalismaGunu: 0,
+  ...override,
+});
+
+export const makeVeli = (override = {}) => ({
+  uid: 'veli-uid-1',
+  isim: 'Test Veli',
+  email: 'veli@test.com',
+  rol: 'veli',
+  aktif: true,
+  ogrenciUid: 'ogrenci-uid-1',
+  ...override,
+});
+
+export const makeAdmin = (override = {}) => ({
+  uid: 'admin-uid-1',
+  isim: 'Test Admin',
+  email: 'admin@test.com',
+  rol: 'admin',
+  aktif: true,
+  ...override,
+});

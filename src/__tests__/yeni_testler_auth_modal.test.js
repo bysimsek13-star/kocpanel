@@ -2,6 +2,7 @@
  * Yeni Testler — AuthContext, KocPanelUi, DenemeModal
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { makeKoc } from './factories';
 import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { renderHook } from '@testing-library/react';
@@ -75,14 +76,14 @@ describe('AuthProvider ve useAuth()', () => {
     const { onSnapshot } = await import('firebase/firestore');
 
     onAuthStateChanged.mockImplementation((_, cb) => {
-      cb({ uid: 'test-uid', email: 'test@test.com' });
+      cb(makeKoc({ uid: 'test-uid', email: 'test@test.com' }));
       return () => {};
     });
 
     onSnapshot.mockImplementation((_ref, cb) => {
       cb({
         exists: () => true,
-        data: () => ({ rol: 'koc', isim: 'Test Koç', aktif: true }),
+        data: () => makeKoc({ uid: 'test-uid' }),
       });
       return () => {};
     });
