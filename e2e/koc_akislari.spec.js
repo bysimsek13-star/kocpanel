@@ -28,6 +28,16 @@ async function ogrenciGirisYap(page) {
   await page.waitForURL(/\/ogrenci/, { timeout: 15000 });
 }
 
+async function onboardingKapat(page) {
+  try {
+    const skipBtn = page.locator('text=/atla|kapat|sonra/i').first();
+    if (await skipBtn.isVisible({ timeout: 3000 })) {
+      await skipBtn.click();
+      await page.waitForTimeout(500);
+    }
+  } catch {}
+}
+
 // ─── Koç Panel Akışları ───────────────────────────────────────────────────────
 
 test.describe('Koç Paneli Akışları', () => {
@@ -37,12 +47,14 @@ test.describe('Koç Paneli Akışları', () => {
 
   test('koç başarıyla giriş yapar ve panele yönlenir', async ({ page }) => {
     await kocGirisYap(page);
+    await onboardingKapat(page);
     await expect(page).toHaveURL(/\/koc/);
     await expect(page.locator('body')).not.toContainText('Giriş Yap');
   });
 
   test('koç mesajlar sayfasına gider', async ({ page }) => {
     await kocGirisYap(page);
+    await onboardingKapat(page);
     await page.locator('text=Mesajlar').first().click();
     await page.waitForURL(/mesajlar/, { timeout: 5000 });
     await expect(page.locator('body')).toContainText('Mesajlar');
@@ -50,6 +62,7 @@ test.describe('Koç Paneli Akışları', () => {
 
   test('koç haftalık program sayfasına gider', async ({ page }) => {
     await kocGirisYap(page);
+    await onboardingKapat(page);
     await page.locator('text=/Haftalık/i').first().click();
     await page.waitForTimeout(2000);
     await expect(page.locator('body')).toContainText(/Pazartesi|Salı|program/i);
@@ -57,6 +70,7 @@ test.describe('Koç Paneli Akışları', () => {
 
   test('koç hedef takibi sayfasına gider', async ({ page }) => {
     await kocGirisYap(page);
+    await onboardingKapat(page);
     await page.locator('text=/Hedef/i').first().click();
     await page.waitForTimeout(2000);
     await expect(page.locator('body')).toContainText(/hedef|Hedef/i);
@@ -64,6 +78,7 @@ test.describe('Koç Paneli Akışları', () => {
 
   test('koç öğrencilerim sayfasını açar', async ({ page }) => {
     await kocGirisYap(page);
+    await onboardingKapat(page);
     await page.locator('text=/Öğrenci/i').first().click();
     await page.waitForTimeout(2000);
     await expect(page.locator('body')).toContainText(/öğrenci|Öğrenci/i);
@@ -72,6 +87,7 @@ test.describe('Koç Paneli Akışları', () => {
   test('koç paneli mobilde yatay scroll yapmaz', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await kocGirisYap(page);
+    await onboardingKapat(page);
     const bodyWidth = await page.evaluate(() => document.body.scrollWidth);
     const viewportWidth = await page.evaluate(() => window.innerWidth);
     expect(bodyWidth).toBeLessThanOrEqual(viewportWidth + 5);
@@ -79,6 +95,7 @@ test.describe('Koç Paneli Akışları', () => {
 
   test('koç çıkış yapar ve giriş sayfasına döner', async ({ page }) => {
     await kocGirisYap(page);
+    await onboardingKapat(page);
     const cikisBtn = page.locator('button', { hasText: /çıkış|Çıkış/i }).first();
     if (await cikisBtn.isVisible()) {
       await cikisBtn.click();
@@ -103,6 +120,7 @@ test.describe('Öğrenci Paneli Akışları', () => {
   test('öğrenci paneli mobilde yatay scroll yapmaz', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await ogrenciGirisYap(page);
+    await page.waitForLoadState('networkidle');
     const bodyWidth = await page.evaluate(() => document.body.scrollWidth);
     const viewportWidth = await page.evaluate(() => window.innerWidth);
     expect(bodyWidth).toBeLessThanOrEqual(viewportWidth + 5);
