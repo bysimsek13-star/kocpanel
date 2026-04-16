@@ -30,11 +30,19 @@ async function ogrenciGirisYap(page) {
 
 async function onboardingKapat(page) {
   try {
-    const skipBtn = page.locator('text=/atla|kapat|sonra/i').first();
+    await page.waitForTimeout(1000);
+    const skipBtn = page
+      .locator(
+        'button:has-text("atla"), button:has-text("Atla"), button:has-text("sonra"), button:has-text("Kapat")'
+      )
+      .first();
     if (await skipBtn.isVisible({ timeout: 3000 })) {
-      await skipBtn.click();
-      await page.waitForTimeout(500);
+      await skipBtn.click({ force: true });
+      await page.waitForTimeout(1000);
     }
+    // Overlay hâlâ varsa ESC ile kapat
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(500);
   } catch {}
 }
 
@@ -120,7 +128,7 @@ test.describe('Öğrenci Paneli Akışları', () => {
   test('öğrenci paneli mobilde yatay scroll yapmaz', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await ogrenciGirisYap(page);
-    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(3000);
     const bodyWidth = await page.evaluate(() => document.body.scrollWidth);
     const viewportWidth = await page.evaluate(() => window.innerWidth);
     expect(bodyWidth).toBeLessThanOrEqual(viewportWidth + 5);
