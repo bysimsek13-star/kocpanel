@@ -39,6 +39,7 @@ async function seed() {
     isim: 'Test Koç',
     email: 'test.koc@elsway.com',
     aktif: true,
+    onboardingTamamlandi: true,
   });
   console.warn('✓ kullanicilar/kocUid yazıldı');
 
