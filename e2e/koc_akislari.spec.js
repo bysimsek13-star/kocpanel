@@ -60,7 +60,9 @@ test.describe('Koç Paneli Akışları', () => {
     await expect(page.locator('body')).not.toContainText('Giriş Yap');
   });
 
-  test('koç mesajlar sayfasına gider', async ({ page }) => {
+  // Navigasyon testleri masaüstüne özgüdür — mobil alt tabbar farklı label kullanır
+  test('koç mesajlar sayfasına gider', async ({ page }, testInfo) => {
+    if (testInfo.project.name === 'mobile') testInfo.skip(true, 'Mobil alt tabbar farklı label kullanır');
     await kocGirisYap(page);
     await onboardingKapat(page);
     await page.locator('text=Mesajlar').first().click();
@@ -68,7 +70,8 @@ test.describe('Koç Paneli Akışları', () => {
     await expect(page.locator('body')).toContainText('Mesajlar');
   });
 
-  test('koç haftalık program sayfasına gider', async ({ page }) => {
+  test('koç haftalık program sayfasına gider', async ({ page }, testInfo) => {
+    if (testInfo.project.name === 'mobile') testInfo.skip(true, 'Mobil alt tabbar farklı label kullanır');
     await kocGirisYap(page);
     await onboardingKapat(page);
     await page.locator('text=/Haftalık/i').first().click();
@@ -76,7 +79,8 @@ test.describe('Koç Paneli Akışları', () => {
     await expect(page.locator('body')).toContainText(/Pazartesi|Salı|program/i);
   });
 
-  test('koç hedef takibi sayfasına gider', async ({ page }) => {
+  test('koç hedef takibi sayfasına gider', async ({ page }, testInfo) => {
+    if (testInfo.project.name === 'mobile') testInfo.skip(true, 'Mobil alt tabbar farklı label kullanır');
     await kocGirisYap(page);
     await onboardingKapat(page);
     await page.locator('text=/Hedef/i').first().click();
@@ -84,7 +88,8 @@ test.describe('Koç Paneli Akışları', () => {
     await expect(page.locator('body')).toContainText(/hedef|Hedef/i);
   });
 
-  test('koç öğrencilerim sayfasını açar', async ({ page }) => {
+  test('koç öğrencilerim sayfasını açar', async ({ page }, testInfo) => {
+    if (testInfo.project.name === 'mobile') testInfo.skip(true, 'Mobil alt tabbar farklı label kullanır');
     await kocGirisYap(page);
     await onboardingKapat(page);
     await page.locator('text=/Öğrenci/i').first().click();
