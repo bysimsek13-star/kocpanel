@@ -6,6 +6,20 @@ sürekli güncellenen bir bağlam dosyasıdır. Kod üzerinde çalışmadan önc
 
 ---
 
+## Son Oturumda Yapılanlar (2026-04-16) — Temiz Teknik Bakım
+
+### BAKIM: Artık kodlar temizlendi, belgeler güncellendi.
+
+| Dosya | Düzeltme |
+|---|---|
+| `functions/package.json` | `"shell": "react-scripts start"` ve `"start": "npm run shell"` silindi — CRA döneminden kalan anlamsız scriptler |
+| `ARCHITECTURE.md` | N+1 notu güncellendi: `useKocVeri.js` → `Promise.allSettled` ile paralel okuma (2026-04-15 düzeltildi) |
+| `ARCHITECTURE.md` | `memoryLocalCache()` açıklaması düzeltildi: Firebase'in varsayılan cache'ini *kapatan* çağrı olduğu netleştirildi |
+| `ARCHITECTURE.md` | Güvenlik açıkları bölümü güncellendi: `AGORA_APP_CERT` taşıması tamamlandı, App Check durumu netleştirildi |
+| `ROADMAP_AI.md` | "GitHub'a push" maddesi silindi — tamamlandı |
+
+---
+
 ## Son Oturumda Yapılanlar (2026-04-15) — Üçüncü Tur AI Denetimi
 
 ### AI_REVIEW_3: Son bulgular. 1133 test yeşil.
@@ -534,14 +548,6 @@ for (const ogr of snap.docs) {
 **Dosya:** `src/pages/OgrenciPaneli.js` + `src/App.js`
 `VideoGorusme` import'unu `React.lazy` ile sar. Şu an tüm öğrenci paneli
 yüklenirken 1.57 MB VideoGorusme indiriliyor.
-
-#### GitHub'a push
-Repo zaten private olarak açık. Yapılacaklar:
-1. Proje kökünde `git init` + `git remote add origin <repo-url>`
-2. `.gitignore` zaten doğru kurulu (`serviceAccount.json`, `.env*` hariç tutulmuş)
-3. İlk commit + push
-4. Sonraki oturumlarda her görev sonrası commit atmak yeterli.
-**Not:** Push öncesi `git status` ile hangi dosyaların gideceğini mutlaka kontrol et.
 
 #### Firebase App Check — Konsol Aktivasyonu (Son Adım)
 

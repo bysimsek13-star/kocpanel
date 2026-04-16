@@ -71,7 +71,7 @@ async function _veliIsle({ veliEmail, veliSifre, ogrenciUid, ogrenciIsim }) {
 // Frontend eklemeden önce çağırır.
 // Döner: { durum: 'yok'|'aktif'|'pasif'|'cakisma'|'orphan', uid?, rol?, aktif?, isim?, kocId? }
 // ═══════════════════════════════════════════════════════
-exports.emailKontrol = onCall(async (request) => {
+exports.emailKontrol = onCall({ enforceAppCheck: true }, async (request) => {
   await kocVeyaAdminKontrol(request);
   const { email, beklenenRol } = request.data;
   if (!email) throw new HttpsError('invalid-argument', 'email gerekli.');
@@ -106,7 +106,7 @@ exports.emailKontrol = onCall(async (request) => {
 // 1. kullaniciOlustur
 // Sadece { durum: 'yok' } olan e-postalar için.
 // ═══════════════════════════════════════════════════════
-exports.kullaniciOlustur = onCall(async (request) => {
+exports.kullaniciOlustur = onCall({ enforceAppCheck: true }, async (request) => {
   appCheckKontrol(request);
   const arayan = await kocVeyaAdminKontrol(request);
 
@@ -261,7 +261,7 @@ exports.kullaniciOlustur = onCall(async (request) => {
 // 2. kullaniciAktiveEt
 // { durum: 'pasif' } olan hesabı yeniden aç.
 // ═══════════════════════════════════════════════════════
-exports.kullaniciAktiveEt = onCall(async (request) => {
+exports.kullaniciAktiveEt = onCall({ enforceAppCheck: true }, async (request) => {
   const arayan = await kocVeyaAdminKontrol(request);
   const { uid, kocId: kocIdPayload, tur, beklenenSaat } = request.data;
   if (!uid) throw new HttpsError('invalid-argument', 'uid gerekli.');
@@ -316,7 +316,7 @@ exports.kullaniciAktiveEt = onCall(async (request) => {
 // 3. kullaniciPasifYap
 // Pasife al + refresh token'ları iptal et (oturumu düşür).
 // ═══════════════════════════════════════════════════════
-exports.kullaniciPasifYap = onCall(async (request) => {
+exports.kullaniciPasifYap = onCall({ enforceAppCheck: true }, async (request) => {
   const arayan = await adminKontrol(request);
   const { uid } = request.data;
   if (!uid) throw new HttpsError('invalid-argument', 'uid gerekli.');
@@ -350,7 +350,7 @@ exports.kullaniciPasifYap = onCall(async (request) => {
 // 4. kullaniciSil  — ANA YÖNTEM DEĞİL
 // Sadece boş/hatalı hesaplar. onay:"SIL" zorunlu.
 // ═══════════════════════════════════════════════════════
-exports.kullaniciSil = onCall(async (request) => {
+exports.kullaniciSil = onCall({ enforceAppCheck: true }, async (request) => {
   const arayan = await adminKontrol(request);
 
   try {
@@ -403,7 +403,7 @@ exports.kullaniciSil = onCall(async (request) => {
 // ═══════════════════════════════════════════════════════
 // 5. rolDegistir — rol çakışması çözümü
 // ═══════════════════════════════════════════════════════
-exports.rolDegistir = onCall(async (request) => {
+exports.rolDegistir = onCall({ enforceAppCheck: true }, async (request) => {
   const arayan = await adminKontrol(request);
 
   try {
@@ -454,7 +454,7 @@ exports.rolDegistir = onCall(async (request) => {
 // ═══════════════════════════════════════════════════════
 // 6. kocAta
 // ═══════════════════════════════════════════════════════
-exports.kocAta = onCall(async (request) => {
+exports.kocAta = onCall({ enforceAppCheck: true }, async (request) => {
   appCheckKontrol(request);
   const arayan = await adminKontrol(request);
 
@@ -503,7 +503,7 @@ exports.kocAta = onCall(async (request) => {
 // ═══════════════════════════════════════════════════════
 // 7. kocSilVeOgrenciTasi
 // ═══════════════════════════════════════════════════════
-exports.kocSilVeOgrenciTasi = onCall(async (request) => {
+exports.kocSilVeOgrenciTasi = onCall({ enforceAppCheck: true }, async (request) => {
   const arayan = await adminKontrol(request);
   const { kocUid, hedefKocUid } = request.data;
   if (!kocUid) throw new HttpsError('invalid-argument', 'kocUid gerekli.');
@@ -536,7 +536,7 @@ exports.kocSilVeOgrenciTasi = onCall(async (request) => {
 // ═══════════════════════════════════════════════════════
 // 8. veliOgrenciBagla
 // ═══════════════════════════════════════════════════════
-exports.veliOgrenciBagla = onCall(async (request) => {
+exports.veliOgrenciBagla = onCall({ enforceAppCheck: true }, async (request) => {
   const arayan = await kocVeyaAdminKontrol(request);
   const { ogrenciUid, veliEmail } = request.data;
   if (!ogrenciUid || !veliEmail)
@@ -573,7 +573,7 @@ exports.veliOgrenciBagla = onCall(async (request) => {
 // 9. sifreSifirlamaGonder
 // Admin: reset link üret (mail entegrasyonu için genişletilebilir)
 // ═══════════════════════════════════════════════════════
-exports.sifreSifirlamaGonder = onCall(async (request) => {
+exports.sifreSifirlamaGonder = onCall({ enforceAppCheck: true }, async (request) => {
   const arayan = await adminKontrol(request);
   const { email } = request.data;
   if (!email) throw new HttpsError('invalid-argument', 'email gerekli.');
@@ -594,7 +594,7 @@ exports.sifreSifirlamaGonder = onCall(async (request) => {
 // ═══════════════════════════════════════════════════════
 // kocSil — Admin paneli koç silme
 // ═══════════════════════════════════════════════════════
-exports.kocSil = onCall(async (request) => {
+exports.kocSil = onCall({ enforceAppCheck: true }, async (request) => {
   const arayan = await adminKontrol(request);
   const { kocUid } = request.data;
   if (!kocUid) throw new HttpsError('invalid-argument', 'kocUid gerekli.');

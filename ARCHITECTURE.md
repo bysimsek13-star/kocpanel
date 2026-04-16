@@ -192,7 +192,7 @@ Bileşenlerde her zaman `ogrenciTur || userData?.tur` kullan — eski öğrencil
 Vendor chunk'lar: `vendor-firebase` (534kB), `vendor-recharts` (377kB), `vendor-react` (179kB).
 
 ### Firestore Cache
-`memoryLocalCache()` bilerek kapalı. Tüm okumalar network'ten gelir.
+`memoryLocalCache()` çağrısı Firebase'in varsayılan persistent cache'ini **kapatır** — tüm okumalar network'ten gelir (bilerek). Offline destek veya yerel cache istenmiyor; her zaman güncel veri öncelikli.
 
 ### secondaryAuth
 Admin yeni kullanıcı oluştururken kendi oturumunu kaybetmemek için `secondaryAuth` kullanılır (`firebase.js`).
@@ -213,9 +213,9 @@ Callable functions (`onCall`) otomatik olarak Firebase Auth doğrulaması yapar.
 `request.auth` üzerinden uid ve rol kontrol edilir.
 
 ### Bilinen Açıklar (ROADMAP'te)
-- `goruntulReddet` endpoint'i `onRequest` ile public — auth yok (GÜVENLİK-2)
-- `AGORA_APP_CERT` kodda gömülü, `functions/.env`'e taşınmalı (GÜVENLİK-1)
-- Firebase App Check henüz aktif değil
+- `goruntulReddet` endpoint'i `onRequest` ile public — auth yok; token + zaman penceresi ile korunuyor (GÜVENLİK-2, kasıtlı)
+- `AGORA_APP_CERT` → `functions/.env`'e taşındı (2026-04-15 tamamlandı)
+- Firebase App Check — kod tarafı hazır (`ReCaptchaV3Provider` init + `appCheckKontrol()` CF'lerde); Console aktivasyonu bekliyor
 
 ---
 
@@ -284,7 +284,7 @@ Limit aşan dosyalar `BilesenAna.js` + `BilesenUtils.js` + `BilesenAlt.js` şema
 ## Bilinen Teknik Borçlar
 
 1. **Inline style yoğunluğu** — tüm stilleme `style={{ ... }}` ile yapılmış, CSS modülü veya styled-components yok
-2. **N+1 Firestore okuma** — `useKocVeri.js` her öğrenci için ayrı `program_v2` + deneme sorgusu yapıyor; 50+ öğrencide sorun çıkarır
+2. **N+1 Firestore okuma** — `useKocVeri.js` → `Promise.allSettled` ile paralel okuma (2026-04-15 düzeltildi); bir öğrenci hatası artık diğerlerini etkilemiyor
 3. **console.warn/error temizliği** — üretimde kontrolsüz log izi var, `izleme.js` kullanımı tutarsız
 4. **App Check aktif değil** — yetkisiz uygulamaların Firestore'a erişimini engellemez
 5. **`goruntulReddet` auth yok** — bkz. Güvenlik Mimarisi

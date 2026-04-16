@@ -131,7 +131,7 @@ async function videolariFirestoreYaz(playlistRef, items, sureler) {
 // ═══════════════════════════════════════════════════════
 // playlistEkle
 // ═══════════════════════════════════════════════════════
-exports.playlistEkle = onCall({ region: 'europe-west1' }, async (request) => {
+exports.playlistEkle = onCall({ region: 'europe-west1', enforceAppCheck: true }, async (request) => {
   const arayan = await arayaniBul(request);
   if (arayan.rol !== 'koc' && arayan.rol !== 'admin') {
     throw new HttpsError('permission-denied', 'Sadece koçlar playlist ekleyebilir.');
@@ -187,7 +187,7 @@ exports.playlistEkle = onCall({ region: 'europe-west1' }, async (request) => {
 // ═══════════════════════════════════════════════════════
 // playlistYenile
 // ═══════════════════════════════════════════════════════
-exports.playlistYenile = onCall({ region: 'europe-west1' }, async (request) => {
+exports.playlistYenile = onCall({ region: 'europe-west1', enforceAppCheck: true }, async (request) => {
   const arayan = await arayaniBul(request);
   if (arayan.rol !== 'koc' && arayan.rol !== 'admin') {
     throw new HttpsError('permission-denied', 'Sadece koçlar playlist yenileyebilir.');
@@ -244,7 +244,7 @@ exports.playlistYenile = onCall({ region: 'europe-west1' }, async (request) => {
 // ═══════════════════════════════════════════════════════
 // AGORA RTC TOKEN
 // ═══════════════════════════════════════════════════════
-exports.agoraToken = onCall({ region: 'europe-west1' }, async (request) => {
+exports.agoraToken = onCall({ region: 'europe-west1', enforceAppCheck: true }, async (request) => {
   if (!AGORA_APP_ID || !AGORA_APP_CERT) {
     throw new HttpsError('internal', 'Görüntülü görüşme yapılandırılmamış.');
   }

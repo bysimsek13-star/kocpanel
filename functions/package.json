@@ -3,8 +3,6 @@
   "description": "ElsWay Cloud Functions",
   "scripts": {
     "serve": "firebase emulators:start --only functions",
-    "shell": "react-scripts start",
-    "start": "npm run shell",
     "deploy": "firebase deploy --only functions",
     "logs": "firebase functions:log",
     "lint": "eslint . --ext .js --ignore-pattern '__tests__' --max-warnings 20"
