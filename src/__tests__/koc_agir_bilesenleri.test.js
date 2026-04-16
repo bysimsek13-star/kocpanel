@@ -440,6 +440,16 @@ describe('OgrenciEkleForm', () => {
     fireEvent.click(screen.getByText('İptal'));
     expect(onKapat).toHaveBeenCalled();
   });
+
+  it('dogumTarihi alanı görünür ve değişince setDogumTarihi çağrılır', () => {
+    const setDogumTarihi = vi.fn();
+    render(<OgrenciEkleForm {...baseProps} setDogumTarihi={setDogumTarihi} />);
+    const input = screen.getByLabelText('Doğum Tarihi (isteğe bağlı)');
+    expect(input).toBeInTheDocument();
+    expect(input).toHaveAttribute('type', 'date');
+    fireEvent.change(input, { target: { value: '2008-05-15' } });
+    expect(setDogumTarihi).toHaveBeenCalledWith('2008-05-15');
+  });
 });
 
 // ─── useHaftalikProgram — regresyon: merge:true ────────────────────────────────
