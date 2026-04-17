@@ -6,9 +6,8 @@ import { useToast } from '../components/Toast';
 import { useMobil } from '../hooks/useMediaQuery';
 import { renkler } from '../data/konular';
 import { auditLog, AuditTip } from '../utils/auditLog';
-import { LoadingState, ConfirmDialog, ElsWayLogo } from '../components/Shared';
-import TemaSecici from '../components/TemaSecici';
-import { BildirimZili, BildirimPaneli } from '../components/BildirimSistemi';
+import { LoadingState, ConfirmDialog } from '../components/Shared';
+import { BildirimPaneli } from '../components/BildirimSistemi';
 import OgrenciDetay from '../koc/OgrenciDetay';
 import KocPerformansPaneli from '../admin/KocPerformansPaneli';
 import SistemDurumuPaneli from '../admin/SistemDurumuPaneli';
@@ -20,6 +19,7 @@ import KocEkleModal from '../admin/KocEkleModal';
 import KocAtamaModal from '../admin/KocAtamaModal';
 import OgrenciDuzenleModal from '../admin/OgrenciDuzenleModal';
 import MufredatYonetimSayfasi from '../admin/MufredatYonetimSayfasi';
+import TurTopluSync from '../admin/TurTopluSync';
 import YoneticiKoclar from '../admin/YoneticiKoclar';
 import YoneticiOgrenciler from '../admin/YoneticiOgrenciler';
 import YoneticiIstatistik from '../admin/YoneticiIstatistik';
@@ -28,10 +28,12 @@ import {
   ADMIN_MENU_PATHS,
   adminSayfaAnahtariGetir,
   MENU,
-  ALT_TABS,
   UnauthorizedScreen,
 } from './yoneticiPaneliSabitleri';
 import useYoneticiVeri from './useYoneticiVeri';
+import AdminTopBar from './AdminTopBar';
+import AdminSolMenu from './AdminSolMenu';
+import AdminMobilNav from './AdminMobilNav';
 
 export { ADMIN_MENU_PATHS, adminSayfaAnahtariGetir };
 
@@ -206,6 +208,10 @@ export default function YoneticiPaneli() {
         return <SistemDurumuPaneli />;
       case 'mufredat':
         return <MufredatYonetimSayfasi s={s} mobil={mobil} />;
+      case 'tursync':
+        return (
+          <TurTopluSync ogrenciler={ogrenciler} setOgrenciler={setOgrenciler} s={s} mobil={mobil} />
+        );
       default:
         return (
           <YoneticiIstatistik
@@ -224,105 +230,17 @@ export default function YoneticiPaneli() {
     }
   };
 
-  const menuSatir = (item, kapat) => {
-    const on = aktifSayfa === item.key;
-    return (
-      <div
-        key={item.key}
-        onClick={() => {
-          sayfayaGit(item.key);
-          kapat?.();
-        }}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-          padding: '9px 12px',
-          borderRadius: 8,
-          cursor: 'pointer',
-          marginBottom: 1,
-          position: 'relative',
-          background: on ? s.accentSoft : 'transparent',
-          color: on ? s.accent : s.text2,
-          fontWeight: on ? 600 : 500,
-          fontSize: 13,
-        }}
-      >
-        {on && (
-          <div
-            style={{
-              position: 'absolute',
-              left: 0,
-              top: '18%',
-              bottom: '18%',
-              width: 2,
-              background: s.accent,
-              borderRadius: '0 2px 2px 0',
-            }}
-          />
-        )}
-        <span style={{ flex: 1, paddingLeft: on ? 4 : 0 }}>{item.label}</span>
-      </div>
-    );
-  };
-
   const sayfaBasligi = aktifSayfa !== 'ana' ? MENU.find(m => m.key === aktifSayfa)?.label : '';
 
   return (
     <div style={{ minHeight: '100vh', background: s.bg, fontFamily: 'Inter, sans-serif' }}>
-      <div
-        style={{
-          position: 'sticky',
-          top: 0,
-          zIndex: 100,
-          background: s.topBarBg,
-          borderBottom: `1px solid ${s.topBarBorder}`,
-          padding: mobil ? '10px 14px' : '10px 24px',
-          minHeight: 60,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 10,
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <ElsWayLogo size="bar" variant="onDark" />
-          <span style={{ fontSize: 13, color: s.topBarMuted, fontWeight: 600 }}>Yönetici</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <TemaSecici variant="bar" onDarkBar />
-          <BildirimZili onClick={() => setBildirimAcik(v => !v)} />
-          {!mobil && kullanici?.email && (
-            <span
-              style={{
-                fontSize: 12,
-                color: s.topBarMuted,
-                maxWidth: 180,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {kullanici.email}
-            </span>
-          )}
-          <button
-            onClick={cikisYap}
-            style={{
-              background: s.tehlikaSoft,
-              border: `1px solid ${s.border}`,
-              color: s.tehlika,
-              padding: mobil ? '6px 10px' : '7px 14px',
-              borderRadius: 8,
-              cursor: 'pointer',
-              fontSize: 13,
-              fontWeight: 600,
-            }}
-          >
-            Çıkış
-          </button>
-        </div>
-      </div>
+      <AdminTopBar
+        kullanici={kullanici}
+        mobil={mobil}
+        s={s}
+        onBildirimToggle={() => setBildirimAcik(v => !v)}
+        onCikis={cikisYap}
+      />
       <BildirimPaneli acik={bildirimAcik} onKapat={() => setBildirimAcik(false)} />
 
       {kocEkleAcik && <KocEkleModal onKapat={() => setKocEkleAcik(false)} onEkle={verileriGetir} />}
@@ -362,55 +280,13 @@ export default function YoneticiPaneli() {
 
       <div style={{ display: 'flex' }}>
         {!mobil && (
-          <div
-            style={{
-              width: 220,
-              background: s.surface,
-              borderRight: `1px solid ${s.border}`,
-              padding: '14px 10px 24px',
-              position: 'sticky',
-              top: 60,
-              height: 'calc(100vh - 60px)',
-              overflowY: 'auto',
-              flexShrink: 0,
-            }}
-          >
-            <div
-              style={{
-                padding: '6px 12px 14px',
-                borderBottom: `1px solid ${s.border}`,
-                marginBottom: 12,
-              }}
-            >
-              <div style={{ fontSize: 14, fontWeight: 700, color: s.text }}>
-                {kullanici?.email?.split('@')[0] || 'Yönetici'}
-              </div>
-              <div style={{ fontSize: 11, color: s.text3, marginTop: 2 }}>ElsWay Yönetici</div>
-            </div>
-            {[
-              { baslik: 'Yönetim', items: ['ana', 'koclar', 'ogrenciler', 'yasamdongusu'] },
-              { baslik: 'Analiz', items: ['performans', 'auditlog'] },
-              { baslik: 'Sistem', items: ['canli', 'sistem', 'mufredat'] },
-            ].map(grup => (
-              <div key={grup.baslik} style={{ marginBottom: 14 }}>
-                <div
-                  style={{
-                    fontSize: 10,
-                    fontWeight: 700,
-                    color: s.text3,
-                    letterSpacing: '0.08em',
-                    textTransform: 'uppercase',
-                    padding: '4px 12px 6px',
-                  }}
-                >
-                  {grup.baslik}
-                </div>
-                {MENU.filter(m => grup.items.includes(m.key)).map(item => menuSatir(item))}
-              </div>
-            ))}
-          </div>
+          <AdminSolMenu
+            aktifSayfa={aktifSayfa}
+            sayfayaGit={sayfayaGit}
+            kullanici={kullanici}
+            s={s}
+          />
         )}
-
         <div style={{ flex: 1, minWidth: 0, paddingBottom: mobil ? 72 : 0 }}>
           {aktifSayfa !== 'ana' && (
             <div
@@ -445,125 +321,13 @@ export default function YoneticiPaneli() {
       </div>
 
       {mobil && (
-        <div
-          style={{
-            position: 'fixed',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            zIndex: 100,
-            background: s.surface,
-            borderTop: `1px solid ${s.border}`,
-            display: 'flex',
-            paddingBottom: 'env(safe-area-inset-bottom)',
-          }}
-        >
-          {ALT_TABS.map(tab => (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => sayfayaGit(tab.key)}
-              style={{
-                flex: 1,
-                border: 'none',
-                background: 'transparent',
-                padding: '10px 4px 8px',
-                cursor: 'pointer',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: 2,
-                position: 'relative',
-              }}
-            >
-              <div
-                style={{
-                  fontSize: 10,
-                  fontWeight: aktifSayfa === tab.key ? 650 : 450,
-                  color: aktifSayfa === tab.key ? s.accent : s.text3,
-                }}
-              >
-                {tab.label}
-              </div>
-              {aktifSayfa === tab.key && (
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    width: 22,
-                    height: 2,
-                    borderRadius: 99,
-                    background: s.accent,
-                  }}
-                />
-              )}
-            </button>
-          ))}
-          <button
-            type="button"
-            onClick={() => setMenuAcik(true)}
-            style={{
-              flex: 1,
-              border: 'none',
-              background: 'transparent',
-              padding: '10px 4px 8px',
-              cursor: 'pointer',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-            }}
-          >
-            <div style={{ fontSize: 10, fontWeight: 450, color: s.text3 }}>Diğer</div>
-          </button>
-        </div>
-      )}
-
-      {mobil && menuAcik && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex' }}>
-          <div
-            onClick={() => setMenuAcik(false)}
-            style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)' }}
-          />
-          <div
-            style={{
-              position: 'relative',
-              marginLeft: 'auto',
-              width: 280,
-              background: s.surface,
-              borderLeft: `1px solid ${s.border}`,
-              padding: '20px 12px',
-              overflowY: 'auto',
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '4px 12px 16px',
-                marginBottom: 4,
-                borderBottom: `1px solid ${s.border}`,
-              }}
-            >
-              <div style={{ fontSize: 14, fontWeight: 700, color: s.text }}>Tüm Bölümler</div>
-              <button
-                onClick={() => setMenuAcik(false)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  fontSize: 20,
-                  color: s.text2,
-                  cursor: 'pointer',
-                }}
-              >
-                ✕
-              </button>
-            </div>
-            {MENU.map(item => menuSatir(item, () => setMenuAcik(false)))}
-          </div>
-        </div>
+        <AdminMobilNav
+          aktifSayfa={aktifSayfa}
+          sayfayaGit={sayfayaGit}
+          menuAcik={menuAcik}
+          setMenuAcik={setMenuAcik}
+          s={s}
+        />
       )}
     </div>
   );

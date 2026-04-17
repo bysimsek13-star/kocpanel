@@ -15,6 +15,7 @@ export const ADMIN_MENU_PATHS = {
   canli: '/admin/canli-operasyon',
   canlioperasyon: '/admin/canli-operasyon',
   mufredat: '/admin/mufredat',
+  tursync: '/admin/tur-sync',
 };
 
 export function adminSayfaAnahtariGetir(pathname) {
@@ -32,6 +33,7 @@ export const MENU = [
   { key: 'canli', icon: '🚀', label: 'Canlı Operasyon' },
   { key: 'sistem', icon: '🩺', label: 'Sistem Durumu' },
   { key: 'mufredat', icon: '📚', label: 'Müfredat' },
+  { key: 'tursync', icon: '🔀', label: 'Tur Toplu Sync' },
 ];
 
 export const ALT_TABS = [

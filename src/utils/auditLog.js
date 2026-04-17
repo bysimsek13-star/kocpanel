@@ -31,6 +31,7 @@ export const AuditTip = {
   DENEME_EKLE: 'deneme_ekle',
   PROGRAM_GUNCELLE: 'program_guncelle',
   VELI_BAGLA: 'veli_bagla',
+  TUR_GUNCELLE: 'tur_guncelle',
 };
 
 /**
@@ -90,6 +91,7 @@ export function auditTipMetin(tip) {
     [AuditTip.DENEME_EKLE]: 'Deneme sonucu ekledi',
     [AuditTip.PROGRAM_GUNCELLE]: 'Program güncelledi',
     [AuditTip.VELI_BAGLA]: 'Veli bağladı',
+    [AuditTip.TUR_GUNCELLE]: 'Toplu tur güncelledi',
   };
   return map[tip] || tip;
 }
@@ -107,6 +109,7 @@ export function auditTipIkon(tip) {
     [AuditTip.DENEME_EKLE]: '📊',
     [AuditTip.PROGRAM_GUNCELLE]: '📅',
     [AuditTip.VELI_BAGLA]: '👨‍👩‍👦',
+    [AuditTip.TUR_GUNCELLE]: '🔀',
   };
   return map[tip] || '📝';
 }

@@ -1,12 +1,6 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
-import AgoraRTC from 'agora-rtc-sdk-ng';
-import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { getFunctions, httpsCallable } from 'firebase/functions';
-import { db } from '../firebase';
-import { logIstemciHatasi } from '../utils/izleme';
-
-const AGORA_APP_ID = '6d61a6f6984648b5835d30f11e18ee76';
-const agoraTokenFn = httpsCallable(getFunctions(undefined, 'europe-west1'), 'agoraToken');
+import React from 'react';
+import useVideoGorusme from '../hooks/useVideoGorusme';
+import VideoGorusmeKontroller from './VideoGorusmeKontroller';
 
 function formatSure(sn) {
   const m = Math.floor(sn / 60);
@@ -15,149 +9,19 @@ function formatSure(sn) {
 }
 
 export default function VideoGorusme({ session, kullanici, karsıIsim, onKapat }) {
-  const clientRef = useRef(null);
-  const audioRef = useRef(null);
-  const videoRef = useRef(null);
-  const localDivRef = useRef(null);
-  const remoteDivRef = useRef(null);
-  const baglandiRef = useRef(false); // join() başarılıysa true; hata durumunda leave() beklenen failure
-
-  const [durum, setDurum] = useState('baglanıyor'); // baglanıyor | aktif | hata
-  const [mikrofon, setMikrofon] = useState(true);
-  const [kamera, setKamera] = useState(true);
-  const [karsiVar, setKarsiVar] = useState(false);
-  const [hata, setHata] = useState(null);
-  const [sure, setSure] = useState(0);
-
-  // Süre sayacı
-  useEffect(() => {
-    if (durum !== 'aktif') return;
-    const t = setInterval(() => setSure(s => s + 1), 1000);
-    return () => clearInterval(t);
-  }, [durum]);
-
-  const temizle = useCallback(
-    async (guncelle = true) => {
-      audioRef.current?.close();
-      videoRef.current?.close();
-      try {
-        await clientRef.current?.leave();
-      } catch (e) {
-        if (baglandiRef.current)
-          logIstemciHatasi({
-            error: e,
-            info: 'Agora leave hatası',
-            kaynak: 'VideoGorusme',
-            ekstra: { sessionId: session.id },
-          });
-      }
-      if (guncelle) {
-        try {
-          await updateDoc(doc(db, 'goruntulu', session.id), {
-            durum: 'bitti',
-            bitisTarih: serverTimestamp(),
-          });
-        } catch (e) {
-          logIstemciHatasi({
-            error: e,
-            info: 'Görüşme bitiş bilgisi kaydedilemedi',
-            kaynak: 'VideoGorusme',
-            ekstra: { sessionId: session.id },
-          });
-        }
-      }
-    },
-    [session.id]
-  );
-
-  useEffect(() => {
-    AgoraRTC.setLogLevel(4);
-    let mounted = true; // race condition önleyici flag
-
-    const client = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
-    clientRef.current = client;
-
-    client.on('user-published', async (user, mediaType) => {
-      await client.subscribe(user, mediaType);
-      if (!mounted) return;
-      if (mediaType === 'video') {
-        setKarsiVar(true);
-        setDurum('aktif');
-        setTimeout(() => {
-          if (remoteDivRef.current) user.videoTrack?.play(remoteDivRef.current);
-        }, 100);
-      }
-      if (mediaType === 'audio') user.audioTrack?.play();
-    });
-
-    client.on('user-unpublished', (_user, mediaType) => {
-      if (mounted && mediaType === 'video') setKarsiVar(false);
-    });
-
-    client.on('user-left', () => {
-      if (mounted) setKarsiVar(false);
-    });
-
-    const baslat = async () => {
-      try {
-        const res = await agoraTokenFn({ sessionId: session.id });
-        if (!mounted) return; // unmount olduysa devam etme
-
-        const { token, channel } = res.data;
-        await client.join(AGORA_APP_ID, channel, token, kullanici.uid);
-        baglandiRef.current = true;
-        if (!mounted) {
-          client.leave().catch(() => {});
-          return;
-        }
-
-        const [audioTrack, videoTrack] = await AgoraRTC.createMicrophoneAndCameraTracks(
-          { encoderConfig: 'speech_standard' },
-          { encoderConfig: '480p_1' }
-        );
-        if (!mounted) {
-          audioTrack.close();
-          videoTrack.close();
-          client.leave().catch(() => {});
-          return;
-        }
-
-        audioRef.current = audioTrack;
-        videoRef.current = videoTrack;
-
-        if (localDivRef.current) videoTrack.play(localDivRef.current);
-        await client.publish([audioTrack, videoTrack]);
-
-        if (mounted) setDurum('aktif');
-      } catch (e) {
-        if (mounted) {
-          setHata(e.message || 'Kamera/mikrofona erişilemedi');
-          setDurum('hata');
-        }
-      }
-    };
-
-    baslat();
-    return () => {
-      mounted = false;
-      temizle(false);
-    };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const kapat = async () => {
-    await temizle(true);
-    onKapat();
-  };
-
-  const mikToggle = () => {
-    audioRef.current?.setEnabled(!mikrofon);
-    setMikrofon(p => !p);
-  };
-
-  const kamToggle = () => {
-    videoRef.current?.setEnabled(!kamera);
-    setKamera(p => !p);
-  };
+  const {
+    durum,
+    mikrofon,
+    kamera,
+    karsiVar,
+    hata,
+    sure,
+    localDivRef,
+    remoteDivRef,
+    kapat,
+    mikToggle,
+    kamToggle,
+  } = useVideoGorusme({ session, kullanici, onKapat });
 
   return (
     <div
@@ -170,7 +34,6 @@ export default function VideoGorusme({ session, kullanici, karsıIsim, onKapat }
         flexDirection: 'column',
       }}
     >
-      {/* ── Uzak video (tam ekran arka plan) ───────────────────────────── */}
       <div ref={remoteDivRef} style={{ position: 'absolute', inset: 0, background: '#111' }}>
         {!karsiVar && (
           <div
@@ -208,7 +71,6 @@ export default function VideoGorusme({ session, kullanici, karsıIsim, onKapat }
         )}
       </div>
 
-      {/* ── Yerel video (PiP sağ alt) ───────────────────────────────────── */}
       <div
         style={{
           position: 'absolute',
@@ -257,7 +119,6 @@ export default function VideoGorusme({ session, kullanici, karsıIsim, onKapat }
         </div>
       </div>
 
-      {/* ── Üst bar ─────────────────────────────────────────────────────── */}
       <div
         style={{
           position: 'absolute',
@@ -295,20 +156,12 @@ export default function VideoGorusme({ session, kullanici, karsıIsim, onKapat }
               padding: '4px 12px',
             }}
           >
-            <div
-              style={{
-                width: 6,
-                height: 6,
-                borderRadius: '50%',
-                background: '#10B981',
-              }}
-            />
+            <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#10B981' }} />
             <span style={{ color: '#10B981', fontSize: 11, fontWeight: 700 }}>CANLI</span>
           </div>
         )}
       </div>
 
-      {/* ── Hata mesajı ─────────────────────────────────────────────────── */}
       {hata && (
         <div
           style={{
@@ -350,97 +203,13 @@ export default function VideoGorusme({ session, kullanici, karsıIsim, onKapat }
         </div>
       )}
 
-      {/* ── Alt kontroller ──────────────────────────────────────────────── */}
-      <div
-        style={{
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          zIndex: 10,
-          padding: '24px 20px',
-          background: 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 20,
-        }}
-      >
-        {/* Mikrofon */}
-        <button
-          onClick={mikToggle}
-          style={{
-            width: 54,
-            height: 54,
-            borderRadius: '50%',
-            border: 'none',
-            cursor: 'pointer',
-            background: mikrofon ? 'rgba(255,255,255,0.15)' : '#F43F5E',
-            color: '#fff',
-            fontSize: 22,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'background 0.2s, transform 0.1s',
-            backdropFilter: 'blur(8px)',
-          }}
-          title={mikrofon ? 'Mikrofonu kapat' : 'Mikrofonu aç'}
-          onMouseDown={e => (e.currentTarget.style.transform = 'scale(0.92)')}
-          onMouseUp={e => (e.currentTarget.style.transform = 'scale(1)')}
-        >
-          {mikrofon ? '🎙️' : '🔇'}
-        </button>
-
-        {/* Aramayı bitir */}
-        <button
-          onClick={kapat}
-          style={{
-            width: 64,
-            height: 64,
-            borderRadius: '50%',
-            border: 'none',
-            cursor: 'pointer',
-            background: 'linear-gradient(135deg, #F43F5E, #E11D48)',
-            color: '#fff',
-            fontSize: 26,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 6px 24px rgba(244,63,94,0.5)',
-            transition: 'transform 0.1s',
-          }}
-          title="Görüşmeyi bitir"
-          onMouseDown={e => (e.currentTarget.style.transform = 'scale(0.92)')}
-          onMouseUp={e => (e.currentTarget.style.transform = 'scale(1)')}
-        >
-          📵
-        </button>
-
-        {/* Kamera */}
-        <button
-          onClick={kamToggle}
-          style={{
-            width: 54,
-            height: 54,
-            borderRadius: '50%',
-            border: 'none',
-            cursor: 'pointer',
-            background: kamera ? 'rgba(255,255,255,0.15)' : '#F43F5E',
-            color: '#fff',
-            fontSize: 22,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'background 0.2s, transform 0.1s',
-            backdropFilter: 'blur(8px)',
-          }}
-          title={kamera ? 'Kamerayı kapat' : 'Kamerayı aç'}
-          onMouseDown={e => (e.currentTarget.style.transform = 'scale(0.92)')}
-          onMouseUp={e => (e.currentTarget.style.transform = 'scale(1)')}
-        >
-          {kamera ? '📹' : '🚫'}
-        </button>
-      </div>
+      <VideoGorusmeKontroller
+        mikrofon={mikrofon}
+        kamera={kamera}
+        mikToggle={mikToggle}
+        kamToggle={kamToggle}
+        kapat={kapat}
+      />
     </div>
   );
 }
