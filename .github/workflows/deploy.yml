@@ -23,6 +23,8 @@ jobs:
 
       - name: Production build
         run: npm run build
+        env:
+          VITE_RECAPTCHA_SITE_KEY: ${{ secrets.VITE_RECAPTCHA_SITE_KEY }}
 
       - name: Functions bağımlılıklarını yükle
         run: npm ci --legacy-peer-deps
