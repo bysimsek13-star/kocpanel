@@ -96,7 +96,7 @@ service cloud.firestore {
       // gunlukDakika/girisSayisi → CF gunlukAlanlariSifirla (gece sıfırlar)
       allow update: if isKendisi(ogrenciId) && isActive()
         && request.resource.data.diff(resource.data).affectedKeys()
-           .hasOnly(['sonAktif', 'girisSayisi']);
+           .hasOnly(['sonAktif', 'girisSayisi', 'gunlukDakika']);
 
       match /program/{docId} {
         allow read, write: if isAdmin();
@@ -290,6 +290,11 @@ service cloud.firestore {
       allow write: if isAdmin();
 
       match /konular/{konuId} {
+        allow read: if isAuth() && isActive();
+        allow write: if isAdmin();
+      }
+
+      match /dugumler/{dugumId} {
         allow read: if isAuth() && isActive();
         allow write: if isAdmin();
       }
