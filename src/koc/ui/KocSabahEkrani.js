@@ -23,6 +23,7 @@ export default function KocSabahEkrani({ onSec, onNav, kocAdi }) {
       <KocHeroKart
         ogrenciSayisi={ogrenciler.length}
         bugunGirisYokList={bugunGirisYokList}
+        bugunMap={bugunMap}
         toplamOkunmamis={toplamOkunmamis}
         okunmamisMap={okunmamisMap}
         ogrenciler={ogrenciler}

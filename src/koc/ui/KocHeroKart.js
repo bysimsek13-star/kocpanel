@@ -2,96 +2,12 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTheme } from '../../context/ThemeContext';
 import { useMobil } from '../../hooks/useMediaQuery';
-import { Avatar } from '../../components/Shared';
-import { renkler } from '../../data/konular';
-
-// Modal: bugün uygulamaya girmeyen öğrenciler listesi
-function GirisYokModal({ liste, onKapat, s }) {
-  return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(0,0,0,0.55)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 1100,
-      }}
-      onClick={onKapat}
-    >
-      <div
-        style={{
-          background: s.surface,
-          border: `1px solid ${s.border}`,
-          borderRadius: 18,
-          padding: '24px 24px 20px',
-          width: 360,
-          maxWidth: '95vw',
-          maxHeight: '70vh',
-          overflowY: 'auto',
-          boxShadow: s.shadow,
-        }}
-        onClick={e => e.stopPropagation()}
-      >
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: 16,
-          }}
-        >
-          <div style={{ fontSize: 15, fontWeight: 700, color: s.text }}>
-            Bugün giriş yapmayan öğrenciler
-          </div>
-          <button
-            onClick={onKapat}
-            aria-label="Modalı kapat"
-            style={{
-              background: 'none',
-              border: 'none',
-              fontSize: 18,
-              cursor: 'pointer',
-              color: s.text3,
-              lineHeight: 1,
-            }}
-          >
-            ✕
-          </button>
-        </div>
-        {liste.length === 0 ? (
-          <div style={{ textAlign: 'center', color: s.text3, fontSize: 13, padding: '20px 0' }}>
-            Tüm öğrenciler bugün giriş yaptı 🎉
-          </div>
-        ) : (
-          liste.map((o, i) => (
-            <div
-              key={o.id}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-                padding: '10px 0',
-                borderBottom: i < liste.length - 1 ? `1px solid ${s.border}` : 'none',
-              }}
-            >
-              <Avatar isim={o.isim} renk={renkler[i % renkler.length]} boyut={34} />
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: s.text }}>{o.isim}</div>
-                <div style={{ fontSize: 11, color: s.text3 }}>{o.tur || '—'}</div>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-    </div>
-  );
-}
+import KocGirisDurumuModal from './KocGirisDurumuModal';
 
 export default function KocHeroKart({
   ogrenciSayisi,
   bugunGirisYokList,
+  bugunMap,
   toplamOkunmamis,
   okunmamisMap,
   ogrenciler,
@@ -141,8 +57,9 @@ export default function KocHeroKart({
   return (
     <>
       {girisYokAcik && (
-        <GirisYokModal
-          liste={bugunGirisYokList || []}
+        <KocGirisDurumuModal
+          ogrenciler={ogrenciler || []}
+          bugunMap={bugunMap || {}}
           onKapat={() => setGirisYokAcik(false)}
           s={s}
         />
@@ -229,15 +146,10 @@ export default function KocHeroKart({
   );
 }
 
-GirisYokModal.propTypes = {
-  liste: PropTypes.arrayOf(PropTypes.shape({ id: PropTypes.string, isim: PropTypes.string })),
-  onKapat: PropTypes.func.isRequired,
-  s: PropTypes.object.isRequired,
-};
-
 KocHeroKart.propTypes = {
   ogrenciSayisi: PropTypes.number,
   bugunGirisYokList: PropTypes.arrayOf(PropTypes.object),
+  bugunMap: PropTypes.object,
   toplamOkunmamis: PropTypes.number,
   okunmamisMap: PropTypes.object,
   ogrenciler: PropTypes.arrayOf(PropTypes.object),

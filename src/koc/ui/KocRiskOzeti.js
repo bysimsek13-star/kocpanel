@@ -3,9 +3,7 @@ import PropTypes from 'prop-types';
 import { useTheme } from '../../context/ThemeContext';
 import { Card } from '../../components/Shared';
 import { useKoc } from '../../context/KocContext';
-import { RISK_DURUM } from '../../utils/sabitler';
 
-// Milisaniye cinsinden kaç gün önce?
 function gunFarki(tarih) {
   if (!tarih) return Infinity;
   const ms =
@@ -19,17 +17,9 @@ export default function KocRiskOzeti({ onSec }) {
   const { s } = useTheme();
   const [acik, setAcik] = useState(true);
 
-  const yuksekRisk = ogrenciler.filter(o => o.riskDurumu === RISK_DURUM.YUKSEK_RISK);
-  const riskAltinda = ogrenciler.filter(o => o.riskDurumu === RISK_DURUM.RISK_ALTINDA);
-  const inaktif = ogrenciler.filter(
-    o =>
-      o.riskDurumu !== RISK_DURUM.YUKSEK_RISK &&
-      o.riskDurumu !== RISK_DURUM.RISK_ALTINDA &&
-      gunFarki(o.sonCalismaTarihi) >= 7
-  );
+  const inaktif = ogrenciler.filter(o => gunFarki(o.sonCalismaTarihi) >= 7);
 
-  const toplamSorunlu = yuksekRisk.length + riskAltinda.length + inaktif.length;
-  if (toplamSorunlu === 0) return null;
+  if (inaktif.length === 0) return null;
 
   const Satir = ({ ogrenci, renk, etiket }) => (
     <div
@@ -93,7 +83,7 @@ export default function KocRiskOzeti({ onSec }) {
               borderRadius: 20,
             }}
           >
-            {toplamSorunlu}
+            {inaktif.length}
           </div>
         </div>
         <div style={{ fontSize: 12, color: s.text3 }}>{acik ? '▲' : '▼'}</div>
@@ -101,49 +91,7 @@ export default function KocRiskOzeti({ onSec }) {
 
       {acik && (
         <div style={{ padding: '8px 6px' }}>
-          {/* Yüksek risk */}
-          {yuksekRisk.length > 0 && (
-            <div style={{ marginBottom: 4 }}>
-              <div
-                style={{
-                  fontSize: 10,
-                  fontWeight: 700,
-                  color: '#F43F5E',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.06em',
-                  padding: '4px 10px',
-                }}
-              >
-                Yüksek Risk · {yuksekRisk.length}
-              </div>
-              {yuksekRisk.map(o => (
-                <Satir key={o.id} ogrenci={o} renk="#F43F5E" etiket="Yüksek Risk" />
-              ))}
-            </div>
-          )}
-
-          {/* Risk altında */}
-          {riskAltinda.length > 0 && (
-            <div style={{ marginBottom: 4 }}>
-              <div
-                style={{
-                  fontSize: 10,
-                  fontWeight: 700,
-                  color: '#F59E0B',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.06em',
-                  padding: '4px 10px',
-                }}
-              >
-                Dikkat · {riskAltinda.length}
-              </div>
-              {riskAltinda.map(o => (
-                <Satir key={o.id} ogrenci={o} renk="#F59E0B" etiket="Risk Altında" />
-              ))}
-            </div>
-          )}
-
-          {/* İnaktif */}
+          {/* İnaktif — 7+ gün çalışma yok */}
           {inaktif.length > 0 && (
             <div>
               <div

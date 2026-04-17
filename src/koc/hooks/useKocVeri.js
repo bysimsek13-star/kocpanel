@@ -71,6 +71,11 @@ export default function useKocVeri(kocUid) {
       // Root dokümanındaki aggregate alanları okur (rutin/gunlukSoru/calisma
       // Cloud Function veya istemci tarafından güncel tutulur).
       const bugun = BUGUN();
+      // Türkiye saatine göre (Europe/Istanbul) bugünün 00:00:00 başlangıcı
+      const bugunIstanbul = new Date().toLocaleDateString('sv-SE', {
+        timeZone: 'Europe/Istanbul',
+      });
+      const bugunBaslangic = new Date(bugunIstanbul + 'T00:00:00+03:00').getTime();
       const bmap = {};
       liste.forEach(o => {
         const sonAktifMs = o.sonAktif?.toDate
@@ -78,15 +83,14 @@ export default function useKocVeri(kocUid) {
           : o.sonAktif
             ? new Date(o.sonAktif).getTime()
             : 0;
-        const bugunLocal = new Date();
-        bugunLocal.setHours(0, 0, 0, 0);
-        const bugunBaslangic = bugunLocal.getTime();
         bmap[o.id] = {
           rutin: o.bugunRutinTarihi === bugun,
           gunlukSoru: o.bugunSoruTarihi === bugun,
           soruToplam: 0,
           calisma: o.sonCalismaTarihi === bugun,
           bugunAktif: sonAktifMs >= bugunBaslangic,
+          sonAktif: o.sonAktif ?? null,
+          girisSayisi: o.girisSayisi ?? 0,
         };
       });
       setBugunMap(bmap);

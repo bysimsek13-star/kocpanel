@@ -91,12 +91,12 @@ service cloud.firestore {
       allow read: if isKendisi(ogrenciId) && isActive();
       allow read: if isVeli() && isActive() && isVelininOgrencisi(ogrenciId);
 
-      // Öğrenci sadece aktiflik alanını günceller
+      // Öğrenci aktiflik alanlarını günceller
       // sonDenemeNet/sonDenemeTarih → CF denemeAggregateGuncelle
-      // gunlukDakika/girisSayisi → CF gunlukAlanlariSifirla
+      // gunlukDakika/girisSayisi → CF gunlukAlanlariSifirla (gece sıfırlar)
       allow update: if isKendisi(ogrenciId) && isActive()
         && request.resource.data.diff(resource.data).affectedKeys()
-           .hasOnly(['sonAktif']);
+           .hasOnly(['sonAktif', 'girisSayisi']);
 
       match /program/{docId} {
         allow read, write: if isAdmin();

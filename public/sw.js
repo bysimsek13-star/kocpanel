@@ -1,6 +1,6 @@
 // Build script her deploy'da SHELL_CACHE degerini otomatik gunceller
 const CHUNKS_CACHE = 'elsway-chunks';
-const SHELL_CACHE  = 'elsway-v1776202254164';   // <- build script bunu gunceller (pattern: elsway-v[^']+)
+const SHELL_CACHE  = 'elsway-v1776465670372';   // <- build script bunu gunceller (pattern: elsway-v[^']+)
 
 const isFirebaseAPI = (url) =>
   url.includes('firestore.googleapis.com') ||

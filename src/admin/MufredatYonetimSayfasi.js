@@ -1,18 +1,32 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   collection,
   getDocs,
   doc,
   setDoc,
   updateDoc,
-  deleteDoc,
-  query,
-  orderBy,
+  writeBatch,
   serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useToast } from '../components/Toast';
 import { Card, Btn, Input, LoadingState } from '../components/Shared';
+import MufredatAgaci from './MufredatAgaci';
+import { agaciDuzlestir, TYT_AGAC } from '../data/tytMufredatSeed';
+import { AYT_EA_AGAC, AYT_SAYISAL_AGAC, AYT_SOZEL_AGAC } from '../data/aytMufredatSeed';
+import { LGS_AGAC } from '../data/lgsMufredatSeed';
+import { LISE9_AGAC } from '../data/lise9Seed';
+import { LISE10_AGAC } from '../data/lise10Seed';
+
+const SEED_AGACLARI = {
+  tyt: TYT_AGAC,
+  lgs: LGS_AGAC,
+  ayt_ea: AYT_EA_AGAC,
+  ayt_sayisal: AYT_SAYISAL_AGAC,
+  ayt_sozel: AYT_SOZEL_AGAC,
+  lise9_tymm: LISE9_AGAC,
+  lise10_tymm: LISE10_AGAC,
+};
 
 const TUR_SECENEKLER = [
   { id: 'lgs', label: 'LGS' },
@@ -21,31 +35,27 @@ const TUR_SECENEKLER = [
   { id: 'ayt_ea', label: 'AYT EA' },
   { id: 'ayt_sozel', label: 'AYT Sözel' },
   { id: 'ayt_dil', label: 'AYT Dil / YDT' },
+  { id: 'lise9_tymm', label: '9. Sınıf' },
+  { id: 'lise10_tymm', label: '10. Sınıf' },
 ];
 
 export default function MufredatYonetimSayfasi({ s, mobil }) {
   const toast = useToast();
   const [seciliTur, setSeciliTur] = useState('tyt');
-  const [konular, setKonular] = useState([]);
+  const [dugumler, setDugumler] = useState([]);
   const [yukleniyor, setYukleniyor] = useState(false);
-  const [yeniKonuFormu, setYeniKonuFormu] = useState(false);
-  const [yeniKonu, setYeniKonu] = useState({
-    dersLabel: '',
-    konu: '',
-    tahminiSaat: 2,
-    kritik: false,
-  });
+  const [seedYukleniyor, setSeedYukleniyor] = useState(false);
+  const [yeniDersFormu, setYeniDersFormu] = useState(false);
+  const [yeniDersAd, setYeniDersAd] = useState('');
 
-  const konulariGetir = useCallback(
+  const dugumlerGetir = useCallback(
     async tur => {
       setYukleniyor(true);
       try {
-        const snap = await getDocs(
-          query(collection(db, 'mufredat', tur, 'konular'), orderBy('sira'))
-        );
-        setKonular(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+        const snap = await getDocs(collection(db, 'mufredat', tur, 'dugumler'));
+        setDugumler(snap.docs.map(d => ({ id: d.id, ...d.data() })));
       } catch {
-        toast('Konular alınamadı.', 'error');
+        toast('Müfredat alınamadı.', 'error');
       }
       setYukleniyor(false);
     },
@@ -53,97 +63,154 @@ export default function MufredatYonetimSayfasi({ s, mobil }) {
   );
 
   useEffect(() => {
-    konulariGetir(seciliTur);
-  }, [seciliTur, konulariGetir]);
+    dugumlerGetir(seciliTur);
+  }, [seciliTur, dugumlerGetir]);
 
-  const saatGuncelle = async (konuId, yeniSaat) => {
+  const onEkle = async (parentId, ad, seviye) => {
+    const id = `${parentId}_${Date.now()}`;
+    const sira = dugumler.filter(d => d.parentId === parentId).length;
     try {
-      await updateDoc(doc(db, 'mufredat', seciliTur, 'konular', konuId), {
-        tahminiSaat: Number(yeniSaat),
-        guncelleme: serverTimestamp(),
-      });
-      setKonular(prev =>
-        prev.map(k => (k.id === konuId ? { ...k, tahminiSaat: Number(yeniSaat) } : k))
-      );
-    } catch {
-      toast('Güncelleme başarısız.', 'error');
-    }
-  };
-
-  const kritikToggle = async (konuId, mevcutDeger) => {
-    try {
-      await updateDoc(doc(db, 'mufredat', seciliTur, 'konular', konuId), {
-        kritik: !mevcutDeger,
-        guncelleme: serverTimestamp(),
-      });
-      setKonular(prev => prev.map(k => (k.id === konuId ? { ...k, kritik: !mevcutDeger } : k)));
-    } catch {
-      toast('Güncelleme başarısız.', 'error');
-    }
-  };
-
-  const konuSil = async konuId => {
-    try {
-      await deleteDoc(doc(db, 'mufredat', seciliTur, 'konular', konuId));
-      setKonular(prev => prev.filter(k => k.id !== konuId));
-      toast('Konu silindi.');
-    } catch {
-      toast('Silinemedi.', 'error');
-    }
-  };
-
-  const konuEkle = async () => {
-    if (!yeniKonu.konu.trim() || !yeniKonu.dersLabel.trim())
-      return toast('Konu ve ders adı boş olamaz.', 'info');
-    try {
-      const konuId = `${yeniKonu.dersLabel.toLowerCase().replace(/\s/g, '_')}_${Date.now()}`;
-      await setDoc(doc(db, 'mufredat', seciliTur, 'konular', konuId), {
-        ders: yeniKonu.dersLabel.toLowerCase().replace(/\s/g, '_'),
-        dersLabel: yeniKonu.dersLabel.trim(),
-        konu: yeniKonu.konu.trim(),
-        tahminiSaat: Number(yeniKonu.tahminiSaat) || 2,
-        kritik: yeniKonu.kritik,
-        sira: konular.length,
+      await setDoc(doc(db, 'mufredat', seciliTur, 'dugumler', id), {
+        parentId,
+        seviye,
+        ad,
+        sira,
         olusturma: serverTimestamp(),
       });
-      toast('Konu eklendi.');
-      setYeniKonuFormu(false);
-      setYeniKonu({ dersLabel: '', konu: '', tahminiSaat: 2, kritik: false });
-      konulariGetir(seciliTur);
+      setDugumler(prev => [...prev, { id, parentId, seviye, ad, sira }]);
     } catch {
       toast('Eklenemedi.', 'error');
     }
   };
 
-  const dersGruplari = useMemo(() => {
-    const gruplar = {};
-    konular.forEach(k => {
-      const key = k.dersLabel || k.ders || '—';
-      if (!gruplar[key]) gruplar[key] = [];
-      gruplar[key].push(k);
-    });
-    return gruplar;
-  }, [konular]);
+  const onDersEkle = async () => {
+    if (!yeniDersAd.trim()) return;
+    const id = `${seciliTur}_${Date.now()}`;
+    const sira = dugumler.filter(d => !d.parentId).length;
+    try {
+      await setDoc(doc(db, 'mufredat', seciliTur, 'dugumler', id), {
+        parentId: null,
+        seviye: 1,
+        ad: yeniDersAd.trim(),
+        sira,
+        olusturma: serverTimestamp(),
+      });
+      setDugumler(prev => [
+        ...prev,
+        { id, parentId: null, seviye: 1, ad: yeniDersAd.trim(), sira },
+      ]);
+      setYeniDersFormu(false);
+      setYeniDersAd('');
+    } catch {
+      toast('Eklenemedi.', 'error');
+    }
+  };
+
+  const onSil = async id => {
+    const silinecekler = new Set();
+    const kuyruk = [id];
+    while (kuyruk.length > 0) {
+      const cari = kuyruk.shift();
+      silinecekler.add(cari);
+      dugumler.filter(d => d.parentId === cari).forEach(d => kuyruk.push(d.id));
+    }
+    try {
+      let batch = writeBatch(db);
+      let sayac = 0;
+      for (const did of silinecekler) {
+        batch.delete(doc(db, 'mufredat', seciliTur, 'dugumler', did));
+        sayac++;
+        if (sayac % 400 === 0) {
+          await batch.commit();
+          batch = writeBatch(db);
+        }
+      }
+      await batch.commit();
+      setDugumler(prev => prev.filter(d => !silinecekler.has(d.id)));
+      toast(`${silinecekler.size} düğüm silindi.`);
+    } catch {
+      toast('Silinemedi.', 'error');
+    }
+  };
+
+  const onDuzenle = async (id, ad) => {
+    try {
+      await updateDoc(doc(db, 'mufredat', seciliTur, 'dugumler', id), {
+        ad,
+        guncelleme: serverTimestamp(),
+      });
+      setDugumler(prev => prev.map(d => (d.id === id ? { ...d, ad } : d)));
+    } catch {
+      toast('Güncellenemedi.', 'error');
+    }
+  };
+
+  const seedMufredat = async () => {
+    const agac = SEED_AGACLARI[seciliTur];
+    if (!agac) return;
+    if (
+      !window.confirm(
+        `${seciliTur.toUpperCase()} müfredatını yükle? Mevcut veriler üzerine yazılır.`
+      )
+    )
+      return;
+    setSeedYukleniyor(true);
+    try {
+      const docs = agaciDuzlestir(seciliTur, agac);
+      let batch = writeBatch(db);
+      let sayac = 0;
+      for (const d of docs) {
+        batch.set(doc(db, 'mufredat', seciliTur, 'dugumler', d.id), {
+          parentId: d.parentId,
+          seviye: d.seviye,
+          ad: d.ad,
+          sira: d.sira,
+          olusturma: serverTimestamp(),
+        });
+        sayac++;
+        if (sayac % 400 === 0) {
+          await batch.commit();
+          batch = writeBatch(db);
+        }
+      }
+      await batch.commit();
+      toast(`${docs.length} düğüm yüklendi.`);
+      await dugumlerGetir(seciliTur);
+    } catch (e) {
+      console.error(e);
+      toast('Seed başarısız.', 'error');
+    }
+    setSeedYukleniyor(false);
+  };
 
   return (
-    <div style={{ padding: mobil ? 16 : 28, maxWidth: 960 }}>
+    <div style={{ padding: mobil ? 16 : 28, maxWidth: 900 }}>
       <div
         style={{
-          marginBottom: 20,
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           flexWrap: 'wrap',
           gap: 12,
+          marginBottom: 20,
         }}
       >
         <div>
           <h2 style={{ fontSize: 20, fontWeight: 700, color: s.text, margin: 0 }}>
-            📚 Müfredat Yönetimi
+            Müfredat Yönetimi
           </h2>
-          <div style={{ fontSize: 13, color: s.text2, marginTop: 4 }}>{konular.length} konu</div>
+          <div style={{ fontSize: 13, color: s.text2, marginTop: 4 }}>
+            {dugumler.length > 0 ? `${dugumler.length} düğüm` : 'Henüz içerik yok'}
+          </div>
         </div>
-        <Btn onClick={() => setYeniKonuFormu(true)}>+ Yeni Konu</Btn>
+        <div style={{ display: 'flex', gap: 8 }}>
+          {SEED_AGACLARI[seciliTur] && (
+            <Btn onClick={seedMufredat} variant="ghost" disabled={seedYukleniyor}>
+              {seedYukleniyor ? 'Yükleniyor…' : 'Seed Yükle'}
+            </Btn>
+          )}
+          <Btn onClick={() => setYeniDersFormu(!yeniDersFormu)}>+ Ders Ekle</Btn>
+        </div>
       </div>
 
       <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
@@ -167,69 +234,25 @@ export default function MufredatYonetimSayfasi({ s, mobil }) {
         ))}
       </div>
 
-      {yeniKonuFormu && (
-        <Card style={{ padding: 16, marginBottom: 16 }}>
-          <div style={{ color: s.text, fontWeight: 700, marginBottom: 12 }}>Yeni Konu Ekle</div>
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: mobil ? '1fr' : '1fr 1fr',
-              gap: 10,
-              marginBottom: 10,
-            }}
-          >
-            <Input
-              placeholder="Ders adı (ör. Matematik)"
-              value={yeniKonu.dersLabel}
-              onChange={e => setYeniKonu(p => ({ ...p, dersLabel: e.target.value }))}
-            />
-            <Input
-              placeholder="Konu adı (ör. Türev)"
-              value={yeniKonu.konu}
-              onChange={e => setYeniKonu(p => ({ ...p, konu: e.target.value }))}
-            />
-          </div>
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 12 }}>
-            <div style={{ fontSize: 13, color: s.text2 }}>Tahmini saat:</div>
-            <select
-              value={yeniKonu.tahminiSaat}
-              onChange={e => setYeniKonu(p => ({ ...p, tahminiSaat: e.target.value }))}
-              style={{
-                padding: '8px 12px',
-                borderRadius: 8,
-                background: s.surface2,
-                border: `1px solid ${s.border}`,
-                color: s.text,
-              }}
-            >
-              {[1, 2, 3, 4, 5, 6, 8, 10].map(n => (
-                <option key={n} value={n}>
-                  {n} saat
-                </option>
-              ))}
-            </select>
-            <div
-              onClick={() => setYeniKonu(p => ({ ...p, kritik: !p.kritik }))}
-              style={{
-                padding: '8px 14px',
-                borderRadius: 8,
-                cursor: 'pointer',
-                fontSize: 12,
-                fontWeight: 700,
-                background: yeniKonu.kritik ? 'rgba(244,63,94,0.12)' : s.surface2,
-                color: yeniKonu.kritik ? '#F43F5E' : s.text2,
-                border: `1px solid ${yeniKonu.kritik ? '#F43F5E' : s.border}`,
-              }}
-            >
-              🔥 Kritik
-            </div>
-          </div>
+      {yeniDersFormu && (
+        <Card style={{ padding: 14, marginBottom: 14 }}>
           <div style={{ display: 'flex', gap: 8 }}>
-            <Btn onClick={() => setYeniKonuFormu(false)} variant="ghost" style={{ flex: 1 }}>
+            <Input
+              placeholder="Ders adı"
+              value={yeniDersAd}
+              onChange={e => setYeniDersAd(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && onDersEkle()}
+              style={{ flex: 1 }}
+            />
+            <Btn onClick={onDersEkle}>Ekle</Btn>
+            <Btn
+              onClick={() => {
+                setYeniDersFormu(false);
+                setYeniDersAd('');
+              }}
+              variant="ghost"
+            >
               İptal
-            </Btn>
-            <Btn onClick={konuEkle} style={{ flex: 2 }}>
-              Ekle
             </Btn>
           </div>
         </Card>
@@ -237,80 +260,27 @@ export default function MufredatYonetimSayfasi({ s, mobil }) {
 
       {yukleniyor ? (
         <LoadingState />
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          {Object.entries(dersGruplari).map(([dersAdi, dersKonular]) => (
-            <Card key={dersAdi} style={{ overflow: 'hidden' }}>
-              <div
-                style={{
-                  padding: '12px 18px',
-                  borderBottom: `1px solid ${s.border}`,
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                }}
-              >
-                <div style={{ color: s.text, fontWeight: 700, fontSize: 14 }}>{dersAdi}</div>
-                <div style={{ fontSize: 12, color: s.text3 }}>{dersKonular.length} konu</div>
-              </div>
-              {dersKonular.map((konu, i) => (
-                <div
-                  key={konu.id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 10,
-                    padding: '10px 18px',
-                    borderBottom: i < dersKonular.length - 1 ? `1px solid ${s.border}` : 'none',
-                    flexWrap: 'wrap',
-                  }}
-                >
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ color: s.text, fontSize: 13, fontWeight: 500 }}>{konu.konu}</div>
-                  </div>
-                  <div
-                    onClick={() => kritikToggle(konu.id, konu.kritik)}
-                    style={{
-                      padding: '4px 10px',
-                      borderRadius: 999,
-                      cursor: 'pointer',
-                      fontSize: 11,
-                      fontWeight: 700,
-                      background: konu.kritik ? 'rgba(244,63,94,0.12)' : s.surface2,
-                      color: konu.kritik ? '#F43F5E' : s.text3,
-                    }}
-                  >
-                    🔥 {konu.kritik ? 'Kritik' : 'Normal'}
-                  </div>
-                  <select
-                    value={konu.tahminiSaat || 2}
-                    onChange={e => saatGuncelle(konu.id, e.target.value)}
-                    style={{
-                      padding: '4px 8px',
-                      borderRadius: 8,
-                      background: s.surface2,
-                      border: `1px solid ${s.border}`,
-                      color: s.text,
-                      fontSize: 12,
-                    }}
-                  >
-                    {[1, 2, 3, 4, 5, 6, 8, 10].map(n => (
-                      <option key={n} value={n}>
-                        {n}s
-                      </option>
-                    ))}
-                  </select>
-                  <div
-                    onClick={() => konuSil(konu.id)}
-                    style={{ color: s.text3, cursor: 'pointer', fontSize: 13, padding: '0 4px' }}
-                  >
-                    ✕
-                  </div>
-                </div>
-              ))}
-            </Card>
-          ))}
+      ) : dugumler.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '48px 24px', color: s.text3, fontSize: 14 }}>
+          Bu müfredat için henüz düğüm yok.
+          {SEED_AGACLARI[seciliTur] && (
+            <div style={{ marginTop: 12 }}>
+              <Btn onClick={seedMufredat} disabled={seedYukleniyor}>
+                {seedYukleniyor ? 'Yükleniyor…' : 'Müfredatı Yükle'}
+              </Btn>
+            </div>
+          )}
         </div>
+      ) : (
+        <Card style={{ padding: '12px 8px' }}>
+          <MufredatAgaci
+            dugumler={dugumler}
+            onEkle={onEkle}
+            onSil={onSil}
+            onDuzenle={onDuzenle}
+            s={s}
+          />
+        </Card>
       )}
     </div>
   );

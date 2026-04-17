@@ -513,12 +513,14 @@ describe('hedefUtils — puan tahmini', () => {
 // 8. KocHeroKart — GirisYokModal ve handleOkunmamis ek testleri
 // ─────────────────────────────────────────────────────────────────────────────
 describe('KocHeroKart — GirisYokModal', () => {
+  const ogrenci = { id: 'o1', isim: 'Zeynep', tur: 'lgs_8' };
   const defaultProps = {
     ogrenciSayisi: 5,
-    bugunGirisYokList: [{ id: 'o1', isim: 'Zeynep', tur: 'lgs_8' }],
+    bugunGirisYokList: [ogrenci],
+    bugunMap: { o1: { bugunAktif: false, girisSayisi: 0, sonAktif: null } },
     toplamOkunmamis: 0,
     okunmamisMap: {},
-    ogrenciler: [],
+    ogrenciler: [ogrenci],
     onNav: vi.fn(),
     onSec: vi.fn(),
     kocAdi: 'Selin',
@@ -528,7 +530,7 @@ describe('KocHeroKart — GirisYokModal', () => {
     renderWithProviders(<KocHeroKart {...defaultProps} />);
     fireEvent.click(screen.getByText('Bugün giriş yok'));
     await waitFor(() => {
-      expect(screen.getByText('Bugün giriş yapmayan öğrenciler')).toBeDefined();
+      expect(screen.getByText('Bugün giriş durumu')).toBeDefined();
     });
   });
 
@@ -543,10 +545,10 @@ describe('KocHeroKart — GirisYokModal', () => {
   it('✕ butonuyla modal kapanır', async () => {
     renderWithProviders(<KocHeroKart {...defaultProps} />);
     fireEvent.click(screen.getByText('Bugün giriş yok'));
-    await waitFor(() => screen.getByText('Bugün giriş yapmayan öğrenciler'));
+    await waitFor(() => screen.getByText('Bugün giriş durumu'));
     fireEvent.click(screen.getByText('✕'));
     await waitFor(() => {
-      expect(screen.queryByText('Bugün giriş yapmayan öğrenciler')).toBeNull();
+      expect(screen.queryByText('Bugün giriş durumu')).toBeNull();
     });
   });
 

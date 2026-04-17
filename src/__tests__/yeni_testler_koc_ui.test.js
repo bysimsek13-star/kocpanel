@@ -75,9 +75,10 @@ const mockDashboardMap = {
   o1: { sonDenemeNet: 45, gorevTamamlama: 80 },
   o2: { sonDenemeNet: 30, gorevTamamlama: 40 },
 };
+const mockSonAktif = { toDate: () => new Date('2026-04-17T11:32:00+03:00') };
 const mockBugunMap = {
-  o1: { rutin: true, gunlukSoru: false, bugunAktif: true },
-  o2: { rutin: false, gunlukSoru: false, bugunAktif: false },
+  o1: { rutin: true, gunlukSoru: false, bugunAktif: true, sonAktif: mockSonAktif, girisSayisi: 2 },
+  o2: { rutin: false, gunlukSoru: false, bugunAktif: false, sonAktif: null, girisSayisi: 0 },
 };
 const mockOkunmamisMap = { o1: 0, o2: 3 };
 
@@ -516,5 +517,124 @@ describe('KocOgrenciListesi', () => {
       </KocProvider>
     );
     expect(screen.getByText(/Yükleniyor/)).toBeInTheDocument();
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// KocGirisDurumuModal
+// ─────────────────────────────────────────────────────────────────────────────
+import KocGirisDurumuModal from '../koc/ui/KocGirisDurumuModal';
+import { mockS } from './testUtils';
+
+const modalOgrenciler = [
+  { id: 'o1', isim: 'Ali Veli' },
+  { id: 'o2', isim: 'Ayşe Hanım' },
+  { id: 'o3', isim: 'Can Demir' },
+];
+const modalBugunMap = {
+  o1: {
+    bugunAktif: true,
+    girisSayisi: 3,
+    sonAktif: { toDate: () => new Date('2026-04-17T14:32:00+03:00') },
+  },
+  o2: {
+    bugunAktif: false,
+    girisSayisi: 0,
+    sonAktif: { toDate: () => new Date('2026-04-16T23:00:00+03:00') },
+  },
+  o3: { bugunAktif: false, girisSayisi: 0, sonAktif: null },
+};
+
+describe('KocGirisDurumuModal', () => {
+  it('tüm öğrencileri gösterir', () => {
+    render(
+      <KocGirisDurumuModal
+        ogrenciler={modalOgrenciler}
+        bugunMap={modalBugunMap}
+        onKapat={vi.fn()}
+        s={mockS}
+      />
+    );
+    expect(screen.getByText('Ali Veli')).toBeInTheDocument();
+    expect(screen.getByText('Ayşe Hanım')).toBeInTheDocument();
+    expect(screen.getByText('Can Demir')).toBeInTheDocument();
+  });
+
+  it('bugün giriş yapan için "kez" ve saat gösterir', () => {
+    render(
+      <KocGirisDurumuModal
+        ogrenciler={modalOgrenciler}
+        bugunMap={modalBugunMap}
+        onKapat={vi.fn()}
+        s={mockS}
+      />
+    );
+    expect(screen.getByText(/3 kez/)).toBeInTheDocument();
+    expect(screen.getAllByText(/son giriş/i).length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('hiç giriş yapmayan için "Hiç giriş yok" gösterir', () => {
+    render(
+      <KocGirisDurumuModal
+        ogrenciler={modalOgrenciler}
+        bugunMap={modalBugunMap}
+        onKapat={vi.fn()}
+        s={mockS}
+      />
+    );
+    expect(screen.getByText('Hiç giriş yok')).toBeInTheDocument();
+  });
+
+  it('bugün giren/girmeyen özet sayısını gösterir', () => {
+    render(
+      <KocGirisDurumuModal
+        ogrenciler={modalOgrenciler}
+        bugunMap={modalBugunMap}
+        onKapat={vi.fn()}
+        s={mockS}
+      />
+    );
+    expect(screen.getByText(/1\/3 öğrenci bugün giriş yaptı/)).toBeInTheDocument();
+  });
+
+  it('✕ butonuna basınca onKapat çağrılır', () => {
+    const onKapat = vi.fn();
+    render(
+      <KocGirisDurumuModal
+        ogrenciler={modalOgrenciler}
+        bugunMap={modalBugunMap}
+        onKapat={onKapat}
+        s={mockS}
+      />
+    );
+    fireEvent.click(screen.getByLabelText('Modalı kapat'));
+    expect(onKapat).toHaveBeenCalledTimes(1);
+  });
+
+  it('arka plana tıklayınca onKapat çağrılır', () => {
+    const onKapat = vi.fn();
+    const { container } = render(
+      <KocGirisDurumuModal
+        ogrenciler={modalOgrenciler}
+        bugunMap={modalBugunMap}
+        onKapat={onKapat}
+        s={mockS}
+      />
+    );
+    fireEvent.click(container.firstChild);
+    expect(onKapat).toHaveBeenCalledTimes(1);
+  });
+
+  it('bugün girenler listede önce sıralanır', () => {
+    render(
+      <KocGirisDurumuModal
+        ogrenciler={modalOgrenciler}
+        bugunMap={modalBugunMap}
+        onKapat={vi.fn()}
+        s={mockS}
+      />
+    );
+    const isimler = screen.getAllByText(/Ali Veli|Ayşe Hanım|Can Demir/).map(el => el.textContent);
+    expect(isimler[0]).toBe('Ali Veli');
   });
 });

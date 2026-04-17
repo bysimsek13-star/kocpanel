@@ -16,6 +16,61 @@ import { mufredatAnahtarlariniBelirle } from '../utils/ogrenciBaglam';
 import { dersiRenk } from './mufredatUtils';
 import { KocSatiri, OgrenciSatiri, Chip } from './MufredatDers';
 
+function yaprakListesi(idHaritasi, id, sonuc = []) {
+  const dugum = idHaritasi[id];
+  if (!dugum) return sonuc;
+  if (!dugum._cocuklar.length) sonuc.push(dugum);
+  else dugum._cocuklar.forEach(cid => yaprakListesi(idHaritasi, cid, sonuc));
+  return sonuc;
+}
+
+function dugumlerdenGruplar(docs) {
+  const harita = {};
+  docs.forEach(d => {
+    harita[d.id] = { ...d, _cocuklar: [] };
+  });
+  docs.forEach(d => {
+    if (d.parentId && harita[d.parentId]) harita[d.parentId]._cocuklar.push(d.id);
+  });
+  const dersler = docs.filter(d => d.seviye === 1).sort((a, b) => (a.sira ?? 0) - (b.sira ?? 0));
+  const gruplar = {};
+  dersler.forEach(ders => {
+    const yapraklar = yaprakListesi(harita, ders.id).sort((a, b) => (a.sira ?? 0) - (b.sira ?? 0));
+    if (yapraklar.length > 0) {
+      gruplar[ders.ad] = yapraklar.map(d => ({ id: d.id, konu: d.ad, kritik: d.kritik || false }));
+    }
+  });
+  return gruplar;
+}
+
+async function gruplarGetir(anahtarlar) {
+  const gruplar = {};
+  for (const anahtar of anahtarlar) {
+    try {
+      const dugSnap = await getDocs(collection(db, 'mufredat', anahtar, 'dugumler'));
+      if (!dugSnap.empty) {
+        Object.assign(
+          gruplar,
+          dugumlerdenGruplar(dugSnap.docs.map(d => ({ id: d.id, ...d.data() })))
+        );
+        continue;
+      }
+      const konSnap = await getDocs(
+        query(collection(db, 'mufredat', anahtar, 'konular'), orderBy('sira'))
+      );
+      konSnap.docs.forEach(d => {
+        const data = { id: d.id, ...d.data() };
+        const key = data.dersLabel || data.ders || '—';
+        if (!gruplar[key]) gruplar[key] = [];
+        gruplar[key].push({ id: data.id, konu: data.konu, kritik: data.kritik || false });
+      });
+    } catch (e) {
+      console.error('Müfredat alınamadı:', anahtar, e);
+    }
+  }
+  return gruplar;
+}
+
 export default function MufredatGoruntule({
   ogrenciId,
   ogrenciTur,
@@ -32,33 +87,17 @@ export default function MufredatGoruntule({
 
   const mufredatiGetir = useCallback(async () => {
     const anahtarlar = mufredatAnahtarlariniBelirle(ogrenciTur, ogrenciSinif);
-    const gruplar = {};
-    for (const anahtar of anahtarlar) {
-      try {
-        const snap = await getDocs(
-          query(collection(db, 'mufredat', anahtar, 'konular'), orderBy('sira'))
-        );
-        snap.docs.forEach(d => {
-          const data = { id: d.id, ...d.data() };
-          const key = data.dersLabel || data.ders || '—';
-          if (!gruplar[key]) gruplar[key] = [];
-          gruplar[key].push(data);
-        });
-      } catch (e) {
-        console.error('Müfredat alınamadı:', anahtar, e);
-      }
-    }
-    setDersGruplari(gruplar);
+    setDersGruplari(await gruplarGetir(anahtarlar));
   }, [ogrenciTur, ogrenciSinif]);
 
   const durumGetir = useCallback(async () => {
     try {
       const snap = await getDocs(collection(db, 'ogrenciler', ogrenciId, 'konu_takip'));
-      const map = {};
+      const harita = {};
       snap.docs.forEach(d => {
-        map[d.id] = d.data();
+        harita[d.id] = d.data();
       });
-      setKonuDurumlar(map);
+      setKonuDurumlar(harita);
     } catch (e) {
       console.error(e);
     }
@@ -186,10 +225,10 @@ export default function MufredatGoruntule({
           const renk = dersiRenk(dersAdi);
           const dersTam = konular.filter(k => konuDurumlar[k.id]?.durum === 'tamamlandi').length;
           const dersEksik = konular.filter(k => konuDurumlar[k.id]?.durum === 'eksik').length;
-          const gorunulenKonular = konular.filter(k => {
-            if (filtre === 'hepsi' || kocModu) return true;
-            return konuDurumlar[k.id]?.durum === filtre;
-          });
+          const gorunulenKonular =
+            kocModu || filtre === 'hepsi'
+              ? konular
+              : konular.filter(k => konuDurumlar[k.id]?.durum === filtre);
           if (!kocModu && filtre !== 'hepsi' && gorunulenKonular.length === 0) return null;
           const acik = acikDers === dersAdi;
 

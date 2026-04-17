@@ -17,6 +17,7 @@
  * 10. HaftalikVerimlilik  — 7 gün içeriği
  * 11. ProgramOlustur      — sekme geçişi
  * 12. Istatistikler       — aralik seçimi
+ * 13. KocGirisDurumuModal — giriş durumu davranış testleri
  */
 
 import React from 'react';
@@ -892,5 +893,115 @@ describe('GuncelleModal — kaydet akışı', () => {
       />
     );
     expect(document.body.textContent).toContain('TYT Net hedefi');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 13. KocGirisDurumuModal — davranış testleri
+// ─────────────────────────────────────────────────────────────────────────────
+import KocGirisDurumuModal from '../koc/ui/KocGirisDurumuModal';
+
+const dvOgrenciler = [
+  { id: 'a', isim: 'Zeynep Kaya' },
+  { id: 'b', isim: 'Burak Şahin' },
+  { id: 'c', isim: 'Selin Arslan' },
+];
+
+// a: bugün 2 kez girmiş, b: dün gece girmiş, c: hiç girmemiş
+const dvBugunMap = {
+  a: {
+    bugunAktif: true,
+    girisSayisi: 2,
+    sonAktif: { toDate: () => new Date('2026-04-17T16:45:00+03:00') },
+  },
+  b: {
+    bugunAktif: false,
+    girisSayisi: 0,
+    sonAktif: { toDate: () => new Date('2026-04-16T23:10:00+03:00') },
+  },
+  c: { bugunAktif: false, girisSayisi: 0, sonAktif: null },
+};
+
+describe('KocGirisDurumuModal — davranış', () => {
+  it('bugün girenler listede önce, hiç girmeyenler sonda sıralanır', () => {
+    render(
+      <KocGirisDurumuModal
+        ogrenciler={dvOgrenciler}
+        bugunMap={dvBugunMap}
+        onKapat={vi.fn()}
+        s={mockS}
+      />
+    );
+    const isimler = screen
+      .getAllByText(/Zeynep Kaya|Burak Şahin|Selin Arslan/)
+      .map(el => el.textContent);
+    expect(isimler[0]).toBe('Zeynep Kaya');
+  });
+
+  it('bugün giren için giriş sayısı ve "son giriş" etiketi görünür', () => {
+    render(
+      <KocGirisDurumuModal
+        ogrenciler={dvOgrenciler}
+        bugunMap={dvBugunMap}
+        onKapat={vi.fn()}
+        s={mockS}
+      />
+    );
+    expect(screen.getByText(/2 kez/)).toBeInTheDocument();
+    expect(screen.getAllByText(/son giriş/i).length).toBeGreaterThan(0);
+  });
+
+  it('dün giren için "Son giriş:" etiketi görünür, "kez" görünmez', () => {
+    render(
+      <KocGirisDurumuModal
+        ogrenciler={dvOgrenciler}
+        bugunMap={dvBugunMap}
+        onKapat={vi.fn()}
+        s={mockS}
+      />
+    );
+    expect(screen.getByText(/Son giriş:/)).toBeInTheDocument();
+    expect(screen.queryByText(/0 kez/)).not.toBeInTheDocument();
+  });
+
+  it('hiç girmemiş öğrenci için "Hiç giriş yok" görünür', () => {
+    render(
+      <KocGirisDurumuModal
+        ogrenciler={dvOgrenciler}
+        bugunMap={dvBugunMap}
+        onKapat={vi.fn()}
+        s={mockS}
+      />
+    );
+    expect(screen.getByText('Hiç giriş yok')).toBeInTheDocument();
+  });
+
+  it('özet satırı doğru sayıyı gösterir', () => {
+    render(
+      <KocGirisDurumuModal
+        ogrenciler={dvOgrenciler}
+        bugunMap={dvBugunMap}
+        onKapat={vi.fn()}
+        s={mockS}
+      />
+    );
+    expect(screen.getByText('1/3 öğrenci bugün giriş yaptı')).toBeInTheDocument();
+  });
+
+  it('tüm öğrenciler bugün girdiyse özet 3/3 gösterir', () => {
+    const hepsiBugun = {
+      a: { bugunAktif: true, girisSayisi: 1, sonAktif: dvBugunMap.a.sonAktif },
+      b: { bugunAktif: true, girisSayisi: 1, sonAktif: dvBugunMap.a.sonAktif },
+      c: { bugunAktif: true, girisSayisi: 1, sonAktif: dvBugunMap.a.sonAktif },
+    };
+    render(
+      <KocGirisDurumuModal
+        ogrenciler={dvOgrenciler}
+        bugunMap={hepsiBugun}
+        onKapat={vi.fn()}
+        s={mockS}
+      />
+    );
+    expect(screen.getByText('3/3 öğrenci bugün giriş yaptı')).toBeInTheDocument();
   });
 });
