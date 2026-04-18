@@ -241,7 +241,7 @@ export default function MufredatGoruntule({
             const eslesen = filtre === 'tamamlandi' ? dersTam : dersEksik;
             if (eslesen === 0) return null;
           }
-          const acik = acikDers === ders.id;
+          const acik = filtre !== 'hepsi' || acikDers === ders.id;
 
           return (
             <div

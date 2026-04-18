@@ -77,7 +77,7 @@ export function NodSatiri({ dugum, konuDurumlar, derinlik, kocModu, onToggle, fi
           ▼
         </span>
       </div>
-      {acik &&
+      {(acik || (!kocModu && filtre && filtre !== 'hepsi')) &&
         dugum._cocuklar.map(c => (
           <NodSatiri
             key={c.id}
