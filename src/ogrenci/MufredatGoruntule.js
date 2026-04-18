@@ -36,15 +36,21 @@ function yapraklariTopla(dugum) {
   return dugum._cocuklar.flatMap(c => yapraklariTopla(c));
 }
 
-async function derslerGetir(anahtarlar) {
+async function derslerGetir(anahtarlar, mevcutDurumlar = {}) {
+  const bosDurumlar = Object.keys(mevcutDurumlar).length === 0;
   const tumDersler = [];
   for (const anahtar of anahtarlar) {
     try {
       const dugSnap = await getDocs(collection(db, 'mufredat', anahtar, 'dugumler'));
       if (!dugSnap.empty) {
         const agac = dugumlerdenAgac(dugSnap.docs.map(d => ({ id: d.id, ...d.data() })));
-        tumDersler.push(...agac);
-        continue;
+        const idsEslesiyor =
+          bosDurumlar || agac.flatMap(d => yapraklariTopla(d)).some(id => id in mevcutDurumlar);
+        if (idsEslesiyor) {
+          tumDersler.push(...agac);
+          continue;
+        }
+        // dugumler ID'leri mevcut konu_takip ile eşleşmiyor → konular formatına geç
       }
       const konSnap = await getDocs(
         query(collection(db, 'mufredat', anahtar, 'konular'), orderBy('sira'))
@@ -94,10 +100,13 @@ export default function MufredatGoruntule({
   const [filtre, setFiltre] = useState('hepsi');
   const [kaydediliyor, setKaydediliyor] = useState(false);
 
-  const mufredatiGetir = useCallback(async () => {
-    const anahtarlar = mufredatAnahtarlariniBelirle(ogrenciTur, ogrenciSinif);
-    setDersler(await derslerGetir(anahtarlar));
-  }, [ogrenciTur, ogrenciSinif]);
+  const mufredatiGetir = useCallback(
+    async mevcutDurumlar => {
+      const anahtarlar = mufredatAnahtarlariniBelirle(ogrenciTur, ogrenciSinif);
+      setDersler(await derslerGetir(anahtarlar, mevcutDurumlar));
+    },
+    [ogrenciTur, ogrenciSinif]
+  );
 
   const durumGetir = useCallback(async () => {
     try {
@@ -107,15 +116,19 @@ export default function MufredatGoruntule({
         harita[d.id] = d.data();
       });
       setKonuDurumlar(harita);
+      return harita;
     } catch (e) {
       console.error(e);
+      return {};
     }
   }, [ogrenciId]);
 
   useEffect(() => {
     setYukleniyor(true);
-    Promise.all([mufredatiGetir(), durumGetir()]).finally(() => setYukleniyor(false));
-  }, [mufredatiGetir, durumGetir]);
+    durumGetir()
+      .then(kd => mufredatiGetir(kd))
+      .finally(() => setYukleniyor(false));
+  }, [durumGetir, mufredatiGetir]);
 
   const toggle = useCallback(
     async (konuId, hedef) => {
