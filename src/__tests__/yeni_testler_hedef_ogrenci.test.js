@@ -29,6 +29,14 @@ vi.mock('../data/konular', () => ({
 
 vi.mock('../utils/ogrenciBaglam', () => ({
   LGS_DERSLER: [],
+  mufredatAnahtarlariniBelirle: vi.fn(() => ['tyt']),
+  ogrenciBaglaminiCoz: vi.fn(() => ({
+    sinavModu: 'yks',
+    lgsOgrencisi: false,
+    arasinifOgrencisi: false,
+    gerisayimHedef: null,
+    mufredatAnahtarlari: ['tyt'],
+  })),
 }));
 
 vi.mock('../utils/sinavUtils', () => ({
@@ -347,5 +355,91 @@ describe('yorumUret()', () => {
     expect(RENK).toHaveProperty('genel');
     expect(RENK).toHaveProperty('artis');
     expect(RENK).toHaveProperty('istikrar');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// BugunSlotSatir
+// ─────────────────────────────────────────────────────────────────────────────
+import BugunSlotSatir from '../ogrenci/BugunSlotSatir';
+
+describe('BugunSlotSatir', () => {
+  const mockTip = { renk: '#10B981', acik: '#e6f7f2', label: 'Konu' };
+  const baseProps = {
+    slot: {
+      _idx: 0,
+      tip: 'konu',
+      ders: 'Matematik',
+      icerik: 'Türevler',
+      baslangic: '09:00',
+      bitis: '10:00',
+    },
+    bitti: false,
+    tip: mockTip,
+    konularAcik: null,
+    setKonularAcik: vi.fn(),
+    setVideoModal: vi.fn(),
+    onToggle: vi.fn(),
+    ogrenciId: 'ogr-1',
+    ogrenciTur: 'sayisal_12',
+    ogrenciSinif: 12,
+    s: mockS,
+  };
+
+  it('ders adını ve içeriği gösterir', () => {
+    render(<BugunSlotSatir {...baseProps} />);
+    expect(screen.getByText('Matematik')).toBeInTheDocument();
+    expect(screen.getByText('Türevler')).toBeInTheDocument();
+  });
+
+  it('ogrenciTur varken Konular butonu render olur', () => {
+    render(<BugunSlotSatir {...baseProps} />);
+    expect(screen.getByText(/Konular/)).toBeInTheDocument();
+  });
+
+  it('ogrenciTur yoksa Konular butonu render olmaz', () => {
+    render(<BugunSlotSatir {...baseProps} ogrenciTur={undefined} />);
+    expect(screen.queryByText(/Konular/)).not.toBeInTheDocument();
+  });
+
+  it('tıklanınca onToggle çağrılır', () => {
+    render(<BugunSlotSatir {...baseProps} />);
+    fireEvent.click(screen.getByText('Matematik'));
+    expect(baseProps.onToggle).toHaveBeenCalledWith(0);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SlotKonularPanel
+// ─────────────────────────────────────────────────────────────────────────────
+import SlotKonularPanel from '../ogrenci/SlotKonularPanel';
+
+describe('SlotKonularPanel', () => {
+  it('ogrenciTur yoksa yükleniyor göstermez', async () => {
+    render(
+      <SlotKonularPanel ders="Matematik" ogrenciId="ogr-1" ogrenciTur={undefined} s={mockS} />
+    );
+    await waitFor(() => {
+      expect(document.body).toBeTruthy();
+    });
+  });
+
+  it('Firestore boş döndüğünde bulunamadı mesajı gösterir', async () => {
+    const { getDocs } = await import('firebase/firestore');
+    getDocs.mockResolvedValue({ docs: [], empty: true });
+
+    render(
+      <SlotKonularPanel
+        ders="Matematik"
+        ogrenciId="ogr-1"
+        ogrenciTur="sayisal_12"
+        ogrenciSinif={12}
+        s={mockS}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText(/bulunamadı/i)).toBeInTheDocument();
+    });
   });
 });

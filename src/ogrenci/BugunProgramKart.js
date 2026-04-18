@@ -5,14 +5,30 @@ import { db } from '../firebase';
 import { useMobil } from '../hooks/useMediaQuery';
 import { VideoIzleModal } from '../koc/HaftalikProgram';
 import { bugunGunAdi, haftaBasStr } from '../utils/tarih';
+import BugunSlotSatir from './BugunSlotSatir';
 
 const BUGUN_GUN = bugunGunAdi();
 const HAFTA_BAZ = haftaBasStr();
 
-export default function BugunProgramKart({ ogrenciId, onNav: _onNav, s }) {
+function slotSuresi(sl) {
+  if (!sl.baslangic || !sl.bitis) return 60;
+  const [sh, sm] = sl.baslangic.split(':').map(Number);
+  const [eh, em] = sl.bitis.split(':').map(Number);
+  const d = eh * 60 + em - (sh * 60 + sm);
+  return d > 0 ? d : 60;
+}
+
+export default function BugunProgramKart({
+  ogrenciId,
+  ogrenciTur,
+  ogrenciSinif,
+  onNav: _onNav,
+  s,
+}) {
   const [slotlar, setSlotlar] = useState([]);
   const [tamamlandi, setTamamlandi] = useState({});
   const [videoModal, setVideoModal] = useState(null);
+  const [konularAcik, setKonularAcik] = useState(null);
   const mobil = useMobil();
 
   useEffect(() => {
@@ -20,7 +36,6 @@ export default function BugunProgramKart({ ogrenciId, onNav: _onNav, s }) {
     return onSnapshot(ref, snap => {
       if (snap.exists()) {
         const v = snap.data();
-        // Orijinal indeksi koru — tamamlandiMap'teki key'ler orijinal pozisyona göre
         setSlotlar(
           (v.hafta?.[BUGUN_GUN] || [])
             .map((sl, idx) => (sl.tip ? { ...sl, _idx: idx } : null))
@@ -52,17 +67,11 @@ export default function BugunProgramKart({ ogrenciId, onNav: _onNav, s }) {
   };
 
   if (slotlar.length === 0) return null;
+
   const tam = slotlar.filter(sl => tamamlandi[`${BUGUN_GUN}_${sl._idx}`]).length;
-  const getDuration = sl => {
-    if (!sl.baslangic || !sl.bitis) return 60;
-    const [sh, sm] = sl.baslangic.split(':').map(Number);
-    const [eh, em] = sl.bitis.split(':').map(Number);
-    const d = eh * 60 + em - (sh * 60 + sm);
-    return d > 0 ? d : 60;
-  };
-  const toplamDk = slotlar.reduce((a, sl) => a + getDuration(sl), 0);
+  const toplamDk = slotlar.reduce((a, sl) => a + slotSuresi(sl), 0);
   const tamamDk = slotlar.reduce(
-    (a, sl) => a + (tamamlandi[`${BUGUN_GUN}_${sl._idx}`] ? getDuration(sl) : 0),
+    (a, sl) => a + (tamamlandi[`${BUGUN_GUN}_${sl._idx}`] ? slotSuresi(sl) : 0),
     0
   );
   const oran = toplamDk > 0 ? Math.round((tamamDk / toplamDk) * 100) : 0;
@@ -115,118 +124,22 @@ export default function BugunProgramKart({ ogrenciId, onNav: _onNav, s }) {
           </div>
         </div>
         <div style={{ padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 0 }}>
-          {slotlar.map(slot => {
-            const tip = TIP_RENK[slot.tip] || TIP_RENK.diger;
-            const bitti = !!tamamlandi[`${BUGUN_GUN}_${slot._idx}`];
-            return (
-              <div
-                key={slot._idx}
-                onClick={() => toggle(slot._idx)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 10,
-                  cursor: 'pointer',
-                  padding: '8px 10px',
-                  marginBottom: 6,
-                  borderRadius: 10,
-                  background: bitti ? s.surface2 : tip.acik,
-                  border: `1px solid ${bitti ? s.border : tip.renk + '30'}`,
-                  opacity: bitti ? 0.6 : 1,
-                  transition: 'transform .15s ease, box-shadow .15s ease, opacity .2s',
-                }}
-                onMouseEnter={e => {
-                  e.currentTarget.style.transform = 'scale(1.02)';
-                  e.currentTarget.style.boxShadow = s.shadowHover ?? s.shadow;
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.transform = 'scale(1)';
-                  e.currentTarget.style.boxShadow = 'none';
-                }}
-              >
-                <div
-                  style={{
-                    width: 4,
-                    minHeight: 36,
-                    borderRadius: 99,
-                    flexShrink: 0,
-                    alignSelf: 'stretch',
-                    background: bitti ? s.border : tip.renk,
-                  }}
-                />
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-                    <span
-                      style={{
-                        fontSize: 10,
-                        fontWeight: 700,
-                        color: bitti ? s.text3 : tip.renk,
-                        background: `${tip.renk}20`,
-                        padding: '1px 7px',
-                        borderRadius: 4,
-                      }}
-                    >
-                      {tip.label}
-                    </span>
-                    {slot.baslangic && (
-                      <span style={{ fontSize: 10, color: s.text3 }}>
-                        {slot.baslangic}
-                        {slot.bitis ? ` – ${slot.bitis}` : ''}
-                      </span>
-                    )}
-                  </div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: bitti ? s.text3 : s.text }}>
-                    {slot.ders || '—'}
-                  </div>
-                  {slot.icerik && (
-                    <div style={{ fontSize: 11, color: s.text3, marginTop: 1 }}>{slot.icerik}</div>
-                  )}
-                  {slot.tip === 'video' && slot.videolar?.length > 0 && (
-                    <div
-                      onClick={e => {
-                        e.stopPropagation();
-                        setVideoModal(slot.videolar);
-                      }}
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 4,
-                        marginTop: 4,
-                        fontSize: 10,
-                        fontWeight: 700,
-                        color: s.info ?? s.accent,
-                        background: `${s.info ?? s.accent}15`,
-                        padding: '2px 10px',
-                        borderRadius: 20,
-                        cursor: 'pointer',
-                        border: `1px solid ${s.info ?? s.accent}30`,
-                      }}
-                    >
-                      ▶ {slot.videolar.length} video izle
-                    </div>
-                  )}
-                </div>
-                <div
-                  style={{
-                    width: 22,
-                    height: 22,
-                    borderRadius: 6,
-                    flexShrink: 0,
-                    border: bitti ? 'none' : `1.5px solid ${tip.renk}60`,
-                    background: bitti ? tip.renk : 'transparent',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: 11,
-                    color: '#fff',
-                    fontWeight: 700,
-                  }}
-                >
-                  {bitti ? '✓' : ''}
-                </div>
-              </div>
-            );
-          })}
+          {slotlar.map(slot => (
+            <BugunSlotSatir
+              key={slot._idx}
+              slot={slot}
+              bitti={!!tamamlandi[`${BUGUN_GUN}_${slot._idx}`]}
+              tip={TIP_RENK[slot.tip] || TIP_RENK.diger}
+              konularAcik={konularAcik}
+              setKonularAcik={setKonularAcik}
+              setVideoModal={setVideoModal}
+              onToggle={toggle}
+              ogrenciId={ogrenciId}
+              ogrenciTur={ogrenciTur}
+              ogrenciSinif={ogrenciSinif}
+              s={s}
+            />
+          ))}
         </div>
       </div>
     </>
@@ -235,6 +148,8 @@ export default function BugunProgramKart({ ogrenciId, onNav: _onNav, s }) {
 
 BugunProgramKart.propTypes = {
   ogrenciId: PropTypes.string.isRequired,
+  ogrenciTur: PropTypes.string,
+  ogrenciSinif: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   onNav: PropTypes.func,
   s: PropTypes.object.isRequired,
 };

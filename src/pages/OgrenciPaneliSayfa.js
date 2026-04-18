@@ -195,7 +195,13 @@ export function OgrenciAnaSayfa({
       <KpiSerit s={s} mobil={mobil} items={kpiItems} />
       <KocMesajiKart mesaj={gununSozu} s={s} />
       <GunlukRutinKart ogrenciId={kullanici.uid} s={s} />
-      <BugunProgramKart ogrenciId={kullanici.uid} onNav={onNav} s={s} />
+      <BugunProgramKart
+        ogrenciId={kullanici.uid}
+        ogrenciTur={ogrenciTur || userData?.tur}
+        ogrenciSinif={ogrenciSinif || userData?.sinif}
+        onNav={onNav}
+        s={s}
+      />
       {geriSayimVar && (
         <GeriSayimKart
           tur={ogrenciTur || userData?.tur}
