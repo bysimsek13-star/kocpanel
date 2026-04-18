@@ -197,8 +197,8 @@ export default function MufredatGoruntule({
         <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap' }}>
           {[
             { k: 'hepsi', l: 'Tümü' },
-            { k: 'eksik', l: `⚠ Eksik (${eksikSayisi})` },
-            { k: 'tamamlandi', l: `✓ Tamamlandı (${tamSayisi})` },
+            { k: 'eksik', l: `⚠ Eksik` },
+            { k: 'tamamlandi', l: `✓ Tamamlandı` },
           ].map(f => (
             <button
               key={f.k}
@@ -249,7 +249,7 @@ export default function MufredatGoruntule({
                   display: 'flex',
                   alignItems: 'center',
                   gap: 12,
-                  padding: '13px 18px',
+                  padding: '14px 18px',
                   cursor: 'pointer',
                   userSelect: 'none',
                 }}
@@ -263,57 +263,87 @@ export default function MufredatGoruntule({
                     flexShrink: 0,
                   }}
                 />
-                <div style={{ flex: 1 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 14, fontWeight: 700, color: s.text }}>{dersAdi}</div>
-                  <div
-                    style={{ fontSize: 11, color: s.text3, marginTop: 2, display: 'flex', gap: 8 }}
-                  >
-                    <span>{konular.length} konu</span>
-                    {dersTam > 0 && (
-                      <span style={{ color: '#10B981', fontWeight: 600 }}>
-                        ✓ {dersTam} tamamlandı
-                      </span>
-                    )}
-                    {dersEksik > 0 && (
-                      <span style={{ color: '#F59E0B', fontWeight: 600 }}>⚠ {dersEksik} eksik</span>
-                    )}
-                  </div>
-                </div>
-                {dersTam + dersEksik > 0 && (
-                  <div
-                    style={{
-                      width: 80,
-                      height: 6,
-                      background: s.surface3 || s.border,
-                      borderRadius: 4,
-                      overflow: 'hidden',
-                      flexShrink: 0,
-                    }}
-                  >
-                    <div style={{ height: '100%', display: 'flex' }}>
-                      <div
-                        style={{
-                          width: `${(dersTam / konular.length) * 100}%`,
-                          background: '#10B981',
-                          transition: 'width .4s',
-                        }}
-                      />
-                      <div
-                        style={{
-                          width: `${(dersEksik / konular.length) * 100}%`,
-                          background: '#F59E0B',
-                          transition: 'width .4s',
-                        }}
-                      />
+                  {dersTam + dersEksik > 0 && (
+                    <div
+                      style={{
+                        marginTop: 6,
+                        height: 4,
+                        background: s.surface3 || s.border,
+                        borderRadius: 4,
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <div style={{ height: '100%', display: 'flex' }}>
+                        <div
+                          style={{
+                            width: `${(dersTam / konular.length) * 100}%`,
+                            background: '#10B981',
+                            transition: 'width .4s',
+                          }}
+                        />
+                        <div
+                          style={{
+                            width: `${(dersEksik / konular.length) * 100}%`,
+                            background: '#F59E0B',
+                            transition: 'width .4s',
+                          }}
+                        />
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                  {dersTam > 0 && (
+                    <span
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 700,
+                        color: '#10B981',
+                        background: 'rgba(16,185,129,0.12)',
+                        padding: '2px 8px',
+                        borderRadius: 20,
+                      }}
+                    >
+                      ✓ {dersTam}
+                    </span>
+                  )}
+                  {dersEksik > 0 && (
+                    <span
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 700,
+                        color: '#F59E0B',
+                        background: 'rgba(245,158,11,0.12)',
+                        padding: '2px 8px',
+                        borderRadius: 20,
+                      }}
+                    >
+                      ⚠ {dersEksik}
+                    </span>
+                  )}
+                  {dersTam > 0 && (
+                    <span
+                      style={{
+                        fontSize: 11,
+                        color: s.text3,
+                        fontWeight: 600,
+                        minWidth: 28,
+                        textAlign: 'right',
+                      }}
+                    >
+                      {Math.round((dersTam / konular.length) * 100)}%
+                    </span>
+                  )}
+                </div>
                 <div
                   style={{
                     color: s.text3,
-                    fontSize: 12,
+                    fontSize: 11,
                     transform: acik ? 'rotate(90deg)' : 'none',
                     transition: 'transform .2s',
+                    flexShrink: 0,
                   }}
                 >
                   ▶
