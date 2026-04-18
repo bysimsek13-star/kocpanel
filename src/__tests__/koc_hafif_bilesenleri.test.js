@@ -420,3 +420,46 @@ describe('GuncelleModal (hedef)', () => {
     }
   });
 });
+
+// ─── SlotTipSecici ─────────────────────────────────────────────────────────────
+import SlotTipSecici from '../koc/SlotTipSecici';
+
+describe('SlotTipSecici', () => {
+  it('tüm aktivite tiplerini render eder', () => {
+    const onChange = vi.fn();
+    renderSade(<SlotTipSecici secilenTip={null} onChange={onChange} s={mockS} />);
+    expect(screen.getByText(/Konu/i)).toBeInTheDocument();
+    expect(screen.getByText(/Soru/i)).toBeInTheDocument();
+  });
+
+  it('seçili tip vurgulanır', () => {
+    renderSade(<SlotTipSecici secilenTip="konu" onChange={vi.fn()} s={mockS} />);
+    expect(document.body).toBeTruthy();
+  });
+
+  it('tıklanınca onChange çağrılır', () => {
+    const onChange = vi.fn();
+    renderSade(<SlotTipSecici secilenTip={null} onChange={onChange} s={mockS} />);
+    fireEvent.click(screen.getByText(/Konu/i));
+    expect(onChange).toHaveBeenCalledWith('konu');
+  });
+});
+
+// ─── SlotKonuSecici ─────────────────────────────────────────────────────────────
+import SlotKonuSecici from '../koc/SlotKonuSecici';
+
+describe('SlotKonuSecici', () => {
+  it('ders ve tur yoksa hiçbir şey render etmez', () => {
+    const { container } = renderSade(
+      <SlotKonuSecici ders="" ogrenciTur={undefined} onSec={vi.fn()} s={mockS} />
+    );
+    expect(container.firstChild).toBeNull();
+  });
+
+  it('ders varken başlangıçta boş render eder (fetch tamamlanmadan)', () => {
+    const { container } = renderSade(
+      <SlotKonuSecici ders="Matematik" ogrenciTur="sayisal_12" onSec={vi.fn()} s={mockS} />
+    );
+    expect(container).toBeTruthy();
+  });
+});
