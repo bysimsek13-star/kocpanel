@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { useTheme } from '../../context/ThemeContext';
 import { Card } from '../../components/Shared';
 import { useKoc } from '../../context/KocContext';
+import { bugunStr } from '../../utils/tarih';
 
 function gunFarki(tarih) {
   if (!tarih) return Infinity;
@@ -16,10 +17,14 @@ export default function KocRiskOzeti({ onSec }) {
   const { ogrenciler } = useKoc();
   const { s } = useTheme();
   const [acik, setAcik] = useState(true);
+  const BUGUN = bugunStr();
 
   const inaktif = ogrenciler.filter(o => gunFarki(o.sonCalismaTarihi) >= 7);
+  const soruGirmedi = ogrenciler.filter(
+    o => o.bugunSoruTarihi !== BUGUN && gunFarki(o.sonCalismaTarihi) < 7
+  );
 
-  if (inaktif.length === 0) return null;
+  if (inaktif.length === 0 && soruGirmedi.length === 0) return null;
 
   const Satir = ({ ogrenci, renk, etiket }) => (
     <div
@@ -83,7 +88,7 @@ export default function KocRiskOzeti({ onSec }) {
               borderRadius: 20,
             }}
           >
-            {inaktif.length}
+            {inaktif.length + soruGirmedi.length}
           </div>
         </div>
         <div style={{ fontSize: 12, color: s.text3 }}>{acik ? '▲' : '▼'}</div>
@@ -117,6 +122,27 @@ export default function KocRiskOzeti({ onSec }) {
                   />
                 );
               })}
+            </div>
+          )}
+
+          {/* Bugün soru girişi yok */}
+          {soruGirmedi.length > 0 && (
+            <div style={{ marginTop: inaktif.length > 0 ? 6 : 0 }}>
+              <div
+                style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  color: s.text3,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.06em',
+                  padding: '4px 10px',
+                }}
+              >
+                Bugün soru yok · {soruGirmedi.length}
+              </div>
+              {soruGirmedi.map(o => (
+                <Satir key={o.id} ogrenci={o} renk="#F59E0B" etiket="Soru girilmedi" />
+              ))}
             </div>
           )}
         </div>

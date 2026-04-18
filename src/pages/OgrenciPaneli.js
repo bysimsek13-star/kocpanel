@@ -40,6 +40,7 @@ export default function OgrenciPaneli() {
     mesajlariOku,
     gununSozu,
     bugunSoruVar,
+    bugunSoruOzet,
     programOran,
     ogrenciTur,
     ogrenciSinif,
@@ -308,6 +309,7 @@ export default function OgrenciPaneli() {
               ogrenciSinif={ogrenciSinif}
               gununSozu={gununSozu}
               bugunSoruVar={bugunSoruVar}
+              bugunSoruOzet={bugunSoruOzet}
               okunmamis={okunmamis}
               programOran={programOran}
               userData={userData}

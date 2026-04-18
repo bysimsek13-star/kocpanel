@@ -82,7 +82,15 @@ export function KocSatiri({
   );
 }
 
+const RISK_CFG = {
+  orta: { ikon: '⚠', renk: '#F59E0B', label: 'Orta risk' },
+  yuksek: { ikon: '⚡', renk: '#F43F5E', label: 'Yüksek risk' },
+  kritik: { ikon: '🚨', renk: '#DC2626', label: 'Kritik' },
+};
+
 export function OgrenciSatiri({ konu, durum, kritik, riskSeviyesi, s }) {
+  const riskCfg = riskSeviyesi && riskSeviyesi !== 'dusuk' ? RISK_CFG[riskSeviyesi] : null;
+
   if (!durum) {
     return (
       <div
@@ -92,12 +100,17 @@ export function OgrenciSatiri({ konu, durum, kritik, riskSeviyesi, s }) {
           gap: 8,
           padding: '8px 10px',
           borderRadius: 10,
-          background: s.surface2,
-          border: `1px solid ${s.border}`,
+          background: riskCfg ? `${riskCfg.renk}12` : s.surface2,
+          border: `1px solid ${riskCfg ? riskCfg.renk + '40' : s.border}`,
         }}
       >
         {kritik && <span style={{ fontSize: 11 }}>🔥</span>}
-        <span style={{ fontSize: 13, color: s.text2 }}>{konu}</span>
+        <span style={{ flex: 1, fontSize: 13, color: s.text2 }}>{konu}</span>
+        {riskCfg && (
+          <span style={{ fontSize: 10, color: riskCfg.renk, fontWeight: 700 }}>
+            {riskCfg.ikon} {riskCfg.label}
+          </span>
+        )}
       </div>
     );
   }
@@ -130,8 +143,8 @@ export function OgrenciSatiri({ konu, durum, kritik, riskSeviyesi, s }) {
       </div>
       {kritik && <span style={{ fontSize: 11 }}>🔥</span>}
       <span style={{ flex: 1, fontSize: 13, color: s.text, fontWeight: 600 }}>{konu}</span>
-      {riskSeviyesi === 'yuksek' && durum !== 'tamamlandi' && (
-        <span style={{ fontSize: 10, color: '#F43F5E', fontWeight: 700 }}>⚡</span>
+      {riskCfg && durum !== 'tamamlandi' && (
+        <span style={{ fontSize: 10, color: riskCfg.renk, fontWeight: 700 }}>{riskCfg.ikon}</span>
       )}
       <span style={{ fontSize: 11, fontWeight: 700, color: cfg.renk }}>{cfg.label}</span>
     </div>

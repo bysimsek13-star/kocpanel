@@ -52,6 +52,7 @@ export function OgrenciAnaSayfa({
   ogrenciSinif,
   gununSozu,
   bugunSoruVar,
+  bugunSoruOzet,
   okunmamis,
   programOran,
   userData,
@@ -98,8 +99,18 @@ export function OgrenciAnaSayfa({
     },
     {
       label: 'Soru çözümü',
-      deger: bugunSoruVar ? 'Tamamlandı' : 'Girilmedi',
-      alt: bugunSoruVar ? 'Bugün girildi' : saat < 22 ? 'Girmeyi unutma!' : 'Bugün girilmedi',
+      deger: bugunSoruVar ? `${bugunSoruOzet?.toplam ?? '?'}s` : 'Girilmedi',
+      alt: bugunSoruVar
+        ? [
+            bugunSoruOzet?.yanlis > 0 ? `Y${bugunSoruOzet.yanlis}` : null,
+            bugunSoruOzet?.bos > 0 ? `B${bugunSoruOzet.bos}` : null,
+            bugunSoruOzet?.sure > 0 ? `${bugunSoruOzet.sure}dk` : null,
+          ]
+            .filter(Boolean)
+            .join(' · ') || 'Bugün girildi'
+        : saat < 22
+          ? 'Girmeyi unutma!'
+          : 'Bugün girilmedi',
       renk: bugunSoruVar
         ? (s.success ?? s.ok)
         : saat < 22
@@ -210,6 +221,7 @@ export function OgrenciSayfaIcerigi({
   ogrenciSinif,
   gununSozu,
   bugunSoruVar,
+  bugunSoruOzet,
   okunmamis,
   programOran,
   userData,
@@ -261,6 +273,7 @@ export function OgrenciSayfaIcerigi({
             kocId={userData?.kocId}
             ogrenciTur={ogrenciTur || userData?.tur}
             ogrenciSinif={ogrenciSinif || userData?.sinif}
+            konuAnalizGoster
           />
         </>
       );
@@ -316,6 +329,7 @@ export function OgrenciSayfaIcerigi({
           ogrenciSinif={ogrenciSinif}
           gununSozu={gununSozu}
           bugunSoruVar={bugunSoruVar}
+          bugunSoruOzet={bugunSoruOzet}
           okunmamis={okunmamis}
           programOran={programOran}
           userData={userData}

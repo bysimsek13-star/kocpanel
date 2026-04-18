@@ -42,6 +42,7 @@ export function useOgrenciPaneliVeri(kullanici, userData) {
   const [okunmamis, setOkunmamis] = useState(0);
   const [gununSozu, setGununSozu] = useState(null);
   const [bugunSoruVar, setBugunSoruVar] = useState(false);
+  const [bugunSoruOzet, setBugunSoruOzet] = useState(null);
   const [programOran, setProgramOran] = useState(null);
   const [ogrenciTur, setOgrenciTur] = useState(null);
   const [ogrenciSinif, setOgrenciSinif] = useState(null);
@@ -129,6 +130,18 @@ export function useOgrenciPaneliVeri(kullanici, userData) {
         setDenemeler(dl);
         setCalismalar(cs.docs.map(d => ({ id: d.id, ...d.data(), tarih: d.id })));
         setBugunSoruVar(sq.exists());
+        if (sq.exists()) {
+          const sd = sq.data();
+          let topS = 0,
+            topY = 0,
+            topB = 0;
+          Object.values(sd.dersler || {}).forEach(r => {
+            topS += (r.d || 0) + (r.y || 0) + (r.b || 0);
+            topY += r.y || 0;
+            topB += r.b || 0;
+          });
+          setBugunSoruOzet({ toplam: topS, yanlis: topY, bos: topB, sure: sd.sureDk || 0 });
+        }
         const bugunBaslangic = new Date();
         bugunBaslangic.setHours(0, 0, 0, 0);
         const sozBugunkuMu = veri => {
@@ -186,6 +199,7 @@ export function useOgrenciPaneliVeri(kullanici, userData) {
     mesajlariOku,
     gununSozu,
     bugunSoruVar,
+    bugunSoruOzet,
     programOran,
     ogrenciTur,
     ogrenciSinif,

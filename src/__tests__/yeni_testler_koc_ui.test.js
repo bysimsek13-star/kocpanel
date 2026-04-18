@@ -409,7 +409,13 @@ describe('KocRiskOzeti', () => {
     const { container } = render(
       <KocProvider
         ogrenciler={[
-          { id: 'o1', isim: 'Normal', riskDurumu: 'normal', sonCalismaTarihi: new Date() },
+          {
+            id: 'o1',
+            isim: 'Normal',
+            riskDurumu: 'normal',
+            sonCalismaTarihi: new Date(),
+            bugunSoruTarihi: '2024-01-15',
+          },
         ]}
         dashboardMap={{}}
         bugunMap={{}}
