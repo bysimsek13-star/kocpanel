@@ -3,12 +3,18 @@ import { DURUM } from './mufredatUtils';
 
 const DERINLIK_RENK = ['#5B4FE8', '#0891B2', '#059669'];
 
-export function NodSatiri({ dugum, konuDurumlar, derinlik, kocModu, onToggle, s }) {
+function altAgactaEslesen(dugum, filtre, konuDurumlar) {
+  if (!dugum._cocuklar?.length) return konuDurumlar[dugum.id]?.durum === filtre;
+  return dugum._cocuklar.some(c => altAgactaEslesen(c, filtre, konuDurumlar));
+}
+
+export function NodSatiri({ dugum, konuDurumlar, derinlik, kocModu, onToggle, filtre, s }) {
   const [acik, setAcik] = useState(true);
   const yaprak = !dugum._cocuklar?.length;
 
   if (yaprak) {
     const durum = konuDurumlar[dugum.id]?.durum || null;
+    if (!kocModu && filtre && filtre !== 'hepsi' && durum !== filtre) return null;
     const risk = konuDurumlar[dugum.id]?.riskSeviyesi || null;
     const kaynakDeneme = konuDurumlar[dugum.id]?.kaynak === 'deneme';
     const satir = kocModu ? (
@@ -33,6 +39,9 @@ export function NodSatiri({ dugum, konuDurumlar, derinlik, kocModu, onToggle, s 
     );
     return derinlik > 0 ? <div style={{ paddingLeft: derinlik * 10 }}>{satir}</div> : satir;
   }
+
+  if (!kocModu && filtre && filtre !== 'hepsi' && !altAgactaEslesen(dugum, filtre, konuDurumlar))
+    return null;
 
   const renk = DERINLIK_RENK[Math.min(derinlik, 2)];
   return (
@@ -77,6 +86,7 @@ export function NodSatiri({ dugum, konuDurumlar, derinlik, kocModu, onToggle, s 
             derinlik={derinlik + 1}
             kocModu={kocModu}
             onToggle={onToggle}
+            filtre={filtre}
             s={s}
           />
         ))}

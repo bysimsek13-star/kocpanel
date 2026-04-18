@@ -386,6 +386,7 @@ export default function MufredatGoruntule({
                         derinlik={0}
                         kocModu={kocModu}
                         onToggle={toggle}
+                        filtre={filtre}
                         s={s}
                       />
                     ))}
