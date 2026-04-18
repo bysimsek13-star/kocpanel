@@ -18,8 +18,6 @@ export function SlotModal({
   onKapat,
   onHaftayaTasi,
   kocUid,
-  ogrenciTur,
-  ogrenciSinif,
   s,
 }) {
   const [form, setForm] = useState({
@@ -118,15 +116,7 @@ export function SlotModal({
             placeholder="ör: Türev, Limit..."
             style={inputStil}
           />
-          {ogrenciTur && (
-            <SlotKonuSecici
-              ders={form.ders}
-              ogrenciTur={ogrenciTur}
-              ogrenciSinif={ogrenciSinif}
-              onSec={v => set('icerik', v)}
-              s={s}
-            />
-          )}
+          <SlotKonuSecici ders={form.ders} onSec={v => set('icerik', v)} s={s} />
         </div>
 
         {form.tip === 'video' && (

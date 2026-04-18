@@ -184,8 +184,6 @@ export default function HaftalikProgramSayfasi({
           onKapat={() => setModal(null)}
           onHaftayaTasi={readOnly ? null : haftayaTasi}
           kocUid={readOnly ? null : kocUid}
-          ogrenciTur={secilenOgrenci?.tur}
-          ogrenciSinif={secilenOgrenci?.sinif}
           s={s}
         />
       )}
