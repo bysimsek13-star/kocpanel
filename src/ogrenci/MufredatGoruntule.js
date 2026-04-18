@@ -14,61 +14,70 @@ import { useTheme } from '../context/ThemeContext';
 import { LoadingState } from '../components/Shared';
 import { mufredatAnahtarlariniBelirle } from '../utils/ogrenciBaglam';
 import { dersiRenk } from './mufredatUtils';
-import { KocSatiri, OgrenciSatiri, Chip } from './MufredatDers';
+import { Chip, NodSatiri } from './MufredatDers';
 
-function yaprakListesi(idHaritasi, id, sonuc = []) {
-  const dugum = idHaritasi[id];
-  if (!dugum) return sonuc;
-  if (!dugum._cocuklar.length) sonuc.push(dugum);
-  else dugum._cocuklar.forEach(cid => yaprakListesi(idHaritasi, cid, sonuc));
-  return sonuc;
-}
-
-function dugumlerdenGruplar(docs) {
+function dugumlerdenAgac(docs) {
   const harita = {};
   docs.forEach(d => {
     harita[d.id] = { ...d, _cocuklar: [] };
   });
   docs.forEach(d => {
-    if (d.parentId && harita[d.parentId]) harita[d.parentId]._cocuklar.push(d.id);
+    if (d.parentId && harita[d.parentId]) harita[d.parentId]._cocuklar.push(harita[d.id]);
   });
-  const dersler = docs.filter(d => d.seviye === 1).sort((a, b) => (a.sira ?? 0) - (b.sira ?? 0));
-  const gruplar = {};
-  dersler.forEach(ders => {
-    const yapraklar = yaprakListesi(harita, ders.id).sort((a, b) => (a.sira ?? 0) - (b.sira ?? 0));
-    if (yapraklar.length > 0) {
-      gruplar[ders.ad] = yapraklar.map(d => ({ id: d.id, konu: d.ad, kritik: d.kritik || false }));
-    }
-  });
-  return gruplar;
+  Object.values(harita).forEach(n => n._cocuklar.sort((a, b) => (a.sira ?? 0) - (b.sira ?? 0)));
+  return docs
+    .filter(d => !d.parentId)
+    .sort((a, b) => (a.sira ?? 0) - (b.sira ?? 0))
+    .map(d => harita[d.id]);
 }
 
-async function gruplarGetir(anahtarlar) {
-  const gruplar = {};
+function yapraklariTopla(dugum) {
+  if (!dugum._cocuklar?.length) return [dugum.id];
+  return dugum._cocuklar.flatMap(c => yapraklariTopla(c));
+}
+
+async function derslerGetir(anahtarlar) {
+  const tumDersler = [];
   for (const anahtar of anahtarlar) {
     try {
       const dugSnap = await getDocs(collection(db, 'mufredat', anahtar, 'dugumler'));
       if (!dugSnap.empty) {
-        Object.assign(
-          gruplar,
-          dugumlerdenGruplar(dugSnap.docs.map(d => ({ id: d.id, ...d.data() })))
-        );
+        const agac = dugumlerdenAgac(dugSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+        tumDersler.push(...agac);
         continue;
       }
       const konSnap = await getDocs(
         query(collection(db, 'mufredat', anahtar, 'konular'), orderBy('sira'))
       );
-      konSnap.docs.forEach(d => {
+      const grupHarita = {};
+      konSnap.docs.forEach((d, i) => {
         const data = { id: d.id, ...d.data() };
         const key = data.dersLabel || data.ders || '—';
-        if (!gruplar[key]) gruplar[key] = [];
-        gruplar[key].push({ id: data.id, konu: data.konu, kritik: data.kritik || false });
+        if (!grupHarita[key]) {
+          grupHarita[key] = {
+            id: `fb_${key}`,
+            ad: key,
+            seviye: 1,
+            sira: i,
+            _cocuklar: [],
+            kritik: false,
+          };
+        }
+        grupHarita[key]._cocuklar.push({
+          id: data.id,
+          ad: data.konu,
+          seviye: 3,
+          sira: i,
+          kritik: data.kritik || false,
+          _cocuklar: [],
+        });
       });
+      tumDersler.push(...Object.values(grupHarita));
     } catch (e) {
       console.error('Müfredat alınamadı:', anahtar, e);
     }
   }
-  return gruplar;
+  return tumDersler;
 }
 
 export default function MufredatGoruntule({
@@ -79,7 +88,7 @@ export default function MufredatGoruntule({
 }) {
   const { s } = useTheme();
   const [konuDurumlar, setKonuDurumlar] = useState({});
-  const [dersGruplari, setDersGruplari] = useState({});
+  const [dersler, setDersler] = useState([]);
   const [yukleniyor, setYukleniyor] = useState(true);
   const [acikDers, setAcikDers] = useState(null);
   const [filtre, setFiltre] = useState('hepsi');
@@ -87,7 +96,7 @@ export default function MufredatGoruntule({
 
   const mufredatiGetir = useCallback(async () => {
     const anahtarlar = mufredatAnahtarlariniBelirle(ogrenciTur, ogrenciSinif);
-    setDersGruplari(await gruplarGetir(anahtarlar));
+    setDersler(await derslerGetir(anahtarlar));
   }, [ogrenciTur, ogrenciSinif]);
 
   const durumGetir = useCallback(async () => {
@@ -154,7 +163,7 @@ export default function MufredatGoruntule({
 
   if (yukleniyor) return <LoadingState />;
 
-  const toplamKonu = Object.values(dersGruplari).reduce((acc, arr) => acc + arr.length, 0);
+  const toplamKonu = dersler.reduce((acc, d) => acc + yapraklariTopla(d).length, 0);
 
   return (
     <div>
@@ -221,20 +230,22 @@ export default function MufredatGoruntule({
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        {Object.entries(dersGruplari).map(([dersAdi, konular]) => {
-          const renk = dersiRenk(dersAdi);
-          const dersTam = konular.filter(k => konuDurumlar[k.id]?.durum === 'tamamlandi').length;
-          const dersEksik = konular.filter(k => konuDurumlar[k.id]?.durum === 'eksik').length;
-          const gorunulenKonular =
-            kocModu || filtre === 'hepsi'
-              ? konular
-              : konular.filter(k => konuDurumlar[k.id]?.durum === filtre);
-          if (!kocModu && filtre !== 'hepsi' && gorunulenKonular.length === 0) return null;
-          const acik = acikDers === dersAdi;
+        {dersler.map(ders => {
+          const renk = dersiRenk(ders.ad);
+          const yaprakIdleri = yapraklariTopla(ders);
+          const dersTam = yaprakIdleri.filter(
+            id => konuDurumlar[id]?.durum === 'tamamlandi'
+          ).length;
+          const dersEksik = yaprakIdleri.filter(id => konuDurumlar[id]?.durum === 'eksik').length;
+          if (!kocModu && filtre !== 'hepsi') {
+            const eslesen = filtre === 'tamamlandi' ? dersTam : dersEksik;
+            if (eslesen === 0) return null;
+          }
+          const acik = acikDers === ders.id;
 
           return (
             <div
-              key={dersAdi}
+              key={ders.id}
               style={{
                 background: s.surface,
                 borderRadius: 14,
@@ -244,7 +255,7 @@ export default function MufredatGoruntule({
               }}
             >
               <div
-                onClick={() => setAcikDers(acik ? null : dersAdi)}
+                onClick={() => setAcikDers(acik ? null : ders.id)}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -264,7 +275,7 @@ export default function MufredatGoruntule({
                   }}
                 />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: s.text }}>{dersAdi}</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: s.text }}>{ders.ad}</div>
                   {dersTam + dersEksik > 0 && (
                     <div
                       style={{
@@ -278,14 +289,14 @@ export default function MufredatGoruntule({
                       <div style={{ height: '100%', display: 'flex' }}>
                         <div
                           style={{
-                            width: `${(dersTam / konular.length) * 100}%`,
+                            width: `${(dersTam / yaprakIdleri.length) * 100}%`,
                             background: '#10B981',
                             transition: 'width .4s',
                           }}
                         />
                         <div
                           style={{
-                            width: `${(dersEksik / konular.length) * 100}%`,
+                            width: `${(dersEksik / yaprakIdleri.length) * 100}%`,
                             background: '#F59E0B',
                             transition: 'width .4s',
                           }}
@@ -333,7 +344,7 @@ export default function MufredatGoruntule({
                         textAlign: 'right',
                       }}
                     >
-                      {Math.round((dersTam / konular.length) * 100)}%
+                      {Math.round((dersTam / yaprakIdleri.length) * 100)}%
                     </span>
                   )}
                 </div>
@@ -366,37 +377,18 @@ export default function MufredatGoruntule({
                       Her konuya durum ata — öğrenci görecek
                     </div>
                   )}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    {gorunulenKonular.map(konu => {
-                      const durum = konuDurumlar[konu.id]?.durum || null;
-                      const risk = konuDurumlar[konu.id]?.riskSeviyesi || null;
-                      const kaynakDeneme = konuDurumlar[konu.id]?.kaynak === 'deneme';
-                      if (kocModu) {
-                        return (
-                          <KocSatiri
-                            key={konu.id}
-                            konu={konu.konu}
-                            durum={durum}
-                            kritik={konu.kritik}
-                            riskSeviyesi={risk}
-                            kaynakDeneme={kaynakDeneme}
-                            sonDenemeTarihi={konuDurumlar[konu.id]?.sonDenemeTarihi || null}
-                            onToggle={hedef => toggle(konu.id, hedef)}
-                            s={s}
-                          />
-                        );
-                      }
-                      return (
-                        <OgrenciSatiri
-                          key={konu.id}
-                          konu={konu.konu}
-                          durum={durum}
-                          kritik={konu.kritik}
-                          riskSeviyesi={risk}
-                          s={s}
-                        />
-                      );
-                    })}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    {ders._cocuklar.map(c => (
+                      <NodSatiri
+                        key={c.id}
+                        dugum={c}
+                        konuDurumlar={konuDurumlar}
+                        derinlik={0}
+                        kocModu={kocModu}
+                        onToggle={toggle}
+                        s={s}
+                      />
+                    ))}
                   </div>
                 </div>
               )}

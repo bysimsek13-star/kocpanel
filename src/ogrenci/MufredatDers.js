@@ -1,5 +1,88 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { DURUM } from './mufredatUtils';
+
+const DERINLIK_RENK = ['#5B4FE8', '#0891B2', '#059669'];
+
+export function NodSatiri({ dugum, konuDurumlar, derinlik, kocModu, onToggle, s }) {
+  const [acik, setAcik] = useState(true);
+  const yaprak = !dugum._cocuklar?.length;
+
+  if (yaprak) {
+    const durum = konuDurumlar[dugum.id]?.durum || null;
+    const risk = konuDurumlar[dugum.id]?.riskSeviyesi || null;
+    const kaynakDeneme = konuDurumlar[dugum.id]?.kaynak === 'deneme';
+    const satir = kocModu ? (
+      <KocSatiri
+        konu={dugum.ad}
+        durum={durum}
+        kritik={dugum.kritik}
+        riskSeviyesi={risk}
+        kaynakDeneme={kaynakDeneme}
+        sonDenemeTarihi={konuDurumlar[dugum.id]?.sonDenemeTarihi || null}
+        onToggle={hedef => onToggle?.(dugum.id, hedef)}
+        s={s}
+      />
+    ) : (
+      <OgrenciSatiri
+        konu={dugum.ad}
+        durum={durum}
+        kritik={dugum.kritik}
+        riskSeviyesi={risk}
+        s={s}
+      />
+    );
+    return derinlik > 0 ? <div style={{ paddingLeft: derinlik * 10 }}>{satir}</div> : satir;
+  }
+
+  const renk = DERINLIK_RENK[Math.min(derinlik, 2)];
+  return (
+    <div style={{ marginTop: derinlik === 0 ? 0 : 6 }}>
+      <div
+        onClick={() => setAcik(v => !v)}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          padding: '5px 8px',
+          marginLeft: derinlik * 10,
+          borderLeft: `2px solid ${renk}50`,
+          paddingLeft: 10,
+          cursor: 'pointer',
+          userSelect: 'none',
+          marginBottom: 4,
+        }}
+      >
+        <span
+          style={{ flex: 1, fontSize: derinlik === 0 ? 12 : 11, fontWeight: 700, color: s.text2 }}
+        >
+          {dugum.ad}
+        </span>
+        <span
+          style={{
+            fontSize: 9,
+            color: s.text3,
+            transform: acik ? 'none' : 'rotate(-90deg)',
+            transition: 'transform .15s',
+          }}
+        >
+          ▼
+        </span>
+      </div>
+      {acik &&
+        dugum._cocuklar.map(c => (
+          <NodSatiri
+            key={c.id}
+            dugum={c}
+            konuDurumlar={konuDurumlar}
+            derinlik={derinlik + 1}
+            kocModu={kocModu}
+            onToggle={onToggle}
+            s={s}
+          />
+        ))}
+    </div>
+  );
+}
 
 export function KocSatiri({
   konu,
