@@ -134,6 +134,7 @@ export function SlotModal({
             kocUid={kocUid}
             seciliVideolar={form.videolar}
             onChange={v => set('videolar', v)}
+            ders={form.ders}
             s={s}
           />
         )}

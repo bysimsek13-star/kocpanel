@@ -3,7 +3,7 @@ import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
 import { db } from '../firebase';
 import { toplamSureHesapla } from './programBilesenUtils';
 
-export function VideoSecici({ kocUid, seciliVideolar, onChange, s }) {
+export function VideoSecici({ kocUid, seciliVideolar, onChange, ders, s }) {
   const [playlistler, setPlaylistler] = useState([]);
   const [seciliPL, setSeciliPL] = useState(null);
   const [plVideolar, setPlVideolar] = useState([]);
@@ -133,40 +133,51 @@ export function VideoSecici({ kocUid, seciliVideolar, onChange, s }) {
               overflowY: 'auto',
             }}
           >
-            {playlistler.map(pl => (
-              <div
-                key={pl.id}
-                onClick={() => plSec(pl)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 10,
-                  padding: '8px 12px',
-                  borderRadius: 10,
-                  background: s.surface2,
-                  border: `1px solid ${s.border}`,
-                  cursor: 'pointer',
-                  fontSize: 12,
-                }}
-              >
-                <span style={{ fontSize: 16 }}>🎬</span>
-                <span
+            {(ders?.trim()
+              ? [...playlistler].sort((a, b) => {
+                  const al = a.title?.toLowerCase() || '';
+                  const bl = b.title?.toLowerCase() || '';
+                  const dl = ders.toLowerCase();
+                  return (bl.includes(dl) ? 1 : 0) - (al.includes(dl) ? 1 : 0);
+                })
+              : playlistler
+            ).map(pl => {
+              const vurgula = ders?.trim() && pl.title?.toLowerCase().includes(ders.toLowerCase());
+              return (
+                <div
+                  key={pl.id}
+                  onClick={() => plSec(pl)}
                   style={{
-                    flex: 1,
-                    color: s.text,
-                    fontWeight: 600,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    padding: '8px 12px',
+                    borderRadius: 10,
+                    background: vurgula ? `${s.info ?? s.accent}12` : s.surface2,
+                    border: `1px solid ${vurgula ? (s.info ?? s.accent) + '50' : s.border}`,
+                    cursor: 'pointer',
+                    fontSize: 12,
                   }}
                 >
-                  {pl.title}
-                </span>
-                <span style={{ color: s.text3, fontSize: 11, flexShrink: 0 }}>
-                  {pl.videoCount} video →
-                </span>
-              </div>
-            ))}
+                  <span style={{ fontSize: 16 }}>🎬</span>
+                  <span
+                    style={{
+                      flex: 1,
+                      color: s.text,
+                      fontWeight: vurgula ? 700 : 600,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {pl.title}
+                  </span>
+                  <span style={{ color: s.text3, fontSize: 11, flexShrink: 0 }}>
+                    {pl.videoCount} video →
+                  </span>
+                </div>
+              );
+            })}
           </div>
         )
       ) : (
