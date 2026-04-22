@@ -1,9 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { collection, getDocs, query, where, orderBy } from 'firebase/firestore';
 import { db } from '../firebase';
 import { toplamSureHesapla } from './programBilesenUtils';
+import VideoSeciciVideoPanel from './VideoSeciciVideoPanel';
+import { MUFREDAT_TO_KANONIK, ogrenciTurToGrup } from '../constants/playlistSabitleri';
 
-export function VideoSecici({ kocUid, seciliVideolar, onChange, ders, s }) {
+export function VideoSecici({
+  kocUid,
+  seciliVideolar,
+  onChange,
+  ders,
+  dersId,
+  ogrenciTur,
+  ogrenciSinif,
+  s,
+}) {
   const [playlistler, setPlaylistler] = useState([]);
   const [seciliPL, setSeciliPL] = useState(null);
   const [plVideolar, setPlVideolar] = useState([]);
@@ -22,6 +33,37 @@ export function VideoSecici({ kocUid, seciliVideolar, onChange, ders, s }) {
       .catch(console.error);
   }, [kocUid]);
 
+  const ogrenciGrup = useMemo(
+    () => ogrenciTurToGrup(ogrenciTur, ogrenciSinif),
+    [ogrenciTur, ogrenciSinif]
+  );
+  const kanonikDers = useMemo(() => (dersId ? MUFREDAT_TO_KANONIK[dersId] : null), [dersId]);
+
+  const gorunenPlaylistler = useMemo(() => {
+    if (!playlistler.length) return [];
+    let liste = [...playlistler];
+    // Önce öğrencinin grubuna atanmış olanları filtrele
+    if (ogrenciGrup) {
+      const grupluListe = liste.filter(p => (p.gruplar || []).includes(ogrenciGrup));
+      if (grupluListe.length > 0) liste = grupluListe;
+    }
+    // Kanonik ders eşleşmesine göre sırala/filtrele
+    if (kanonikDers) {
+      const eslesenler = liste.filter(p => p.ders === kanonikDers);
+      if (eslesenler.length > 0) return eslesenler;
+    }
+    // Fallback: ders adıyla title eşleşmesi
+    if (ders?.trim()) {
+      return [...liste].sort((a, b) => {
+        const al = a.title?.toLowerCase() || '';
+        const bl = b.title?.toLowerCase() || '';
+        const dl = ders.toLowerCase();
+        return (bl.includes(dl) ? 1 : 0) - (al.includes(dl) ? 1 : 0);
+      });
+    }
+    return liste;
+  }, [playlistler, ogrenciGrup, kanonikDers, ders]);
+
   const plSec = async pl => {
     setSeciliPL(pl);
     setPlYukleniyor(true);
@@ -34,22 +76,6 @@ export function VideoSecici({ kocUid, seciliVideolar, onChange, ders, s }) {
       console.error(e);
     }
     setPlYukleniyor(false);
-  };
-
-  const toggle = video => {
-    const var_ = seciliVideolar.some(v => v.videoId === video.videoId);
-    if (var_) onChange(seciliVideolar.filter(v => v.videoId !== video.videoId));
-    else
-      onChange([
-        ...seciliVideolar,
-        {
-          videoId: video.videoId,
-          title: video.title,
-          thumbnail: video.thumbnail,
-          duration: video.duration,
-          playlistDocId: seciliPL.id,
-        },
-      ]);
   };
 
   const toplamSure = toplamSureHesapla(seciliVideolar);
@@ -119,9 +145,9 @@ export function VideoSecici({ kocUid, seciliVideolar, onChange, ders, s }) {
       )}
 
       {!seciliPL ? (
-        playlistler.length === 0 ? (
+        gorunenPlaylistler.length === 0 ? (
           <div style={{ fontSize: 12, color: s.text3, padding: '8px 0' }}>
-            Henüz playlist eklenmemiş.
+            {kanonikDers ? 'Bu derse atanmış playlist yok.' : 'Henüz playlist eklenmemiş.'}
           </div>
         ) : (
           <div
@@ -133,16 +159,10 @@ export function VideoSecici({ kocUid, seciliVideolar, onChange, ders, s }) {
               overflowY: 'auto',
             }}
           >
-            {(ders?.trim()
-              ? [...playlistler].sort((a, b) => {
-                  const al = a.title?.toLowerCase() || '';
-                  const bl = b.title?.toLowerCase() || '';
-                  const dl = ders.toLowerCase();
-                  return (bl.includes(dl) ? 1 : 0) - (al.includes(dl) ? 1 : 0);
-                })
-              : playlistler
-            ).map(pl => {
-              const vurgula = ders?.trim() && pl.title?.toLowerCase().includes(ders.toLowerCase());
+            {gorunenPlaylistler.map(pl => {
+              const vurgula = kanonikDers
+                ? pl.ders === kanonikDers
+                : ders?.trim() && pl.title?.toLowerCase().includes(ders.toLowerCase());
               return (
                 <div
                   key={pl.id}
@@ -181,108 +201,18 @@ export function VideoSecici({ kocUid, seciliVideolar, onChange, ders, s }) {
           </div>
         )
       ) : (
-        <div>
-          <button
-            onClick={() => {
-              setSeciliPL(null);
-              setPlVideolar([]);
-            }}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: s.accent,
-              cursor: 'pointer',
-              fontSize: 11,
-              fontWeight: 600,
-              padding: '0 0 8px 0',
-            }}
-          >
-            ← {seciliPL.title}
-          </button>
-          {plYukleniyor ? (
-            <div style={{ fontSize: 12, color: s.text3 }}>Yükleniyor...</div>
-          ) : (
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 4,
-                maxHeight: 180,
-                overflowY: 'auto',
-              }}
-            >
-              {plVideolar.map(v => {
-                const secili = seciliVideolar.some(x => x.videoId === v.videoId);
-                return (
-                  <div
-                    key={v.videoId}
-                    onClick={() => toggle(v)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 8,
-                      padding: '6px 10px',
-                      borderRadius: 8,
-                      cursor: 'pointer',
-                      transition: 'background 0.1s',
-                      background: secili ? `${s.info ?? s.accent}15` : s.surface2,
-                      border: `1px solid ${secili ? (s.info ?? s.accent) : s.border}`,
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: 16,
-                        height: 16,
-                        borderRadius: 4,
-                        flexShrink: 0,
-                        background: secili ? (s.info ?? s.accent) : 'transparent',
-                        border: `2px solid ${secili ? (s.info ?? s.accent) : s.border}`,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      {secili && (
-                        <span style={{ color: '#fff', fontSize: 10, lineHeight: 1 }}>✓</span>
-                      )}
-                    </div>
-                    {v.thumbnail && (
-                      <img
-                        src={v.thumbnail}
-                        alt=""
-                        style={{
-                          width: 40,
-                          height: 22,
-                          objectFit: 'cover',
-                          borderRadius: 4,
-                          flexShrink: 0,
-                        }}
-                        loading="lazy"
-                      />
-                    )}
-                    <span
-                      style={{
-                        flex: 1,
-                        fontSize: 11,
-                        color: s.text,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {v.title}
-                    </span>
-                    {v.duration && (
-                      <span style={{ fontSize: 10, color: s.text3, flexShrink: 0 }}>
-                        {v.duration}
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
+        <VideoSeciciVideoPanel
+          seciliPL={seciliPL}
+          plVideolar={plVideolar}
+          plYukleniyor={plYukleniyor}
+          seciliVideolar={seciliVideolar}
+          onChange={onChange}
+          onGeri={() => {
+            setSeciliPL(null);
+            setPlVideolar([]);
+          }}
+          s={s}
+        />
       )}
     </div>
   );

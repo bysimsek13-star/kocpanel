@@ -328,6 +328,43 @@ Factory dosyaları: `src/__tests__/factories/index.js`
 - `setTimeout` / `sleep` ile zamanlama hilelemek — `waitFor` kullan
 - Aynı senaryoyu iki farklı dosyada test etmek — tek yer seç
 
+## E2E Test (Playwright)
+
+Playwright kurulu ve CI'a entegre. Her `main` push'unda deploy sonrası otomatik çalışır.
+
+### Dosya yapısı
+```
+e2e/
+├── smoke_deploy.spec.js   # Sayfa açılıyor, CSS yüklendi, JS hatası yok
+├── giris.spec.js          # Login formu çalışıyor
+├── navigasyon.spec.js     # SPA routing
+├── guvenlik.spec.js       # Auth korumalı sayfalar redirect yapıyor
+├── koc_akislari.spec.js   # Koç: giriş, panel, playlist, haftalık program
+└── responsive.spec.js     # Mobil yatay scroll yok
+```
+
+### Nasıl çalışır
+- **CI'da:** Deploy bittikten sonra production URL'ye (`kocpaneli.web.app`) karşı koşar
+- **Yerelde:** `npm run test:e2e:smoke` (build gerekir) veya `npm run test:e2e:ui` (görsel arayüz)
+- Başarısız test → Playwright raporu artifact olarak GitHub'a yüklenir
+
+### Credentials (GitHub Secrets)
+- `TEST_KOC_EMAIL` / `TEST_KOC_SIFRE` — koç test hesabı
+- `TEST_OGRNC_EMAIL` / `TEST_OGRNC_SIFRE` — öğrenci test hesabı
+
+### Yeni E2E testi ne zaman ekle
+- Yeni sayfa → smoke testi (açılıyor mu, JS hatası var mı)
+- Kritik kullanıcı akışı → altın yol testi (baştan sona çalışıyor mu)
+- Düzeltilen UX hatası → regresyon testi (bir daha olmuyor mu)
+
+### E2E testi nereye yaz
+- Koç akışları → `e2e/koc_akislari.spec.js`
+- Genel/smoke → `e2e/smoke_deploy.spec.js`
+- Sayfa erişim güvenliği → `e2e/guvenlik.spec.js`
+
+**Önemli:** E2E testler production'a karşı çalıştığı için gerçek veri yazmamalı.
+Sadece okuma ve navigasyon senaryoları yaz.
+
 ## Operasyonel Hatırlatıcılar
 
 ### Her geliştirme oturumunda

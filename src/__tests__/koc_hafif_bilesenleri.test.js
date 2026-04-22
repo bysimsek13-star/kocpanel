@@ -124,7 +124,6 @@ const ogrenciler = [
 const mockOgrenci = { id: 'o1', isim: 'Ali Yılmaz', tur: 'tyt_12', kocId: 'k1' };
 
 // ─── PlaylistYonetimi ─────────────────────────────────────────────────────────
-// kullanici prop zorunlu
 describe('PlaylistYonetimi', () => {
   it('render olur', () => {
     expect(() =>
@@ -135,6 +134,11 @@ describe('PlaylistYonetimi', () => {
   it('DOM içeriği üretilir', async () => {
     renderWithProviders(<PlaylistYonetimi kullanici={mockKullanici} onGeri={vi.fn()} />);
     await waitFor(() => expect(document.body.textContent.length).toBeGreaterThan(0));
+  });
+
+  it('grup tabları render edilir', async () => {
+    renderWithProviders(<PlaylistYonetimi kullanici={mockKullanici} onGeri={vi.fn()} />);
+    await waitFor(() => expect(screen.getByText('TYT')).toBeTruthy());
   });
 });
 

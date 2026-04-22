@@ -25,22 +25,59 @@ describe('SlotKonuSecici', () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it('Matematik girince konular listesi görünür', () => {
+  it('Matematik girince konular listesi görünür (label eşleşme)', () => {
     renderSade(<SlotKonuSecici ders="Matematik" onSec={vi.fn()} s={mockS} />);
     expect(screen.getByText('Müfredattan seç')).toBeTruthy();
   });
 
-  it('Matematik konularından birine tıklayınca onSec çağrılır', () => {
-    const onSec = vi.fn();
-    renderSade(<SlotKonuSecici ders="Matematik" onSec={onSec} s={mockS} />);
+  it('Matematik konularından birine tıklayınca onToggle çağrılır', () => {
+    const onToggle = vi.fn();
+    renderSade(<SlotKonuSecici ders="Matematik" onToggle={onToggle} s={mockS} />);
     const butonlar = screen.getAllByRole('button');
     fireEvent.click(butonlar[0]);
-    expect(onSec).toHaveBeenCalledWith(expect.any(String));
+    expect(onToggle).toHaveBeenCalledWith(expect.any(String));
   });
 
   it('Fizik dersi için de konular görünür', () => {
-    renderSade(<SlotKonuSecici ders="Fizik" onSec={vi.fn()} s={mockS} />);
-    expect(screen.getByText('Müfredattan seç')).toBeTruthy();
+    renderSade(<SlotKonuSecici ders="Fizik" onToggle={vi.fn()} s={mockS} />);
+    expect(screen.getByText(/Müfredattan seç/)).toBeTruthy();
+  });
+
+  it('dersId ile doğrudan TYT matematik konularını bulur', () => {
+    renderSade(<SlotKonuSecici ders="" dersId="mat" onToggle={vi.fn()} s={mockS} />);
+    expect(screen.getByText(/Müfredattan seç/)).toBeTruthy();
+  });
+
+  it('dersId ile LGS türkçe konularını bulur', () => {
+    renderSade(<SlotKonuSecici ders="" dersId="lgstur" onToggle={vi.fn()} s={mockS} />);
+    expect(screen.getByText(/Müfredattan seç/)).toBeTruthy();
+  });
+
+  it('dersId olmayan bilinmeyen ders hiçbir şey render etmez', () => {
+    const { container } = renderSade(
+      <SlotKonuSecici ders="" dersId="bilinmezid" onToggle={vi.fn()} s={mockS} />
+    );
+    expect(container.firstChild).toBeNull();
+  });
+
+  it('seciliKonular ile seçili sayısı gösterilir', () => {
+    renderSade(
+      <SlotKonuSecici
+        ders=""
+        dersId="mat"
+        seciliKonular="Türev, Limit"
+        onToggle={vi.fn()}
+        s={mockS}
+      />
+    );
+    expect(screen.getByText(/2 seçili/)).toBeTruthy();
+  });
+
+  it('arama inputuna yazınca liste filtrelenir', () => {
+    renderSade(<SlotKonuSecici ders="" dersId="mat" onToggle={vi.fn()} s={mockS} />);
+    const aramaInput = screen.getByPlaceholderText('Konularda ara...');
+    fireEvent.change(aramaInput, { target: { value: 'xyzbilinmez' } });
+    expect(screen.getByText('Eşleşen konu yok')).toBeTruthy();
   });
 });
 

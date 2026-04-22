@@ -3,6 +3,7 @@ import { GUN_ETIKET } from '../utils/programAlgoritma';
 import { VideoSecici } from './VideoSecici';
 import SlotTipSecici from './SlotTipSecici';
 import SlotKonuSecici from './SlotKonuSecici';
+import { dersSetiniBelirle } from '../utils/ogrenciBaglam';
 
 export { TIPLER_NEON } from './programBilesenUtils';
 export { tipBulNeon } from './programBilesenUtils';
@@ -18,20 +19,38 @@ export function SlotModal({
   onKapat,
   onHaftayaTasi,
   kocUid,
+  ogrenciTur,
+  ogrenciSinif,
   s,
 }) {
-  const [form, setForm] = useState({
-    tip: slot.tip || null,
-    baslangic: slot.baslangic || '',
-    bitis: slot.bitis || '',
-    icerik: slot.icerik || '',
-    ders: slot.ders || '',
-    videolar: slot.videolar || [],
+  const dersListesi = dersSetiniBelirle(ogrenciTur, ogrenciSinif);
+
+  const [form, setForm] = useState(() => {
+    let dersId = slot.dersId || '';
+    if (!dersId && slot.ders) {
+      const eslesen = dersListesi.find(
+        d => d.label.toLowerCase() === (slot.ders || '').toLowerCase()
+      );
+      if (eslesen) dersId = eslesen.id;
+    }
+    return {
+      tip: slot.tip || null,
+      baslangic: slot.baslangic || '',
+      bitis: slot.bitis || '',
+      icerik: slot.icerik || '',
+      ders: slot.ders || '',
+      dersId,
+      videolar: slot.videolar || [],
+    };
   });
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
   const changeTip = id =>
     setForm(f => ({ ...f, tip: id, videolar: id === 'video' ? f.videolar : [] }));
+  const changeDers = id => {
+    const eslesen = dersListesi.find(d => d.id === id);
+    setForm(f => ({ ...f, dersId: id, ders: eslesen ? eslesen.label : '' }));
+  };
 
   const inputStil = {
     width: '100%',
@@ -100,12 +119,18 @@ export function SlotModal({
 
         <div style={{ marginBottom: 14 }}>
           <div style={{ fontSize: 11, color: s.text3, marginBottom: 5 }}>Ders</div>
-          <input
-            value={form.ders}
-            onChange={e => set('ders', e.target.value)}
-            placeholder="ör: Matematik, Fizik..."
-            style={inputStil}
-          />
+          <select
+            value={form.dersId}
+            onChange={e => changeDers(e.target.value)}
+            style={{ ...inputStil, cursor: 'pointer' }}
+          >
+            <option value="">Ders seç...</option>
+            {dersListesi.map(d => (
+              <option key={d.id} value={d.id}>
+                {d.label}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div style={{ marginBottom: form.tip === 'video' ? 14 : 20 }}>
@@ -116,7 +141,23 @@ export function SlotModal({
             placeholder="ör: Türev, Limit..."
             style={inputStil}
           />
-          <SlotKonuSecici ders={form.ders} onSec={v => set('icerik', v)} s={s} />
+          <SlotKonuSecici
+            ders={form.ders}
+            dersId={form.dersId}
+            seciliKonular={form.icerik}
+            onToggle={konu => {
+              const mevcut = form.icerik
+                ? form.icerik
+                    .split(',')
+                    .map(k => k.trim())
+                    .filter(Boolean)
+                : [];
+              const idx = mevcut.indexOf(konu);
+              const yeni = idx === -1 ? [...mevcut, konu] : mevcut.filter((_, i) => i !== idx);
+              set('icerik', yeni.join(', '));
+            }}
+            s={s}
+          />
         </div>
 
         {form.tip === 'video' && (
@@ -125,6 +166,9 @@ export function SlotModal({
             seciliVideolar={form.videolar}
             onChange={v => set('videolar', v)}
             ders={form.ders}
+            dersId={form.dersId}
+            ogrenciTur={ogrenciTur}
+            ogrenciSinif={ogrenciSinif}
             s={s}
           />
         )}

@@ -1,14 +1,15 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import { KONULAR, TYT_DERSLER, AYT_DERSLER } from '../data/konular';
 import { lgsKonular } from '../data/konularLgs';
+import { LGS_DERSLER } from '../utils/ogrenciBaglam';
 
-const LGS_DERSLER_LISTE = Object.keys(lgsKonular).map(id => ({
-  id,
-  label: id.charAt(0).toUpperCase() + id.slice(1),
-}));
+const TUM_DERSLER = [...TYT_DERSLER, ...AYT_DERSLER, ...LGS_DERSLER];
 
-const TUM_DERSLER = [...TYT_DERSLER, ...AYT_DERSLER, ...LGS_DERSLER_LISTE];
+function konulariBulById(dersId) {
+  if (!dersId) return [];
+  return KONULAR[dersId] || lgsKonular[dersId] || [];
+}
 
 function konulariBul(ders) {
   if (!ders?.trim()) return [];
@@ -18,55 +19,138 @@ function konulariBul(ders) {
     return label.includes(dl) || dl.includes(label);
   });
   if (!eslesen) return [];
-  const liste = KONULAR[eslesen.id] || lgsKonular[eslesen.id] || [];
-  return liste;
+  return KONULAR[eslesen.id] || lgsKonular[eslesen.id] || [];
 }
 
-export default function SlotKonuSecici({ ders, onSec, s }) {
-  const konular = useMemo(() => konulariBul(ders), [ders]);
+function seciliListesi(seciliKonular) {
+  if (!seciliKonular?.trim()) return [];
+  return seciliKonular
+    .split(',')
+    .map(k => k.trim())
+    .filter(Boolean);
+}
 
-  if (!konular.length) return null;
+function vurgula(metin, arama) {
+  if (!arama) return metin;
+  const idx = metin.toLowerCase().indexOf(arama.toLowerCase());
+  if (idx === -1) return metin;
+  return (
+    <>
+      {metin.slice(0, idx)}
+      <strong>{metin.slice(idx, idx + arama.length)}</strong>
+      {metin.slice(idx + arama.length)}
+    </>
+  );
+}
+
+export default function SlotKonuSecici({ ders, dersId, seciliKonular, onToggle, s }) {
+  const [aramaQuery, setAramaQuery] = useState('');
+
+  const tumKonular = useMemo(
+    () => (dersId ? konulariBulById(dersId) : konulariBul(ders)),
+    [ders, dersId]
+  );
+
+  const konular = useMemo(() => {
+    if (!aramaQuery.trim()) return tumKonular;
+    const a = aramaQuery.trim().toLowerCase();
+    return tumKonular.filter(k => k.toLowerCase().includes(a));
+  }, [tumKonular, aramaQuery]);
+
+  const secili = useMemo(() => new Set(seciliListesi(seciliKonular)), [seciliKonular]);
+
+  if (!tumKonular.length) return null;
 
   return (
-    <div style={{ marginTop: 6 }}>
+    <div style={{ marginTop: 8 }}>
       <div style={{ fontSize: 10, fontWeight: 600, color: s.text3, marginBottom: 5 }}>
-        Müfredattan seç
+        Müfredattan seç{secili.size > 0 ? ` · ${secili.size} seçili` : ''}
       </div>
-      <div
+
+      <input
+        value={aramaQuery}
+        onChange={e => setAramaQuery(e.target.value)}
+        placeholder="Konularda ara..."
         style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: 5,
-          maxHeight: 130,
-          overflowY: 'auto',
+          width: '100%',
+          boxSizing: 'border-box',
+          background: s.surface2,
+          border: `1px solid ${s.border}`,
+          borderRadius: 8,
+          padding: '7px 10px',
+          color: s.text,
+          fontSize: 12,
+          outline: 'none',
+          marginBottom: 5,
         }}
-      >
-        {konular.map((k, i) => (
-          <button
-            key={i}
-            type="button"
-            onClick={() => onSec(k)}
-            style={{
-              padding: '4px 10px',
-              borderRadius: 20,
-              fontSize: 11,
-              fontWeight: 500,
-              cursor: 'pointer',
-              border: `1px solid ${s.accent}50`,
-              background: `${s.accent}12`,
-              color: s.accent,
-            }}
-          >
-            {k}
-          </button>
-        ))}
-      </div>
+      />
+
+      {konular.length === 0 ? (
+        <div style={{ fontSize: 11, color: s.text3, padding: '6px 2px' }}>Eşleşen konu yok</div>
+      ) : (
+        <div
+          style={{
+            maxHeight: 160,
+            overflowY: 'auto',
+            border: `1px solid ${s.border}`,
+            borderRadius: 10,
+            background: s.surface2,
+          }}
+        >
+          {konular.map((k, i) => {
+            const isaretli = secili.has(k);
+            return (
+              <button
+                key={i}
+                type="button"
+                onClick={() => onToggle(k)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  width: '100%',
+                  textAlign: 'left',
+                  padding: '8px 12px',
+                  fontSize: 12,
+                  fontWeight: isaretli ? 600 : 400,
+                  cursor: 'pointer',
+                  border: 'none',
+                  borderBottom: i < konular.length - 1 ? `1px solid ${s.border}` : 'none',
+                  background: isaretli ? `${s.accent}18` : 'transparent',
+                  color: isaretli ? s.accent : s.text,
+                }}
+              >
+                <span
+                  style={{
+                    width: 14,
+                    height: 14,
+                    borderRadius: 4,
+                    border: `1.5px solid ${isaretli ? s.accent : s.border}`,
+                    background: isaretli ? s.accent : 'transparent',
+                    flexShrink: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 9,
+                    color: '#fff',
+                  }}
+                >
+                  {isaretli ? '✓' : ''}
+                </span>
+                {vurgula(k, aramaQuery)}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
 
 SlotKonuSecici.propTypes = {
   ders: PropTypes.string,
-  onSec: PropTypes.func.isRequired,
+  dersId: PropTypes.string,
+  seciliKonular: PropTypes.string,
+  onToggle: PropTypes.func.isRequired,
   s: PropTypes.object.isRequired,
 };
