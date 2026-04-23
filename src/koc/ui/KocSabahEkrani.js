@@ -1,16 +1,64 @@
-import React from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTheme } from '../../context/ThemeContext';
 import { useKoc } from '../../context/KocContext';
-import { EmptyState, Btn } from '../../components/Shared';
+import { EmptyState } from '../../components/Shared';
+import KocGirisDurumuModal from './KocGirisDurumuModal';
+import KocGununSozuMini from './KocGununSozuMini';
+import KocKisayollar from './KocKisayollar';
 
 function avatarHarf(isim) {
-  return (isim || '?').charAt(0).toUpperCase();
+  return (isim || '?')
+    .trim()
+    .split(' ')
+    .slice(0, 2)
+    .map(p => p[0]?.toUpperCase() || '')
+    .join('');
 }
+
+function SinavTakvimiModal({ onKapat, s }) {
+  return (
+    <div
+      onClick={onKapat}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 1000,
+        background: 'rgba(0,0,0,0.5)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{
+          background: s.surface,
+          borderRadius: 20,
+          padding: '36px 48px',
+          textAlign: 'center',
+          boxShadow: s.shadowCard ?? s.shadow,
+        }}
+      >
+        <div style={{ fontSize: 36, marginBottom: 12 }}>📅</div>
+        <div style={{ fontSize: 15, fontWeight: 700, color: s.text, marginBottom: 8 }}>
+          Sınav Takvimi
+        </div>
+        <div style={{ fontSize: 13, color: s.text3 }}>Yakında eklenecek</div>
+      </div>
+    </div>
+  );
+}
+SinavTakvimiModal.propTypes = {
+  onKapat: PropTypes.func.isRequired,
+  s: PropTypes.object.isRequired,
+};
 
 export default function KocSabahEkrani({ onSec, onNav, kocAdi }) {
   const { s } = useTheme();
   const { ogrenciler, bugunMap, okunmamisMap } = useKoc();
+  const [girisYokAcik, setGirisYokAcik] = useState(false);
+  const [sinavAcik, setSinavAcik] = useState(false);
 
   const saatTR = parseInt(
     new Date().toLocaleString('tr-TR', {
@@ -28,21 +76,64 @@ export default function KocSabahEkrani({ onSec, onNav, kocAdi }) {
           ? 'İyi akşamlar'
           : 'İyi geceler';
 
+  const girisYokList = ogrenciler.filter(o => !bugunMap[o.id]?.bugunAktif);
+  const sirali = [...ogrenciler].sort((a, b) => (a.isim || '').localeCompare(b.isim || '', 'tr'));
+
+  const ozetKartlar = [
+    { v: ogrenciler.length, l: 'Öğrenci', onClick: () => onNav('ogrenciler') },
+    {
+      v: girisYokList.length,
+      l: 'Giriş yok',
+      onClick: () => setGirisYokAcik(true),
+      renk: girisYokList.length > 0 ? (s.danger ?? '#EF4444') : undefined,
+    },
+    { v: '📅', l: 'Sınav Takvimi', onClick: () => setSinavAcik(true) },
+  ];
+
   return (
     <div>
-      <div style={{ marginBottom: 24 }}>
-        <div style={{ fontSize: 24, fontWeight: 800, color: s.text, marginBottom: 4 }}>
+      {girisYokAcik && (
+        <KocGirisDurumuModal
+          ogrenciler={ogrenciler}
+          bugunMap={bugunMap}
+          onKapat={() => setGirisYokAcik(false)}
+          s={s}
+        />
+      )}
+      {sinavAcik && <SinavTakvimiModal onKapat={() => setSinavAcik(false)} s={s} />}
+
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ fontSize: 22, fontWeight: 800, color: s.text }}>
           {selam}, {kocAdi} 👋
         </div>
-        <div style={{ fontSize: 13, color: s.text3 }}>Bugün öğrencilerinin durumuna bak.</div>
+      </div>
+
+      <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
+        {ozetKartlar.map(k => (
+          <div
+            key={k.l}
+            onClick={k.onClick}
+            style={{
+              flex: 1,
+              background: s.surface,
+              border: `1px solid ${k.renk ? k.renk + '55' : s.border}`,
+              borderRadius: 14,
+              padding: '14px 10px',
+              cursor: 'pointer',
+              textAlign: 'center',
+              transition: 'background 0.15s',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.background = s.surface2)}
+            onMouseLeave={e => (e.currentTarget.style.background = s.surface)}
+          >
+            <div style={{ fontSize: 22, fontWeight: 800, color: k.renk || s.text }}>{k.v}</div>
+            <div style={{ fontSize: 11, fontWeight: 600, color: s.text3, marginTop: 4 }}>{k.l}</div>
+          </div>
+        ))}
       </div>
 
       {ogrenciler.length === 0 ? (
-        <EmptyState mesaj="Henüz öğrenci eklemedin" icon="🎓">
-          <Btn onClick={() => onNav('ogrenciler')} style={{ marginTop: 12 }}>
-            + Öğrenci Ekle
-          </Btn>
-        </EmptyState>
+        <EmptyState mesaj="Henüz öğrenci eklemedin" icon="🎓" />
       ) : (
         <div
           style={{
@@ -50,12 +141,23 @@ export default function KocSabahEkrani({ onSec, onNav, kocAdi }) {
             borderRadius: 16,
             border: `1px solid ${s.border}`,
             overflow: 'hidden',
+            marginBottom: 20,
           }}
         >
-          {ogrenciler.map((o, i) => {
+          {sirali.map((o, i) => {
             const bugun = bugunMap[o.id] || {};
             const okunmamis = okunmamisMap?.[o.id] || 0;
-            const sonSatir = i === ogrenciler.length - 1;
+            let etiket, etiketRenk;
+            if (!bugun.bugunAktif) {
+              etiket = 'Giriş yok';
+              etiketRenk = s.danger ?? '#EF4444';
+            } else if (okunmamis > 0) {
+              etiket = 'Mesaj var';
+              etiketRenk = '#F59E0B';
+            } else {
+              etiket = 'Aktif';
+              etiketRenk = s.success ?? '#22C55E';
+            }
             return (
               <div
                 key={o.id}
@@ -64,9 +166,9 @@ export default function KocSabahEkrani({ onSec, onNav, kocAdi }) {
                   display: 'flex',
                   alignItems: 'center',
                   gap: 12,
-                  padding: '12px 16px',
+                  padding: '11px 16px',
                   cursor: 'pointer',
-                  borderBottom: sonSatir ? 'none' : `1px solid ${s.border}`,
+                  borderBottom: i < sirali.length - 1 ? `1px solid ${s.border}` : 'none',
                   background: 'transparent',
                   transition: 'background 0.15s',
                 }}
@@ -75,13 +177,13 @@ export default function KocSabahEkrani({ onSec, onNav, kocAdi }) {
               >
                 <div
                   style={{
-                    width: 36,
-                    height: 36,
+                    width: 34,
+                    height: 34,
                     borderRadius: '50%',
                     background: `${s.accent}22`,
                     color: s.accent,
                     fontWeight: 700,
-                    fontSize: 15,
+                    fontSize: 13,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -90,54 +192,40 @@ export default function KocSabahEkrani({ onSec, onNav, kocAdi }) {
                 >
                   {avatarHarf(o.isim)}
                 </div>
-
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div
-                    style={{
-                      fontSize: 13,
-                      fontWeight: 600,
-                      color: s.text,
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {o.isim}
-                  </div>
+                <div
+                  style={{
+                    flex: 1,
+                    fontSize: 13,
+                    fontWeight: 600,
+                    color: s.text,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {o.isim}
                 </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                  <span title="Rutin" style={{ fontSize: 16, opacity: bugun.rutin ? 1 : 0.25 }}>
-                    {bugun.rutin ? '✅' : '○'}
-                  </span>
-                  <span
-                    title="Günlük soru"
-                    style={{ fontSize: 16, opacity: bugun.gunlukSoru ? 1 : 0.25 }}
-                  >
-                    {bugun.gunlukSoru ? '📝' : '○'}
-                  </span>
-                  {okunmamis > 0 && (
-                    <span
-                      style={{
-                        background: s.danger,
-                        color: '#fff',
-                        fontSize: 10,
-                        fontWeight: 700,
-                        borderRadius: 20,
-                        padding: '1px 6px',
-                        minWidth: 18,
-                        textAlign: 'center',
-                      }}
-                    >
-                      {okunmamis}
-                    </span>
-                  )}
-                </div>
+                <span
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: etiketRenk,
+                    background: `${etiketRenk}1a`,
+                    borderRadius: 20,
+                    padding: '3px 10px',
+                    flexShrink: 0,
+                  }}
+                >
+                  {etiket}
+                </span>
               </div>
             );
           })}
         </div>
       )}
+
+      <KocGununSozuMini s={s} />
+      <KocKisayollar onNav={onNav} />
     </div>
   );
 }
