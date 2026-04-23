@@ -1,13 +1,13 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import { Card } from '../components/Shared';
 import DenemeListesi from '../ogrenci/DenemeListesi';
 import Mesajlar from '../ogrenci/Mesajlar';
-import HaftalikVerimlilik from './HaftalikVerimlilik';
 import HaftalikProgramSayfasi from './HaftalikProgram';
-import CalismaTakvimi from '../components/CalismaTakvimi';
 import MufredatGoruntule from '../ogrenci/MufredatGoruntule';
-import GorusmeTimeline from './GorusmeTimeline';
-import GamificationKarti from '../components/GamificationKarti';
+import OgrenciHedefKarti from './hedef/OgrenciHedefKarti';
+import OgrenciDetayGenelOzet from './OgrenciDetayGenelOzet';
+import OgrenciDetaySoruRutin from './OgrenciDetaySoruRutin';
 import { OgrenciDetayBilgiler } from './OgrenciDetayBanner';
 
 export function OgrenciDetaySekme({
@@ -16,13 +16,17 @@ export function OgrenciDetaySekme({
   readOnly,
   duzenleyebilir,
   veriGetir,
-  calismalar,
   denemeler,
+  program,
   oran,
   setSilOnay,
   s,
   mobil,
 }) {
+  if (aktifSekme === 'ozet') {
+    return <OgrenciDetayGenelOzet ogrenci={ogrenci} program={program} s={s} />;
+  }
+
   if (aktifSekme === 'program') {
     return (
       <div style={{ display: 'grid', gridTemplateColumns: mobil ? '1fr' : '1.2fr 1fr', gap: 20 }}>
@@ -49,6 +53,10 @@ export function OgrenciDetaySekme({
     );
   }
 
+  if (aktifSekme === 'sorurutin') {
+    return <OgrenciDetaySoruRutin ogrenci={ogrenci} s={s} />;
+  }
+
   if (aktifSekme === 'denemeler') {
     return (
       <div style={{ maxWidth: 750 }}>
@@ -61,16 +69,6 @@ export function OgrenciDetaySekme({
           ogrenciTur={ogrenci.tur}
           ogrenciSinif={ogrenci.sinif}
         />
-      </div>
-    );
-  }
-
-  if (aktifSekme === 'verimlilik') {
-    return (
-      <div style={{ maxWidth: 700, display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <GamificationKarti calismalar={calismalar} denemeler={denemeler} />
-        <HaftalikVerimlilik ogrenciId={ogrenci.id} />
-        <CalismaTakvimi ogrenciId={ogrenci.id} />
       </div>
     );
   }
@@ -94,10 +92,10 @@ export function OgrenciDetaySekme({
     );
   }
 
-  if (aktifSekme === 'timeline') {
+  if (aktifSekme === 'hedef') {
     return (
-      <div style={{ maxWidth: 860 }}>
-        <GorusmeTimeline ogrenciId={ogrenci.id} />
+      <div style={{ maxWidth: 700 }}>
+        <OgrenciHedefKarti ogrenci={ogrenci} index={0} s={s} onHedefEkle={() => {}} />
       </div>
     );
   }
@@ -110,6 +108,7 @@ export function OgrenciDetaySekme({
           ogrenciTur={ogrenci.tur}
           ogrenciSinif={ogrenci.sinif}
           kocModu={duzenleyebilir}
+          denemeler={denemeler}
         />
       </div>
     );
@@ -117,3 +116,17 @@ export function OgrenciDetaySekme({
 
   return null;
 }
+
+OgrenciDetaySekme.propTypes = {
+  aktifSekme: PropTypes.string.isRequired,
+  ogrenci: PropTypes.object.isRequired,
+  readOnly: PropTypes.bool,
+  duzenleyebilir: PropTypes.bool,
+  veriGetir: PropTypes.func,
+  denemeler: PropTypes.array,
+  program: PropTypes.array,
+  oran: PropTypes.number,
+  setSilOnay: PropTypes.func,
+  s: PropTypes.object.isRequired,
+  mobil: PropTypes.bool,
+};

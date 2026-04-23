@@ -12,20 +12,30 @@ import {
 } from 'recharts';
 import { RENK } from './constants';
 
-// ─── Genel deneme net grafiği ──────────────────────────────────────────────────
-export function GenelNetGrafik({ denemeler, s }) {
-  const data = [...denemeler]
-    .filter(d => d.denemeTuru !== 'brans')
-    .sort((a, b) => new Date(a.tarih) - new Date(b.tarih))
-    .map(d => ({
-      etiket: `${d.sinav} ${d.tarih?.slice(5) || ''}`,
-      net: parseFloat(d.toplamNet) || 0,
-      tarih: d.tarih,
-      sinav: d.sinav,
-    }));
+const RENK_AYT = '#8B5CF6';
 
-  if (data.length < 2) return null;
-  const ort = (data.reduce((a, d) => a + d.net, 0) / data.length).toFixed(1);
+// ─── Genel deneme net grafiği — TYT ve AYT ayrı renkli çizgiler ───────────────
+export function GenelNetGrafik({ denemeler, s }) {
+  const geneller = [...denemeler]
+    .filter(d => d.denemeTuru !== 'brans')
+    .sort((a, b) => new Date(a.tarih) - new Date(b.tarih));
+
+  const hasTyt = geneller.some(d => (d.sinav || '').toUpperCase().includes('TYT'));
+  const hasAyt = geneller.some(d => (d.sinav || '').toUpperCase().includes('AYT'));
+
+  const tumData = geneller.map(d => ({
+    etiket: `${d.sinav} ${d.tarih?.slice(5) || ''}`,
+    tyt: (d.sinav || '').toUpperCase().includes('TYT') ? parseFloat(d.toplamNet) || 0 : null,
+    ayt: (d.sinav || '').toUpperCase().includes('AYT') ? parseFloat(d.toplamNet) || 0 : null,
+    net: parseFloat(d.toplamNet) || 0,
+  }));
+
+  const showSplit = hasTyt && hasAyt;
+
+  if (geneller.length < 2) return null;
+  const ort = (
+    geneller.reduce((a, d) => a + (parseFloat(d.toplamNet) || 0), 0) / geneller.length
+  ).toFixed(1);
 
   return (
     <div
@@ -49,7 +59,15 @@ export function GenelNetGrafik({ denemeler, s }) {
         <div>
           <div style={{ fontSize: 13, fontWeight: 700, color: s.text }}>Toplam net seyri</div>
           <div style={{ fontSize: 11, color: s.text3, marginTop: 2 }}>
-            {data.length} genel deneme
+            {geneller.length} deneme
+            {showSplit && (
+              <>
+                {' · '}
+                <span style={{ color: RENK.genel }}>TYT</span>
+                {' · '}
+                <span style={{ color: RENK_AYT }}>AYT</span>
+              </>
+            )}
           </div>
         </div>
         <div style={{ fontSize: 11, color: s.text3 }}>
@@ -57,7 +75,7 @@ export function GenelNetGrafik({ denemeler, s }) {
         </div>
       </div>
       <ResponsiveContainer width="100%" height={180}>
-        <LineChart data={data} margin={{ top: 5, right: 10, bottom: 30, left: 0 }}>
+        <LineChart data={tumData} margin={{ top: 5, right: 10, bottom: 30, left: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke={s.border} vertical={false} />
           <XAxis
             dataKey="etiket"
@@ -77,17 +95,43 @@ export function GenelNetGrafik({ denemeler, s }) {
               color: s.text,
             }}
             labelStyle={{ color: s.text3 }}
-            formatter={v => [`${v} net`, '']}
+            formatter={(v, name) => [
+              v != null ? `${v} net` : '—',
+              name === 'tyt' ? 'TYT' : name === 'ayt' ? 'AYT' : '',
+            ]}
           />
           <ReferenceLine y={parseFloat(ort)} stroke={s.text3} strokeDasharray="4 4" />
-          <Line
-            type="monotone"
-            dataKey="net"
-            stroke={RENK.genel}
-            strokeWidth={2}
-            dot={{ fill: RENK.genel, r: 4, strokeWidth: 0 }}
-            activeDot={{ r: 5 }}
-          />
+          {showSplit ? (
+            <>
+              <Line
+                connectNulls
+                type="monotone"
+                dataKey="tyt"
+                stroke={RENK.genel}
+                strokeWidth={2}
+                dot={{ fill: RENK.genel, r: 4, strokeWidth: 0 }}
+                activeDot={{ r: 5 }}
+              />
+              <Line
+                connectNulls
+                type="monotone"
+                dataKey="ayt"
+                stroke={RENK_AYT}
+                strokeWidth={2}
+                dot={{ fill: RENK_AYT, r: 4, strokeWidth: 0 }}
+                activeDot={{ r: 5 }}
+              />
+            </>
+          ) : (
+            <Line
+              type="monotone"
+              dataKey="net"
+              stroke={RENK.genel}
+              strokeWidth={2}
+              dot={{ fill: RENK.genel, r: 4, strokeWidth: 0 }}
+              activeDot={{ r: 5 }}
+            />
+          )}
         </LineChart>
       </ResponsiveContainer>
     </div>
@@ -105,6 +149,15 @@ const ESKI_DERSLER = [
 ];
 const TUM_DERSLER_LOCAL = [...TYT_DERSLER, ...AYT_DERSLER, ...LGS_DERSLER, ...ESKI_DERSLER];
 const dersGetir = id => TUM_DERSLER_LOCAL.find(d => d.id === id);
+
+function kartBaslik(deneme) {
+  if (deneme.denemeTuru === 'brans') {
+    const ilkDersId = Object.keys(deneme.netler || {})[0];
+    const dersLabel = ilkDersId ? dersGetir(ilkDersId)?.label || ilkDersId : '';
+    return `Branş${dersLabel ? ` — ${dersLabel}` : ''}`;
+  }
+  return deneme.sinav || 'Deneme';
+}
 
 export function DenemeKart({ deneme, acik, onToggle, onSil, onDuzenle, s }) {
   const isBrans = deneme.denemeTuru === 'brans';
@@ -132,20 +185,20 @@ export function DenemeKart({ deneme, acik, onToggle, onSil, onDuzenle, s }) {
         >
           <span
             style={{
-              fontSize: 10,
+              fontSize: 11,
               fontWeight: 700,
               padding: '3px 9px',
               borderRadius: 20,
               background: isBrans ? RENK.bg.brans : RENK.bg.genel,
               color: isBrans ? RENK.brans : RENK.genel,
               flexShrink: 0,
+              whiteSpace: 'nowrap',
             }}
           >
-            {isBrans ? '◆ Branş' : '● Genel'}
+            {kartBaslik(deneme)}
           </span>
           <span style={{ fontSize: 13, fontWeight: 600, color: s.text }}>
-            {deneme.sinav}
-            {deneme.alan ? ` · ${deneme.alan}` : ''}
+            {!isBrans && deneme.alan ? deneme.alan : ''}
           </span>
           <span style={{ fontSize: 11, color: s.text3 }}>{deneme.tarih}</span>
           {deneme.yayinevi && (

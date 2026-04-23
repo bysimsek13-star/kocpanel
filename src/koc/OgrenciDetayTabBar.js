@@ -2,11 +2,12 @@ import React from 'react';
 import { Btn } from '../components/Shared';
 
 const SEKMELER = [
+  { key: 'ozet', label: '🏠 Genel Özet' },
   { key: 'program', label: '📅 Program' },
-  { key: 'denemeler', label: '📊 Denemeler' },
-  { key: 'verimlilik', label: '📈 Verimlilik' },
+  { key: 'sorurutin', label: '✏️ Soru & Rutin' },
+  { key: 'denemeler', label: '📊 Deneme' },
   { key: 'mesajlar', label: '💬 Mesajlar' },
-  { key: 'timeline', label: '🗓 Timeline' },
+  { key: 'hedef', label: '🎯 Hedef' },
   { key: 'mufredat', label: '📋 Konu Takibi' },
 ];
 

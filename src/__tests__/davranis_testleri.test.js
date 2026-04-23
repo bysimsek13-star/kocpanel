@@ -400,19 +400,18 @@ describe('DenemeYonetimi — davranış', () => {
 // 2. OgrenciDetay — Sekme Geçişleri
 // ══════════════════════════════════════════════════════════════════════════════
 describe('OgrenciDetay — sekme geçişleri', () => {
-  it('varsayılan sekme "Program" gösterir', async () => {
+  it('varsayılan sekme "Genel Özet" gösterir', async () => {
     renderWithProviders(<OgrenciDetay ogrenci={mockOgrenci} onGeri={vi.fn()} />);
     await waitFor(() => {
       expect(document.body.textContent).toContain('Ali Yılmaz');
     });
-    // Program sekmesi aktif — haftalik-program render olmuş olmalı
-    expect(document.body.textContent).toContain('Program');
+    expect(document.body.textContent).toContain('Genel Özet');
   });
 
-  it('"Denemeler" sekmesine geçiş DenemeListesi render eder', async () => {
+  it('"Deneme" sekmesine geçiş DenemeListesi render eder', async () => {
     renderWithProviders(<OgrenciDetay ogrenci={mockOgrenci} onGeri={vi.fn()} />);
-    await waitFor(() => expect(document.body.textContent).toContain('📊 Denemeler'));
-    const btn = screen.getByText('📊 Denemeler');
+    await waitFor(() => expect(document.body.textContent).toContain('📊 Deneme'));
+    const btn = screen.getByText('📊 Deneme');
     fireEvent.click(btn);
     await waitFor(() => {
       expect(document.querySelector('[data-testid="deneme-listesi"]')).toBeTruthy();
@@ -429,13 +428,13 @@ describe('OgrenciDetay — sekme geçişleri', () => {
     });
   });
 
-  it('"Verimlilik" sekmesine geçiş çalışır', async () => {
+  it('"Program" sekmesine geçiş çalışır', async () => {
     renderWithProviders(<OgrenciDetay ogrenci={mockOgrenci} onGeri={vi.fn()} />);
-    await waitFor(() => expect(document.body.textContent).toContain('📈 Verimlilik'));
-    const btn = screen.getByText('📈 Verimlilik');
+    await waitFor(() => expect(document.body.textContent).toContain('📅 Program'));
+    const btn = screen.getByText('📅 Program');
     fireEvent.click(btn);
     await waitFor(() => {
-      expect(document.querySelector('[data-testid="gamification"]')).toBeTruthy();
+      expect(document.body.textContent).toContain('Program');
     });
   });
 
@@ -472,8 +471,8 @@ describe('OgrenciDetay — sekme geçişleri', () => {
     renderWithProviders(
       <OgrenciDetay ogrenci={mockOgrenci} onGeri={vi.fn()} onTabChange={onTabChange} />
     );
-    await waitFor(() => expect(document.body.textContent).toContain('📊 Denemeler'));
-    fireEvent.click(screen.getByText('📊 Denemeler'));
+    await waitFor(() => expect(document.body.textContent).toContain('📊 Deneme'));
+    fireEvent.click(screen.getByText('📊 Deneme'));
     expect(onTabChange).toHaveBeenCalledWith('denemeler');
   });
 });

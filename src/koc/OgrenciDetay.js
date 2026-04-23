@@ -79,8 +79,8 @@ export default function OgrenciDetay({
   const mobil = useMobil();
   const [program, setProgram] = useState([]);
   const [denemeler, setDenemeler] = useState([]);
-  const [calismalar, setCalismalar] = useState([]);
-  const [aktifSekme, setAktifSekme] = useState(initialTab || 'program');
+  const [_calismalar, setCalismalar] = useState([]);
+  const [aktifSekme, setAktifSekme] = useState(initialTab || 'ozet');
   const [silOnay, setSilOnay] = useState(false);
   const [aktifGorusme, setAktifGorusme] = useState(null);
 
@@ -110,7 +110,7 @@ export default function OgrenciDetay({
   }, [veriGetir]);
 
   useEffect(() => {
-    const gecerli = ['program', 'denemeler', 'verimlilik', 'mesajlar', 'timeline', 'mufredat'];
+    const gecerli = ['ozet', 'program', 'sorurutin', 'denemeler', 'mesajlar', 'hedef', 'mufredat'];
     if (initialTab && gecerli.includes(initialTab)) setAktifSekme(initialTab);
   }, [initialTab]);
 
@@ -281,8 +281,8 @@ export default function OgrenciDetay({
           readOnly={readOnly}
           duzenleyebilir={duzenleyebilir}
           veriGetir={veriGetir}
-          calismalar={calismalar}
           denemeler={denemeler}
+          program={program}
           oran={oran}
           setSilOnay={setSilOnay}
           s={s}
