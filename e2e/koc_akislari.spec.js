@@ -121,8 +121,11 @@ test.describe('Koç Paneli Akışları', () => {
     if (testInfo.project.name === 'mobile') testInfo.skip(true, 'Mobil menü farklı');
     await kocGirisYap(page);
     await onboardingKapat(page);
-    await page.locator('text=/Playlist|Video/i').first().click();
+    // Desktop: Kaynak kütüphanesi menüsü → Playlistler sekmesi
+    await page.locator('text=Kaynak kütüphanesi').first().click();
     await page.waitForTimeout(2000);
+    await page.locator('text=/Playlist/i').first().click();
+    await page.waitForTimeout(1000);
     // Grup tablarından en az ikisi görünmeli
     await expect(page.locator('button', { hasText: 'TYT' }).first()).toBeVisible();
     await expect(page.locator('button', { hasText: /LGS/i }).first()).toBeVisible();
@@ -132,8 +135,11 @@ test.describe('Koç Paneli Akışları', () => {
     if (testInfo.project.name === 'mobile') testInfo.skip(true, 'Mobil menü farklı');
     await kocGirisYap(page);
     await onboardingKapat(page);
-    await page.locator('text=/Playlist|Video/i').first().click();
+    // Desktop: Kaynak kütüphanesi menüsü → Playlistler sekmesi
+    await page.locator('text=Kaynak kütüphanesi').first().click();
     await page.waitForTimeout(2000);
+    await page.locator('text=/Playlist/i').first().click();
+    await page.waitForTimeout(1000);
     await page.locator('button', { hasText: 'TYT' }).first().click();
     await page.waitForTimeout(1000);
     // Ders grid'inden en az biri görünmeli
