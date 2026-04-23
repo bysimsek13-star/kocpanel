@@ -8,7 +8,12 @@ import { usePlaylistler } from '../hooks/usePlaylist';
 import PlaylistDetay from '../components/PlaylistDetay';
 import PlaylistEkleModal from './PlaylistEkleModal';
 import PlaylistKarti from './PlaylistKarti';
-import { GRUPLAR, KANONIK_DERSLER, kanonikDersLabel } from '../constants/playlistSabitleri';
+import {
+  GRUPLAR,
+  KANONIK_DERSLER,
+  GRUP_DERSLER,
+  kanonikDersLabel,
+} from '../constants/playlistSabitleri';
 
 function TabBar({ secili, onChange, s }) {
   return (
@@ -36,8 +41,12 @@ function TabBar({ secili, onChange, s }) {
   );
 }
 
-function DersGrid({ playlistler, onDersSecili, s }) {
-  const atanmamis = playlistler.filter(p => !p.ders).length;
+function DersGrid({ playlistler, seciliGrup, onDersSecili, s }) {
+  const grupPlaylists = playlistler.filter(p => p.gruplar?.includes(seciliGrup));
+  const izinliDersIds = GRUP_DERSLER[seciliGrup] || Object.keys(KANONIK_DERSLER);
+  const gorunenDersler = KANONIK_DERSLER.filter(d => izinliDersIds.includes(d.id));
+  const atanmamis = grupPlaylists.filter(p => !p.ders).length;
+
   return (
     <div
       style={{
@@ -46,8 +55,8 @@ function DersGrid({ playlistler, onDersSecili, s }) {
         gap: 10,
       }}
     >
-      {KANONIK_DERSLER.map(d => {
-        const sayi = playlistler.filter(p => p.ders === d.id).length;
+      {gorunenDersler.map(d => {
+        const sayi = grupPlaylists.filter(p => p.ders === d.id).length;
         return (
           <button
             key={d.id}
@@ -100,10 +109,11 @@ export default function PlaylistYonetimi({ kullanici, onGeri, dahadarKabuk = fal
   const [seciliPlaylist, setSeciliPlaylist] = useState(null);
 
   const filtreliListe = useMemo(() => {
-    if (!seciliDers) return [];
-    if (seciliDers === '__atanmamis__') return playlistler.filter(p => !p.ders);
-    return playlistler.filter(p => p.ders === seciliDers);
-  }, [playlistler, seciliDers]);
+    if (!seciliGrup || !seciliDers) return [];
+    const grupPlaylists = playlistler.filter(p => p.gruplar?.includes(seciliGrup));
+    if (seciliDers === '__atanmamis__') return grupPlaylists.filter(p => !p.ders);
+    return grupPlaylists.filter(p => p.ders === seciliDers);
+  }, [playlistler, seciliGrup, seciliDers]);
 
   const grupSec = id => {
     setSeciliGrup(id);
@@ -140,7 +150,12 @@ export default function PlaylistYonetimi({ kullanici, onGeri, dahadarKabuk = fal
         yukleniyor ? (
           <LoadingState />
         ) : (
-          <DersGrid playlistler={playlistler} onDersSecili={setSeciliDers} s={s} />
+          <DersGrid
+            playlistler={playlistler}
+            seciliGrup={seciliGrup}
+            onDersSecili={setSeciliDers}
+            s={s}
+          />
         )
       ) : (
         <>
@@ -203,6 +218,19 @@ export default function PlaylistYonetimi({ kullanici, onGeri, dahadarKabuk = fal
     </div>
   );
 }
+
+TabBar.propTypes = {
+  secili: PropTypes.string,
+  onChange: PropTypes.func.isRequired,
+  s: PropTypes.object.isRequired,
+};
+
+DersGrid.propTypes = {
+  playlistler: PropTypes.array.isRequired,
+  seciliGrup: PropTypes.string.isRequired,
+  onDersSecili: PropTypes.func.isRequired,
+  s: PropTypes.object.isRequired,
+};
 
 PlaylistYonetimi.propTypes = {
   kullanici: PropTypes.object.isRequired,

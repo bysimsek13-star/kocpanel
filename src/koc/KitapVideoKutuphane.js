@@ -5,53 +5,17 @@ import { db } from '../firebase';
 import { useTheme } from '../context/ThemeContext';
 import { useMobil } from '../hooks/useMediaQuery';
 import { useToast } from '../components/Toast';
-import { Btn, LoadingState, EmptyState } from '../components/Shared';
+import { LoadingState, EmptyState } from '../components/Shared';
 import { KocHeroBand } from '../components/koc/KocPanelUi';
-import PlaylistYonetimi from './PlaylistYonetimi';
 import { KaynakModal } from './KaynakModal';
 import { KaynakKarti } from './KaynakKarti';
-import { ANA_SEKMELER, TUR_SECENEKLER } from './kitapVideoUtils';
-
-function SekmeBar({ anaSecme, setAnaSecme, s }) {
-  return (
-    <div
-      style={{
-        display: 'flex',
-        background: s.surface2,
-        border: `1px solid ${s.border}`,
-        borderRadius: 10,
-        overflow: 'hidden',
-        marginBottom: 20,
-        width: 'fit-content',
-      }}
-    >
-      {ANA_SEKMELER.map(t => (
-        <button
-          key={t.k}
-          type="button"
-          onClick={() => setAnaSecme(t.k)}
-          style={{
-            padding: '9px 20px',
-            border: 'none',
-            fontSize: 13,
-            fontWeight: 600,
-            cursor: 'pointer',
-            background: anaSecme === t.k ? s.accent : 'transparent',
-            color: anaSecme === t.k ? '#fff' : s.text3,
-          }}
-        >
-          {t.l}
-        </button>
-      ))}
-    </div>
-  );
-}
+import KitapVideoVideoPlaylist from './KitapVideoVideoPlaylist';
+import { TUR_SECENEKLER } from './kitapVideoUtils';
 
 export default function KitapVideoKutuphane({ kullanici, onGeri }) {
   const { s } = useTheme();
   const mobil = useMobil();
   const toast = useToast();
-  const [anaSecme, setAnaSecme] = useState('kaynaklar');
   const [kaynaklar, setKaynaklar] = useState([]);
   const [yukleniyor, setYukleniyor] = useState(true);
   const [modalAcik, setModalAcik] = useState(false);
@@ -90,7 +54,7 @@ export default function KitapVideoKutuphane({ kullanici, onGeri }) {
   };
 
   const gorunenler = kaynaklar
-    .filter(k => filtreTur === 'tumu' || k.tur === filtreTur)
+    .filter(k => filtreTur === 'tumu' || filtreTur === 'video' || k.tur === filtreTur)
     .filter(k => {
       if (!aramaText) return true;
       const ara = aramaText.toLowerCase();
@@ -102,6 +66,14 @@ export default function KitapVideoKutuphane({ kullanici, onGeri }) {
       );
     });
 
+  const videoKaynaklar = kaynaklar
+    .filter(k => k.tur === 'video')
+    .filter(k => {
+      if (!aramaText) return true;
+      const ara = aramaText.toLowerCase();
+      return k.baslik?.toLowerCase().includes(ara) || k.aciklama?.toLowerCase().includes(ara);
+    });
+
   const istatistik = {
     kitap: kaynaklar.filter(k => k.tur === 'kitap').length,
     video: kaynaklar.filter(k => k.tur === 'video').length,
@@ -109,29 +81,14 @@ export default function KitapVideoKutuphane({ kullanici, onGeri }) {
     podcast: kaynaklar.filter(k => k.tur === 'podcast').length,
   };
 
-  const hero = (
-    <KocHeroBand
-      baslik="Kaynak kütüphanesi"
-      aciklama="Öğrencilerinize önereceğiniz kitap, video, makale ve podcast kaynaklarını burada derleyin."
-      onGeri={onGeri}
-      mobil={mobil}
-    />
-  );
-
-  if (anaSecme === 'playlistler') {
-    return (
-      <div style={{ padding: mobil ? 12 : 0 }}>
-        {hero}
-        <SekmeBar anaSecme={anaSecme} setAnaSecme={setAnaSecme} s={s} />
-        <PlaylistYonetimi kullanici={kullanici} onGeri={null} dahadarKabuk />
-      </div>
-    );
-  }
-
   return (
     <div style={{ padding: mobil ? 12 : 0 }}>
-      {hero}
-      <SekmeBar anaSecme={anaSecme} setAnaSecme={setAnaSecme} s={s} />
+      <KocHeroBand
+        baslik="Kaynak kütüphanesi"
+        aciklama="Öğrencilerinize önereceğiniz kitap, video, makale ve podcast kaynaklarını burada derleyin."
+        onGeri={onGeri}
+        mobil={mobil}
+      />
 
       {/* KPI şeridi */}
       <div
@@ -161,7 +118,7 @@ export default function KitapVideoKutuphane({ kullanici, onGeri }) {
         ))}
       </div>
 
-      {/* Üst bar */}
+      {/* Filtre + arama çubuğu */}
       <div
         style={{
           display: 'flex',
@@ -216,19 +173,41 @@ export default function KitapVideoKutuphane({ kullanici, onGeri }) {
             </button>
           ))}
         </div>
-        <Btn
-          onClick={() => {
-            setDuzenle(null);
-            setModalAcik(true);
-          }}
-          style={{ padding: '9px 18px', fontSize: 13, flexShrink: 0 }}
-        >
-          + Kaynak ekle
-        </Btn>
+        {filtreTur !== 'video' && (
+          <button
+            onClick={() => {
+              setDuzenle(null);
+              setModalAcik(true);
+            }}
+            style={{
+              padding: '9px 18px',
+              borderRadius: 10,
+              border: 'none',
+              background: s.accent,
+              color: '#fff',
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: 'pointer',
+              flexShrink: 0,
+            }}
+          >
+            + Kaynak ekle
+          </button>
+        )}
       </div>
 
-      {/* İçerik */}
-      {yukleniyor ? (
+      {/* Video & Playlist birleşik görünüm */}
+      {filtreTur === 'video' ? (
+        <KitapVideoVideoPlaylist
+          kullanici={kullanici}
+          videoKaynaklar={videoKaynaklar}
+          yukle={yukle}
+          sil={sil}
+          setDuzenle={setDuzenle}
+          setModalAcik={setModalAcik}
+          s={s}
+        />
+      ) : yukleniyor ? (
         <LoadingState />
       ) : gorunenler.length === 0 ? (
         <EmptyState

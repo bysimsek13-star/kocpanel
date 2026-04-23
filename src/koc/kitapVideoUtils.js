@@ -1,12 +1,9 @@
-export const ANA_SEKMELER = [
-  { k: 'kaynaklar', l: '📚 Kaynaklar' },
-  { k: 'playlistler', l: '🎬 Playlistler' },
-];
+export const ANA_SEKMELER = [{ k: 'kaynaklar', l: '📚 Kaynaklar' }];
 
 export const TUR_SECENEKLER = [
   { k: 'tumu', l: 'Tümü' },
   { k: 'kitap', l: '📚 Kitap' },
-  { k: 'video', l: '🎬 Video' },
+  { k: 'video', l: '🎬 Video & Playlist' },
   { k: 'makale', l: '📄 Makale' },
   { k: 'podcast', l: '🎙️ Podcast' },
 ];

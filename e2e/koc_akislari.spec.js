@@ -101,7 +101,8 @@ test.describe('Koç Paneli Akışları', () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await kocGirisYap(page);
     await onboardingKapat(page);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
+    await page.waitForTimeout(1500);
     const bodyWidth = await page.evaluate(() => document.body.scrollWidth);
     const viewportWidth = await page.evaluate(() => window.innerWidth);
     expect(bodyWidth).toBeLessThanOrEqual(viewportWidth + 5);

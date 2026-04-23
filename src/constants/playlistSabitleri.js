@@ -1,13 +1,14 @@
 export const GRUPLAR = [
   { id: 'ortaokul7', label: '7. Sınıf' },
   { id: 'lgs8', label: '8. Sınıf / LGS' },
-  { id: 'lise910', label: '9-10. Sınıf' },
+  { id: 'lise9', label: '9. Sınıf' },
+  { id: 'lise10', label: '10. Sınıf' },
   { id: 'lise11', label: '11. Sınıf' },
   { id: 'tyt', label: 'TYT' },
-  { id: 'sayisal', label: 'Sayısal' },
-  { id: 'ea', label: 'EA' },
-  { id: 'sozel', label: 'Sözel' },
-  { id: 'dil', label: 'Dil' },
+  { id: 'sayisal', label: 'AYT Sayısal' },
+  { id: 'ea', label: 'AYT EA' },
+  { id: 'sozel', label: 'AYT Sözel' },
+  { id: 'dil', label: 'AYT Dil' },
 ];
 
 export const KANONIK_DERSLER = [
@@ -26,7 +27,21 @@ export const KANONIK_DERSLER = [
   { id: 'diger', label: 'Diğer' },
 ];
 
-// Müfredat ders id'si → kanonik ders id
+// Gruba göre gösterilecek kanonik ders ID'leri
+export const GRUP_DERSLER = {
+  ortaokul7: ['tur', 'mat', 'fen', 'tar', 'din', 'ing', 'diger'],
+  lgs8: ['tur', 'mat', 'fen', 'tar', 'din', 'ing', 'diger'],
+  lise9: ['tur', 'mat', 'fiz', 'kim', 'biy', 'tar', 'cog', 'fel', 'din', 'ing', 'diger'],
+  lise10: ['tur', 'mat', 'fiz', 'kim', 'biy', 'tar', 'cog', 'fel', 'din', 'ing', 'diger'],
+  lise11: ['tur', 'mat', 'fiz', 'kim', 'biy', 'tar', 'cog', 'fel', 'din', 'ing', 'diger'],
+  tyt: ['tur', 'mat', 'fiz', 'kim', 'biy', 'tar', 'cog', 'fel', 'din', 'diger'],
+  sayisal: ['mat', 'geo', 'fiz', 'kim', 'biy', 'diger'],
+  ea: ['mat', 'geo', 'tur', 'tar', 'cog', 'diger'],
+  sozel: ['tur', 'tar', 'cog', 'fel', 'din', 'diger'],
+  dil: ['ing', 'diger'],
+};
+
+// ─── Müfredat to kanonik eşlemesi ────────────────────────────────────────────
 export const MUFREDAT_TO_KANONIK = {
   // TYT
   tur: 'tur',
@@ -50,6 +65,7 @@ export const MUFREDAT_TO_KANONIK = {
   cog2: 'cog',
   fel: 'fel',
   aytdil: 'ing',
+  yabdil: 'ing',
   // LGS
   lgstur: 'tur',
   lgsmat: 'mat',
@@ -85,7 +101,8 @@ export function ogrenciTurToGrup(tur, sinif) {
 
   if (t.includes('lgs') || efektif === 8) return 'lgs8';
   if (efektif === 7 || (efektif === 0 && t.includes('ortaokul'))) return 'ortaokul7';
-  if (efektif === 9 || efektif === 10) return 'lise910';
+  if (efektif === 9) return 'lise9';
+  if (efektif === 10) return 'lise10';
   if (efektif === 11) return 'lise11';
   if (t.startsWith('sayisal')) return 'sayisal';
   if (t.startsWith('ea')) return 'ea';
