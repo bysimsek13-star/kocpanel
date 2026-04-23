@@ -119,33 +119,30 @@ test.describe('Koç Paneli Akışları', () => {
     }
   });
 
-  test('playlist sayfasında grup tabları görünür', async ({ page }, testInfo) => {
+  test('video & playlist birleşik görünümü açılır', async ({ page }, testInfo) => {
     if (testInfo.project.name === 'mobile') testInfo.skip(true, 'Mobil menü farklı');
     await kocGirisYap(page);
     await onboardingKapat(page);
-    // Desktop: Kaynak kütüphanesi menüsü → Playlistler sekmesi
+    // Desktop: Kaynak kütüphanesi → Video & Playlist filtresi
     await page.locator('text=Kaynak kütüphanesi').first().click();
     await page.waitForTimeout(2000);
-    await page.locator('text=/Playlist/i').first().click();
+    await page.locator('button', { hasText: /Video.*Playlist/i }).first().click();
     await page.waitForTimeout(1000);
-    // Grup tablarından en az ikisi görünmeli
-    await expect(page.locator('button', { hasText: 'TYT' }).first()).toBeVisible();
-    await expect(page.locator('button', { hasText: /LGS/i }).first()).toBeVisible();
+    // Birleşik görünümde Video Kaynaklar ve Playlistler bölümleri görünmeli
+    await expect(page.locator('text=/Video Kaynaklar/i').first()).toBeVisible();
+    await expect(page.locator('text=/Playlistler/i').first()).toBeVisible();
   });
 
-  test('playlist grup seçilince ders grid gelir', async ({ page }, testInfo) => {
+  test('video & playlist görünümünde playlist ekle butonu var', async ({ page }, testInfo) => {
     if (testInfo.project.name === 'mobile') testInfo.skip(true, 'Mobil menü farklı');
     await kocGirisYap(page);
     await onboardingKapat(page);
-    // Desktop: Kaynak kütüphanesi menüsü → Playlistler sekmesi
     await page.locator('text=Kaynak kütüphanesi').first().click();
     await page.waitForTimeout(2000);
-    await page.locator('text=/Playlist/i').first().click();
+    await page.locator('button', { hasText: /Video.*Playlist/i }).first().click();
     await page.waitForTimeout(1000);
-    await page.locator('button', { hasText: 'TYT' }).first().click();
-    await page.waitForTimeout(1000);
-    // Ders grid'inden en az biri görünmeli
-    await expect(page.locator('button', { hasText: 'Matematik' }).first()).toBeVisible();
+    // Playlist Ekle butonu görünmeli
+    await expect(page.locator('button', { hasText: /Playlist Ekle/i }).first()).toBeVisible();
   });
 });
 
