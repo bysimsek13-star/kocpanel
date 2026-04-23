@@ -5,6 +5,8 @@ import { useAuth } from '../context/AuthContext';
 import { useMobil, useTablet } from '../hooks/useMediaQuery';
 import { LoadingState } from '../components/Shared';
 import { aktiflikKaydet, oturumBitir } from '../utils/aktiflikKaydet';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 
 // Hooks
 import useKocVeri from '../koc/hooks/useKocVeri';
@@ -77,7 +79,7 @@ export default function KocPaneli() {
   const [onboardingGoster, setOnboardingGoster] = useState(false);
 
   const { ogrenciler, dashboardMap, bugunMap, yukleniyor, yenile } = useKocVeri(kullanici.uid);
-  const { okunmasisMap, toplamOkunmamis } = useOkunmamis(ogrenciler);
+  const { okunmamisMap, toplamOkunmamis } = useOkunmamis(ogrenciler);
 
   const aktifSayfa = useMemo(() => sayfaGetir(location.pathname), [location.pathname]);
   const seciliOgrenciId = useMemo(() => ogrenciIdGetir(location.pathname), [location.pathname]);
@@ -115,13 +117,24 @@ export default function KocPaneli() {
     };
   }, [kullanici?.uid]);
 
-  // Onboarding — ilk girişte göster
+  // Onboarding — Firestore'dan kontrol et, ilk girişte göster
   useEffect(() => {
-    if (!userData) return;
-    if (!userData.onboardingTamamlandi) {
-      setOnboardingGoster(true);
-    }
-  }, [userData]);
+    if (!kullanici?.uid) return;
+    getDoc(doc(db, 'kullanicilar', kullanici.uid)).then(snap => {
+      if (!snap.exists() || !snap.data().onboardingTamamlandi) {
+        setOnboardingGoster(true);
+      }
+    });
+  }, [kullanici?.uid]);
+
+  const onboardingTamamla = async () => {
+    setOnboardingGoster(false);
+    await setDoc(
+      doc(db, 'kullanicilar', kullanici.uid),
+      { onboardingTamamlandi: true },
+      { merge: true }
+    );
+  };
 
   const renderSayfa = () => {
     if (aktifSayfa === 'ogrenci_detay' && seciliOgrenci) {
@@ -181,7 +194,7 @@ export default function KocPaneli() {
         return (
           <MesajlarSayfasi
             ogrenciler={ogrenciler}
-            okunmamisMap={okunmasisMap}
+            okunmamisMap={okunmamisMap}
             onGeri={() => onNav('ana')}
           />
         );
@@ -216,7 +229,7 @@ export default function KocPaneli() {
       ogrenciler={ogrenciler}
       dashboardMap={dashboardMap}
       bugunMap={bugunMap}
-      okunmamisMap={okunmasisMap}
+      okunmamisMap={okunmamisMap}
       yukleniyor={yukleniyor}
       yenile={yenile}
     >
@@ -232,7 +245,7 @@ export default function KocPaneli() {
         {onboardingGoster && (
           <OnboardingSihirbazi
             kullaniciUid={kullanici.uid}
-            onTamamla={() => setOnboardingGoster(false)}
+            onTamamla={onboardingTamamla}
             onNav={onNav}
             onOgrenciEkle={() => setModalAcik(true)}
           />

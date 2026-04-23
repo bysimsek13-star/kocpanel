@@ -119,9 +119,9 @@ describe('KocHeroKart', () => {
     expect(screen.getByText(/Koç/)).toBeDefined();
   });
 
-  it('selamlama metni görünür (Günaydın / İyi günler / İyi akşamlar)', () => {
+  it('selamlama metni görünür (Günaydın / İyi günler / İyi akşamlar / İyi geceler)', () => {
     renderWithProviders(<KocHeroKart {...defaultProps} />);
-    const selam = screen.queryByText(/Günaydın|İyi günler|İyi akşamlar/);
+    const selam = screen.queryByText(/Günaydın|İyi günler|İyi akşamlar|İyi geceler/);
     expect(selam).toBeTruthy();
   });
 

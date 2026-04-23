@@ -18,8 +18,21 @@ export default function KocHeroKart({
   const { s } = useTheme();
   const mobil = useMobil();
   const [girisYokAcik, setGirisYokAcik] = useState(false);
-  const saat = new Date().getHours();
-  const selam = saat < 12 ? 'Günaydın' : saat < 18 ? 'İyi günler' : 'İyi akşamlar';
+  const saatTR = parseInt(
+    new Date().toLocaleString('tr-TR', {
+      timeZone: 'Europe/Istanbul',
+      hour: 'numeric',
+      hour12: false,
+    })
+  );
+  const selam =
+    saatTR >= 6 && saatTR < 12
+      ? 'Günaydın'
+      : saatTR >= 12 && saatTR < 18
+        ? 'İyi günler'
+        : saatTR >= 18 && saatTR < 22
+          ? 'İyi akşamlar'
+          : 'İyi geceler';
 
   const handleOkunmamis = () => {
     if (!okunmamisMap || !ogrenciler?.length) {

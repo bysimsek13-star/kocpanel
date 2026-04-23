@@ -61,8 +61,21 @@ export function OgrenciAnaSayfa({
   s,
   mobil,
 }) {
-  const saat = new Date().getHours();
-  const selam = saat < 12 ? 'Günaydın' : saat < 18 ? 'İyi günler' : 'İyi akşamlar';
+  const saatTR = parseInt(
+    new Date().toLocaleString('tr-TR', {
+      timeZone: 'Europe/Istanbul',
+      hour: 'numeric',
+      hour12: false,
+    })
+  );
+  const selam =
+    saatTR >= 6 && saatTR < 12
+      ? 'Günaydın'
+      : saatTR >= 12 && saatTR < 18
+        ? 'İyi günler'
+        : saatTR >= 18 && saatTR < 22
+          ? 'İyi akşamlar'
+          : 'İyi geceler';
 
   const baglam = ogrenciBaglaminiCoz({
     tur: ogrenciTur || userData?.tur,
@@ -108,12 +121,12 @@ export function OgrenciAnaSayfa({
           ]
             .filter(Boolean)
             .join(' · ') || 'Bugün girildi'
-        : saat < 22
+        : saatTR < 22
           ? 'Girmeyi unutma!'
           : 'Bugün girilmedi',
       renk: bugunSoruVar
         ? (s.success ?? s.ok)
-        : saat < 22
+        : saatTR < 22
           ? (s.danger ?? s.tehlika)
           : (s.textMuted ?? s.text3),
       onClick: () => onNav('gunluk_soru'),

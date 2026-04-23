@@ -78,11 +78,13 @@ export default function useKocVeri(kocUid) {
       const bugunBaslangic = new Date(bugunIstanbul + 'T00:00:00+03:00').getTime();
       const bmap = {};
       liste.forEach(o => {
-        const sonAktifMs = o.sonAktif?.toDate
-          ? o.sonAktif.toDate().getTime()
-          : o.sonAktif
-            ? new Date(o.sonAktif).getTime()
-            : 0;
+        let sonAktifMs = 0;
+        try {
+          if (o.sonAktif?.toDate) sonAktifMs = o.sonAktif.toDate().getTime();
+          else if (o.sonAktif) sonAktifMs = new Date(o.sonAktif).getTime();
+        } catch {
+          sonAktifMs = 0;
+        }
         bmap[o.id] = {
           rutin: o.bugunRutinTarihi === bugun,
           gunlukSoru: o.bugunSoruTarihi === bugun,
@@ -90,7 +92,7 @@ export default function useKocVeri(kocUid) {
           calisma: o.sonCalismaTarihi === bugun,
           bugunAktif: sonAktifMs >= bugunBaslangic,
           sonAktif: o.sonAktif ?? null,
-          girisSayisi: o.girisSayisi ?? 0,
+          girisSayisi: o.bugunGirisSayisi ?? 0,
         };
       });
       setBugunMap(bmap);

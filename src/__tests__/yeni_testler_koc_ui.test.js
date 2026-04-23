@@ -455,27 +455,39 @@ describe('KocRiskOzeti', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 import KocSabahEkrani from '../koc/ui/KocSabahEkrani';
 
-vi.mock('../koc/ui/KocHeroKart', () => ({
-  default: ({ kocAdi }) => <div>Hero: {kocAdi}</div>,
-}));
-
 describe('KocSabahEkrani', () => {
-  it('render olur', () => {
+  it('render olur ve koç adı görünür', () => {
     render(
       <TestWrapper>
         <KocSabahEkrani onSec={vi.fn()} onNav={vi.fn()} kocAdi="Test Koç" />
       </TestWrapper>
     );
-    expect(screen.getByText('Hero: Test Koç')).toBeInTheDocument();
+    expect(document.body.textContent).toMatch(/Test Koç/);
   });
 
-  it('koc adı aktarılır', () => {
+  it('selamlama metni görünür', () => {
     render(
       <TestWrapper>
         <KocSabahEkrani onSec={vi.fn()} onNav={vi.fn()} kocAdi="Mehmet Hoca" />
       </TestWrapper>
     );
-    expect(screen.getByText('Hero: Mehmet Hoca')).toBeInTheDocument();
+    expect(document.body.textContent).toMatch(/Günaydın|İyi günler|İyi akşamlar|İyi geceler/);
+  });
+
+  it('öğrenci yoksa boş durum mesajı görünür', () => {
+    render(
+      <KocProvider
+        ogrenciler={[]}
+        dashboardMap={{}}
+        bugunMap={{}}
+        okunmamisMap={{}}
+        yukleniyor={false}
+        yenile={vi.fn()}
+      >
+        <KocSabahEkrani onSec={vi.fn()} onNav={vi.fn()} kocAdi="Test" />
+      </KocProvider>
+    );
+    expect(document.body.textContent).toMatch(/öğrenci eklemedin/i);
   });
 });
 
