@@ -3,12 +3,14 @@ import PropTypes from 'prop-types';
 import { KONULAR, TYT_DERSLER, AYT_DERSLER } from '../data/konular';
 import { lgsKonular } from '../data/konularLgs';
 import { LGS_DERSLER } from '../utils/ogrenciBaglam';
+import { konuDuzListe } from '../utils/konuUtils';
 
 const TUM_DERSLER = [...TYT_DERSLER, ...AYT_DERSLER, ...LGS_DERSLER];
 
 function konulariBulById(dersId) {
   if (!dersId) return [];
-  return KONULAR[dersId] || lgsKonular[dersId] || [];
+  const ham = KONULAR[dersId] || lgsKonular[dersId] || [];
+  return konuDuzListe(ham);
 }
 
 function konulariBul(ders) {
@@ -19,7 +21,8 @@ function konulariBul(ders) {
     return label.includes(dl) || dl.includes(label);
   });
   if (!eslesen) return [];
-  return KONULAR[eslesen.id] || lgsKonular[eslesen.id] || [];
+  const ham = KONULAR[eslesen.id] || lgsKonular[eslesen.id] || [];
+  return konuDuzListe(ham);
 }
 
 function seciliListesi(seciliKonular) {

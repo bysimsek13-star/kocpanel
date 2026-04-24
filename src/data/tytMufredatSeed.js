@@ -1,6 +1,33 @@
 // tytMufredatSeed.js — TYT müfredat ağacı + Firestore seed yardımcısı
 // Hiyerarşi: Ders (1) → Alt Başlık (2) → Konu (3) → Alt Konu (4)
 
+// Yeni prefix formatı ('## '/'# '/'### '/düz) → Firestore kayıtlarına dönüştürür
+export function prefixListesiniDuzlestir(dersId, liste) {
+  const sonuc = [];
+  let sira = 0;
+  let anaBolum = null;
+  let altBolum = null;
+  let grup = null;
+  for (const satir of liste) {
+    if (satir.startsWith('## ')) {
+      anaBolum = satir.slice(3);
+      altBolum = null;
+      grup = null;
+      sonuc.push({ dersId, ad: anaBolum, tip: 'ana', sira: sira++ });
+    } else if (satir.startsWith('# ')) {
+      altBolum = satir.slice(2);
+      grup = null;
+      sonuc.push({ dersId, ad: altBolum, tip: 'alt', anaBolum, sira: sira++ });
+    } else if (satir.startsWith('### ')) {
+      grup = satir.slice(4);
+      sonuc.push({ dersId, ad: grup, tip: 'grup', anaBolum, altBolum, sira: sira++ });
+    } else {
+      sonuc.push({ dersId, ad: satir, tip: 'konu', anaBolum, altBolum, grup, sira: sira++ });
+    }
+  }
+  return sonuc;
+}
+
 const n = (ad, c = []) => ({
   ad,
   cocuklar: c.length && typeof c[0] === 'string' ? c.map(a => ({ ad: a, cocuklar: [] })) : c,
