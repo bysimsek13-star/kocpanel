@@ -41,7 +41,7 @@ export default function KocOgrenciListesi({ onSec, onEkle, onGeri }) {
         aciklama="Öğrenci seçerek detay, program ve denemelere gidebilirsiniz."
         mobil={mobil}
         onGeri={onGeri}
-        geriEtiket="← Ana sayfa"
+        geriEtiket="Ana sayfa"
         sagSlot={
           <Btn onClick={onEkle} style={{ padding: '10px 18px', fontSize: 13, fontWeight: 600 }}>
             + Öğrenci ekle
