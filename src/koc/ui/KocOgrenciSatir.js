@@ -22,29 +22,31 @@ const TUR_LABEL = {
   ortaokul: 'Ortaokul',
 };
 
-const TYT_TURLER = new Set(['tyt', 'tyt_10', 'tyt_11', 'tyt_12']);
-const AYT_TURLER = new Set(['sayisal', 'ea', 'sozel', 'dil']);
+const AYT_ALANLAR = ['sayisal', 'ea', 'sozel', 'dil'];
 
 function netSatirlar(tur, dashboard) {
   if (!dashboard) return null;
   const t = (tur || '').toLowerCase();
-  if (turBelirle(t) === 'lgs') {
+  const kategori = turBelirle(t);
+
+  if (kategori === 'lgs') {
     if (dashboard.sonDenemeNet == null) return null;
     return [{ label: 'LGS', val: dashboard.sonDenemeNet }];
   }
-  if (TYT_TURLER.has(t)) {
+  if (kategori === 'ortaokul') return null;
+
+  const isAyt = AYT_ALANLAR.some(a => t.includes(a));
+  if (!isAyt) {
     if (dashboard.sonDenemeNet == null) return null;
     return [{ label: 'TYT', val: dashboard.sonDenemeNet }];
   }
-  if (AYT_TURLER.has(t)) {
-    const tyt = dashboard.sonTytNet ?? dashboard.sonDenemeNet;
-    const ayt = dashboard.sonAytNet ?? dashboard.sonDenemeNet;
-    const satirlar = [];
-    if (tyt != null) satirlar.push({ label: 'TYT', val: tyt });
-    if (ayt != null) satirlar.push({ label: 'AYT', val: ayt });
-    return satirlar.length ? satirlar : null;
-  }
-  return null;
+
+  const tyt = dashboard.sonTytNet ?? dashboard.sonDenemeNet;
+  const ayt = dashboard.sonAytNet ?? dashboard.sonDenemeNet;
+  const satirlar = [];
+  if (tyt != null) satirlar.push({ label: 'TYT', val: tyt });
+  if (ayt != null) satirlar.push({ label: 'AYT', val: ayt });
+  return satirlar.length ? satirlar : null;
 }
 
 function turLabel(tur) {

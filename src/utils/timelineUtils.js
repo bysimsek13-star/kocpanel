@@ -49,6 +49,11 @@ export function haftalikOzetOlustur({
       ? (Number(sonDeneme.toplamNet) || 0) - (Number(oncekiDeneme.toplamNet) || 0)
       : null;
 
+  const tytDenemeler = siraliDenemeler.filter(d => (d.sinav || '').toUpperCase() === 'TYT');
+  const aytDenemeler = siraliDenemeler.filter(d => (d.sinav || '').toUpperCase() === 'AYT');
+  const sonTytDeneme = tytDenemeler[0] || null;
+  const sonAytDeneme = aytDenemeler[0] || null;
+
   const sonRapor = raporlar?.[0];
   const sonRaporTarih = sonRapor?.haftaBitis || sonRapor?.olusturma || null;
   const sonRaporGun = sonRaporTarih ? gunFarki(sonRaporTarih, bugun) : 999;
@@ -61,6 +66,8 @@ export function haftalikOzetOlustur({
     toplamSaat: Number(toplamSaat.toFixed(1)),
     gorevTamamlama: tamamOran,
     sonDenemeNet: sonDeneme ? Number(sonDeneme.toplamNet) || 0 : null,
+    sonTytNet: sonTytDeneme ? Number(sonTytDeneme.toplamNet) || 0 : null,
+    sonAytNet: sonAytDeneme ? Number(sonAytDeneme.toplamNet) || 0 : null,
     netDegisim: netFark !== null ? Number(netFark.toFixed(1)) : null,
     veliRaporGerekli,
     sonRaporGun: sonRaporGun === null ? null : sonRaporGun,
