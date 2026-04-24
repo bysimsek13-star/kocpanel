@@ -1,5 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { useMobil } from '../../hooks/useMediaQuery';
 import {
   LineChart,
   Line,
@@ -142,6 +143,8 @@ export function GenelNetGrafik({ denemeler, s }) {
 // ─── Deneme detay kartı ────────────────────────────────────────────────────────
 import { TYT_DERSLER, AYT_DERSLER } from '../../data/konular';
 import { LGS_DERSLER } from '../../utils/ogrenciBaglam';
+
+const AYT_ALAN_LABEL = { SAY: 'Sayısal', EA: 'EA', SÖZ: 'Sözel', DİL: 'Dil' };
 // Eski fen/sos ID'leriyle kaydedilmiş verilerin gösterilmesi için fallback'ler eklendi
 const ESKI_DERSLER = [
   { id: 'fen', label: 'Fen Bilimleri', renk: '#10B981' },
@@ -157,11 +160,15 @@ function kartBaslik(deneme) {
     const dersLabel = ilkDersId ? dersGetir(ilkDersId)?.label || ilkDersId : '';
     return `Branş${dersLabel ? ` — ${dersLabel}` : ''}`;
   }
+  if (deneme.sinav === 'AYT' && deneme.alan) {
+    return `AYT — ${AYT_ALAN_LABEL[deneme.alan] || deneme.alan}`;
+  }
   return deneme.sinav || 'Deneme';
 }
 
 export function DenemeKart({ deneme, acik, onToggle, onSil, onDuzenle, s }) {
   const isBrans = deneme.denemeTuru === 'brans';
+  const mobil = useMobil();
   return (
     <div
       style={{
@@ -198,9 +205,9 @@ export function DenemeKart({ deneme, acik, onToggle, onSil, onDuzenle, s }) {
           >
             {kartBaslik(deneme)}
           </span>
-          <span style={{ fontSize: 13, fontWeight: 600, color: s.text }}>
-            {!isBrans && deneme.alan ? deneme.alan : ''}
-          </span>
+          {!isBrans && deneme.alan && deneme.sinav !== 'AYT' && (
+            <span style={{ fontSize: 13, fontWeight: 600, color: s.text }}>{deneme.alan}</span>
+          )}
           <span style={{ fontSize: 11, color: s.text3 }}>{deneme.tarih}</span>
           {deneme.yayinevi && (
             <span
@@ -280,7 +287,7 @@ export function DenemeKart({ deneme, acik, onToggle, onSil, onDuzenle, s }) {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))',
+              gridTemplateColumns: mobil ? 'repeat(2, 1fr)' : 'repeat(auto-fill,minmax(150px,1fr))',
               gap: 8,
             }}
           >

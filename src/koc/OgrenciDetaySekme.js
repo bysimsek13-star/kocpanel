@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import PropTypes from 'prop-types';
+import { collection, query, where, getDocs, updateDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 import { Card } from '../components/Shared';
 import DenemeListesi from '../ogrenci/DenemeListesi';
 import Mesajlar from '../ogrenci/Mesajlar';
@@ -23,6 +25,18 @@ export function OgrenciDetaySekme({
   s,
   mobil,
 }) {
+  useEffect(() => {
+    if (aktifSekme !== 'mesajlar' || !ogrenci?.id) return;
+    const q = query(
+      collection(db, 'ogrenciler', ogrenci.id, 'mesajlar'),
+      where('okundu', '==', false),
+      where('gonderen', '==', 'ogrenci')
+    );
+    getDocs(q).then(snap => {
+      snap.docs.forEach(d => updateDoc(d.ref, { okundu: true }));
+    });
+  }, [aktifSekme, ogrenci?.id]);
+
   if (aktifSekme === 'ozet') {
     return <OgrenciDetayGenelOzet ogrenci={ogrenci} program={program} s={s} />;
   }

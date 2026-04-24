@@ -31,6 +31,11 @@ vi.mock('../data/konular', () => ({
   verimlilikHesapla: vi.fn(() => 80),
   TYT_DERSLER: [],
   AYT_DERSLER: [],
+  AYT_SAY: [],
+  AYT_EA: [],
+  AYT_SOZ: [],
+  AYT_DIL: [],
+  LGS_DERSLER: [],
 }));
 
 vi.mock('../utils/aktiflikKaydet', () => ({
@@ -50,6 +55,10 @@ vi.mock('../utils/ogrenciUtils', () => ({
   generateSuggestions: vi.fn(() => []),
   upcomingExams: vi.fn(() => []),
   formatCountdown: vi.fn(d => `${d} gün`),
+  SINAV_TAKVIMI: [
+    { key: 'lgs', date: '2026-06-07' },
+    { key: 'tyt', date: '2026-06-13' },
+  ],
 }));
 
 // KocContext yardımcısı
@@ -654,5 +663,117 @@ describe('KocGirisDurumuModal', () => {
     );
     const isimler = screen.getAllByText(/Ali Veli|Ayşe Hanım|Can Demir/).map(el => el.textContent);
     expect(isimler[0]).toBe('Ali Veli');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// KocOgrenciSatir — net ayrımı (EKSİK 1)
+// ─────────────────────────────────────────────────────────────────────────────
+import KocOgrenciSatir from '../koc/ui/KocOgrenciSatir';
+
+describe('KocOgrenciSatir net ayrımı', () => {
+  it('TYT öğrencisi için TYT: etiketi gösterilir', () => {
+    render(
+      <KocOgrenciSatir
+        ogrenci={{ id: 'o1', isim: 'Ali Veli', tur: 'tyt' }}
+        index={0}
+        dashboard={{ sonDenemeNet: 55 }}
+        okunmamis={0}
+        onClick={vi.fn()}
+      />
+    );
+    expect(document.body.textContent).toMatch(/TYT:/);
+    expect(document.body.textContent).toMatch(/55/);
+  });
+
+  it('LGS öğrencisi için LGS: etiketi gösterilir', () => {
+    render(
+      <KocOgrenciSatir
+        ogrenci={{ id: 'o2', isim: 'Zeynep', tur: 'lgs' }}
+        index={1}
+        dashboard={{ sonDenemeNet: 70 }}
+        okunmamis={0}
+        onClick={vi.fn()}
+      />
+    );
+    expect(document.body.textContent).toMatch(/LGS:/);
+  });
+
+  it('Sayısal öğrencisi için hem TYT hem AYT gösterilir', () => {
+    render(
+      <KocOgrenciSatir
+        ogrenci={{ id: 'o3', isim: 'Mert', tur: 'sayisal' }}
+        index={2}
+        dashboard={{ sonTytNet: 80, sonAytNet: 60 }}
+        okunmamis={0}
+        onClick={vi.fn()}
+      />
+    );
+    expect(document.body.textContent).toMatch(/TYT:/);
+    expect(document.body.textContent).toMatch(/AYT:/);
+  });
+
+  it('Net değer null ise hiçbir şey gösterilmez', () => {
+    const { container } = render(
+      <KocOgrenciSatir
+        ogrenci={{ id: 'o4', isim: 'Can', tur: 'tyt' }}
+        index={3}
+        dashboard={{ sonDenemeNet: null }}
+        okunmamis={0}
+        onClick={vi.fn()}
+      />
+    );
+    expect(container.textContent).not.toMatch(/TYT:/);
+  });
+
+  it('Ara sınıf (ortaokul) net göstermez', () => {
+    render(
+      <KocOgrenciSatir
+        ogrenci={{ id: 'o5', isim: 'Deniz', tur: 'ortaokul' }}
+        index={4}
+        dashboard={{ sonDenemeNet: 45 }}
+        okunmamis={0}
+        onClick={vi.fn()}
+      />
+    );
+    expect(document.body.textContent).not.toMatch(/LGS:|TYT:|AYT:/);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// OgrenciDetaySekme — mesajlar okundu (EKSİK 6)
+// ─────────────────────────────────────────────────────────────────────────────
+import { OgrenciDetaySekme } from '../koc/OgrenciDetaySekme';
+import { getDocs as mockGetDocs, updateDoc as mockUpdateDoc } from 'firebase/firestore';
+
+describe('OgrenciDetaySekme mesajlar okundu', () => {
+  it('mesajlar sekmesi açıldığında getDocs çağrılır', async () => {
+    mockGetDocs.mockResolvedValueOnce({ docs: [] });
+    render(
+      <OgrenciDetaySekme
+        aktifSekme="mesajlar"
+        ogrenci={{ id: 'o1', isim: 'Ali Veli', tur: 'tyt' }}
+        duzenleyebilir={false}
+        s={mockS}
+        program={[]}
+      />
+    );
+    await waitFor(() => {
+      expect(mockGetDocs).toHaveBeenCalled();
+    });
+  });
+
+  it('farklı sekme açıkken getDocs çağrılmaz', () => {
+    mockGetDocs.mockClear();
+    render(
+      <OgrenciDetaySekme
+        aktifSekme="ozet"
+        ogrenci={{ id: 'o1', isim: 'Ali Veli', tur: 'tyt' }}
+        duzenleyebilir={false}
+        s={mockS}
+        program={[]}
+      />
+    );
+    expect(mockGetDocs).not.toHaveBeenCalled();
   });
 });

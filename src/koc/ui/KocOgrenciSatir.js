@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { useTheme } from '../../context/ThemeContext';
 import { Avatar } from '../../components/Shared';
 import { renkler } from '../../data/konular';
+import { turBelirle } from '../../utils/sinavUtils';
 
 const OG_SATIR_GRID = '48px minmax(160px,1fr) 88px 100px 72px';
 
@@ -21,6 +22,31 @@ const TUR_LABEL = {
   ortaokul: 'Ortaokul',
 };
 
+const TYT_TURLER = new Set(['tyt', 'tyt_10', 'tyt_11', 'tyt_12']);
+const AYT_TURLER = new Set(['sayisal', 'ea', 'sozel', 'dil']);
+
+function netSatirlar(tur, dashboard) {
+  if (!dashboard) return null;
+  const t = (tur || '').toLowerCase();
+  if (turBelirle(t) === 'lgs') {
+    if (dashboard.sonDenemeNet == null) return null;
+    return [{ label: 'LGS', val: dashboard.sonDenemeNet }];
+  }
+  if (TYT_TURLER.has(t)) {
+    if (dashboard.sonDenemeNet == null) return null;
+    return [{ label: 'TYT', val: dashboard.sonDenemeNet }];
+  }
+  if (AYT_TURLER.has(t)) {
+    const tyt = dashboard.sonTytNet ?? dashboard.sonDenemeNet;
+    const ayt = dashboard.sonAytNet ?? dashboard.sonDenemeNet;
+    const satirlar = [];
+    if (tyt != null) satirlar.push({ label: 'TYT', val: tyt });
+    if (ayt != null) satirlar.push({ label: 'AYT', val: ayt });
+    return satirlar.length ? satirlar : null;
+  }
+  return null;
+}
+
 function turLabel(tur) {
   const key = (tur || '').toLowerCase();
   return TUR_LABEL[key] || tur || '—';
@@ -37,37 +63,40 @@ const KocOgrenciSatir = memo(function KocOgrenciSatir({
 }) {
   const { s } = useTheme();
 
-  const netHuc =
-    dashboard?.sonDenemeNet != null ? (
-      <div
-        onClick={e => {
-          e.stopPropagation();
-          onDenemeler?.();
-        }}
-        style={{
-          textAlign: mobil ? 'right' : 'center',
-          cursor: onDenemeler ? 'pointer' : 'default',
-        }}
-      >
-        <div style={{ fontSize: 14, fontWeight: 700, color: s.accent }}>
-          {dashboard.sonDenemeNet}
+  const satirlar = netSatirlar(ogrenci.tur, dashboard);
+  const netHuc = satirlar ? (
+    <div
+      onClick={e => {
+        e.stopPropagation();
+        onDenemeler?.();
+      }}
+      style={{
+        textAlign: mobil ? 'right' : 'center',
+        cursor: onDenemeler ? 'pointer' : 'default',
+      }}
+    >
+      {satirlar.map(s2 => (
+        <div key={s2.label} style={{ fontSize: 13, fontWeight: 700, color: s.accent }}>
+          <span style={{ fontSize: 10, fontWeight: 600, color: s.text3, marginRight: 3 }}>
+            {s2.label}:
+          </span>
+          {s2.val}
         </div>
-        {dashboard?.netDegisim != null && (
-          <div
-            style={{
-              fontSize: 11,
-              fontWeight: 600,
-              color: dashboard.netDegisim >= 0 ? s.ok : s.tehlika,
-            }}
-          >
-            {dashboard.netDegisim >= 0 ? '+' : ''}
-            {dashboard.netDegisim}
-          </div>
-        )}
-      </div>
-    ) : (
-      <span style={{ fontSize: 12, color: s.text3, display: 'block', textAlign: 'center' }}>—</span>
-    );
+      ))}
+      {dashboard?.netDegisim != null && (
+        <div
+          style={{
+            fontSize: 11,
+            fontWeight: 600,
+            color: dashboard.netDegisim >= 0 ? s.ok : s.tehlika,
+          }}
+        >
+          {dashboard.netDegisim >= 0 ? '+' : ''}
+          {dashboard.netDegisim}
+        </div>
+      )}
+    </div>
+  ) : null;
 
   const mesajHuc = (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>

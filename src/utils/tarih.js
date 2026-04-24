@@ -12,10 +12,9 @@ import { useState, useEffect } from 'react';
 
 const GUN_ADLARI = ['pazar', 'pazartesi', 'sali', 'carsamba', 'persembe', 'cuma', 'cumartesi'];
 
-/** Bugünün YYYY-MM-DD string'ini yerel saatle döner (her çağrıda taze) */
+/** Bugünün YYYY-MM-DD string'ini Türkiye saatiyle döner (her çağrıda taze) */
 export function bugunStr() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  return new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Istanbul' });
 }
 
 /** Herhangi bir Date nesnesini yerel saatle YYYY-MM-DD string'ine çevirir (timezone-safe) */

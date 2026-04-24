@@ -60,6 +60,53 @@ function BilgiKart({ baslik, deger, renk, s }) {
   );
 }
 
+function EksikKonularKarti({ ogrenciId, s }) {
+  const [veriler, setVeriler] = useState([]);
+
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, 'ogrenciler', ogrenciId, 'eksikKonular'), snap => {
+      setVeriler(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+    return unsub;
+  }, [ogrenciId]);
+
+  const grouped = veriler.reduce((acc, v) => {
+    const ders = v.ders || 'Diğer';
+    if (!acc[ders]) acc[ders] = [];
+    acc[ders].push(v.konu);
+    return acc;
+  }, {});
+  const dersler = Object.keys(grouped);
+
+  return (
+    <div
+      style={{
+        background: s.surface,
+        border: `1px solid ${s.border}`,
+        borderRadius: 14,
+        padding: '18px 20px',
+        marginBottom: 14,
+      }}
+    >
+      <div style={{ fontSize: 13, fontWeight: 700, color: s.text, marginBottom: 12 }}>
+        📚 Eksik Konular
+      </div>
+      {dersler.length === 0 ? (
+        <div style={{ fontSize: 12, color: s.text3 }}>Eksik konu kaydedilmemiş</div>
+      ) : (
+        dersler.map(ders => (
+          <div key={ders} style={{ marginBottom: 10 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: s.text, marginBottom: 3 }}>
+              {ders}
+            </div>
+            <div style={{ fontSize: 12, color: s.text2 }}>{grouped[ders].join(', ')}</div>
+          </div>
+        ))
+      )}
+    </div>
+  );
+}
+
 function NotKarti({ baslik, koleksiyon, ogrenciId, s }) {
   const [notlar, setNotlar] = useState([]);
   const [metin, setMetin] = useState('');
@@ -219,6 +266,7 @@ export default function OgrenciDetayGenelOzet({ ogrenci, program, s }) {
         </div>
       )}
 
+      <EksikKonularKarti ogrenciId={ogrenci.id} s={s} />
       <NotKarti baslik="📝 Koç notları" koleksiyon="kocNotlari" ogrenciId={ogrenci.id} s={s} />
       <NotKarti
         baslik="📝 Toplantı özetleri"
@@ -234,6 +282,11 @@ BilgiKart.propTypes = {
   baslik: PropTypes.string.isRequired,
   deger: PropTypes.string,
   renk: PropTypes.string,
+  s: PropTypes.object.isRequired,
+};
+
+EksikKonularKarti.propTypes = {
+  ogrenciId: PropTypes.string.isRequired,
   s: PropTypes.object.isRequired,
 };
 
