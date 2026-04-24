@@ -39,9 +39,9 @@ export function haftalikOzetOlustur({
   const tamamlanan = program.filter(p => p.tamamlandi).length;
   const tamamOran = program.length ? Math.round((tamamlanan / program.length) * 100) : 0;
 
-  const siraliDenemeler = [...denemeler].sort(
-    (a, b) => new Date(b.tarih || 0) - new Date(a.tarih || 0)
-  );
+  const siraliDenemeler = [...denemeler]
+    .filter(d => (d.denemeTuru || 'genel') !== 'brans')
+    .sort((a, b) => new Date(b.tarih || 0) - new Date(a.tarih || 0));
   const sonDeneme = siraliDenemeler[0] || null;
   const oncekiDeneme = siraliDenemeler[1] || null;
   const netFark =

@@ -42,7 +42,7 @@ function netSatirlar(tur, dashboard) {
   }
 
   const tyt = dashboard.sonTytNet ?? dashboard.sonDenemeNet;
-  const ayt = dashboard.sonAytNet ?? dashboard.sonDenemeNet;
+  const ayt = dashboard.sonAytNet;
   const satirlar = [];
   if (tyt != null) satirlar.push({ label: 'TYT', val: tyt });
   if (ayt != null) satirlar.push({ label: 'AYT', val: ayt });
