@@ -99,6 +99,7 @@ export default function KocSolMenu({ aktif, onNav, okunmamis }) {
       items: [
         { key: 'gorevkutuphane', label: 'Görev şablonları' },
         { key: 'kaynakkutuphane', label: 'Kaynak kütüphanesi' },
+        { key: 'playlistler', label: 'Video playlistler' },
         { key: 'topluislemler', label: 'Toplu işlemler' },
       ],
     },

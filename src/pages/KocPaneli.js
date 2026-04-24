@@ -37,6 +37,7 @@ import OnboardingSihirbazi from '../koc/OnboardingSihirbazi';
 // Ağır sayfalar — lazy chunk'a ayrıldı
 const SenelikProgramSayfasi = React.lazy(() => import('../koc/SenelikProgram'));
 const KitapVideoKutuphane = React.lazy(() => import('../koc/KitapVideoKutuphane'));
+const PlaylistYonetimi = React.lazy(() => import('../koc/PlaylistYonetimi'));
 const IstatistiklerSayfasi = React.lazy(() => import('../koc/Istatistikler'));
 const TopluIslemlerSayfasi = React.lazy(() => import('../koc/TopluIslemler'));
 const DuyuruMerkezi = React.lazy(() => import('../components/DuyuruMerkezi'));
@@ -56,6 +57,7 @@ const KOC_PATHS = {
   veliraporlari: '/koc/veli-raporlari',
   gorevkutuphane: '/koc/gorev-kutuphane',
   kaynakkutuphane: '/koc/kaynak-kutuphane',
+  playlistler: '/koc/playlistler',
   duyurular: '/koc/duyurular',
 };
 
@@ -212,6 +214,8 @@ export default function KocPaneli() {
         return <TopluIslemlerSayfasi ogrenciler={ogrenciler} onGeri={() => onNav('ana')} />;
       case 'kaynakkutuphane':
         return <KitapVideoKutuphane kullanici={kullanici} onGeri={() => onNav('ana')} />;
+      case 'playlistler':
+        return <PlaylistYonetimi kullanici={kullanici} onGeri={() => onNav('ana')} />;
       case 'duyurular':
         return (
           <>

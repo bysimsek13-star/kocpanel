@@ -144,6 +144,30 @@ test.describe('Koç Paneli Akışları', () => {
     // Playlist Ekle butonu görünmeli
     await expect(page.locator('button', { hasText: /Playlist Ekle/i }).first()).toBeVisible();
   });
+
+  test('playlist sayfasında sınıf grup tabları görünür', async ({ page }, testInfo) => {
+    if (testInfo.project.name === 'mobile') testInfo.skip(true, 'Mobil menü farklı');
+    await kocGirisYap(page);
+    await onboardingKapat(page);
+    // Desktop: sol menü → Video playlistler
+    await page.locator('text=Video playlistler').first().click();
+    await page.waitForTimeout(2000);
+    // Grup tablarından en az ikisi görünmeli
+    await expect(page.locator('button', { hasText: 'TYT' }).first()).toBeVisible();
+    await expect(page.locator('button', { hasText: /8\. Sınıf/i }).first()).toBeVisible();
+  });
+
+  test('playlist grup seçilince ders grid gelir', async ({ page }, testInfo) => {
+    if (testInfo.project.name === 'mobile') testInfo.skip(true, 'Mobil menü farklı');
+    await kocGirisYap(page);
+    await onboardingKapat(page);
+    await page.locator('text=Video playlistler').first().click();
+    await page.waitForTimeout(2000);
+    await page.locator('button', { hasText: 'TYT' }).first().click();
+    await page.waitForTimeout(1000);
+    // Ders grid'inden en az biri görünmeli
+    await expect(page.locator('button', { hasText: 'Matematik' }).first()).toBeVisible();
+  });
 });
 
 // ─── Öğrenci Panel Akışları ───────────────────────────────────────────────────
