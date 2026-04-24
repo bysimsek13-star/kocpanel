@@ -4,12 +4,32 @@ import { Btn } from '../components/Shared';
 const SEKMELER = [
   { key: 'ozet', label: '🏠 Genel Özet' },
   { key: 'program', label: '📅 Program' },
-  { key: 'sorurutin', label: '✏️ Soru & Rutin' },
-  { key: 'denemeler', label: '📊 Deneme' },
-  { key: 'mesajlar', label: '💬 Mesajlar' },
+  { key: 'soruRutin', label: '✏️ Soru & Rutin' },
+  { key: 'deneme', label: '📊 Deneme' },
   { key: 'hedef', label: '🎯 Hedef' },
-  { key: 'mufredat', label: '📋 Konu Takibi' },
+  { key: 'konuTakibi', label: '📋 Konu Takibi' },
+  { key: 'mesajlar', label: '💬 Mesajlar' },
 ];
+
+const TUR_LABEL = {
+  tyt: 'TYT',
+  tyt_10: 'TYT',
+  tyt_11: 'TYT',
+  tyt_12: 'TYT',
+  sayisal: 'AYT Sayısal',
+  ea: 'AYT EA',
+  sozel: 'AYT Sözel',
+  dil: 'AYT Dil',
+  lgs: 'LGS',
+  lgs_7: '7. Sınıf',
+  lgs_8: '8. Sınıf / LGS',
+  ortaokul: 'Ortaokul',
+};
+
+function turLabel(tur) {
+  const key = (tur || '').toLowerCase();
+  return TUR_LABEL[key] || tur || '—';
+}
 
 export function OgrenciDetayTabBar({
   ogrenci,
@@ -56,7 +76,7 @@ export function OgrenciDetayTabBar({
           flexShrink: 0,
         }}
       >
-        {ogrenci.tur}
+        {turLabel(ogrenci.tur)}
       </div>
       {readOnly && (
         <div
@@ -121,9 +141,6 @@ export function OgrenciDetayTabBar({
           </div>
         ))}
       </div>
-      {!mobil && (
-        <div style={{ marginLeft: 'auto', fontSize: 13, color: s.text2 }}>{ogrenci.email}</div>
-      )}
     </div>
   );
 }

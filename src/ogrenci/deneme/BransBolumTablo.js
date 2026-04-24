@@ -57,7 +57,7 @@ export default function BransBolumTablo({
               borderBottom: `1px solid ${s.border}`,
             }}
           >
-            ◆ BRANŞ DENEMELERİ
+            BRANŞ DENEMELERİ
           </div>
           {bransDenemeler
             .sort((a, b) => new Date(b.tarih) - new Date(a.tarih))
@@ -124,7 +124,7 @@ export default function BransBolumTablo({
               borderBottom: `1px solid ${s.border}`,
             }}
           >
-            ● GENEL DENEMELERDEKİ NET
+            GENEL DENEMELERDEKİ NET
           </div>
           {denemeler
             .filter(d => d.denemeTuru !== 'brans' && d.netler?.[dersId])

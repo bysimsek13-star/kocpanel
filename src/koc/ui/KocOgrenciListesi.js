@@ -16,27 +16,13 @@ export default function KocOgrenciListesi({ onSec, onEkle, onGeri }) {
   const [filtre, setFiltre] = useState('tumu');
   const [sira, setSira] = useState('isim');
 
-  const bugunEksikSay = useMemo(
-    () => ogrenciler.filter(o => !bugunMap[o.id]?.rutin && !bugunMap[o.id]?.gunlukSoru).length,
-    [ogrenciler, bugunMap]
-  );
-
   const toplamMesaj = useMemo(
     () => Object.values(okunmamisMap || {}).reduce((t, v) => t + (Number(v) || 0), 0),
     [okunmamisMap]
   );
 
-  const denemeliSay = useMemo(
-    () => ogrenciler.filter(o => dashboardMap[o.id]?.sonDenemeNet != null).length,
-    [ogrenciler, dashboardMap]
-  );
-
   const filtreli = useMemo(() => {
-    let l = ogrenciler.filter(
-      o =>
-        o.isim?.toLowerCase().includes(arama.toLowerCase()) ||
-        o.email?.toLowerCase().includes(arama.toLowerCase())
-    );
+    let l = ogrenciler.filter(o => o.isim?.toLowerCase().includes(arama.toLowerCase()));
     if (filtre === 'mesaj') l = l.filter(o => (okunmamisMap?.[o.id] || 0) > 0);
     if (filtre === 'bugun_bos')
       l = l.filter(o => !bugunMap[o.id]?.rutin && !bugunMap[o.id]?.gunlukSoru);
@@ -58,7 +44,7 @@ export default function KocOgrenciListesi({ onSec, onEkle, onGeri }) {
         geriEtiket="← Ana sayfa"
         sagSlot={
           <Btn onClick={onEkle} style={{ padding: '10px 18px', fontSize: 13, fontWeight: 600 }}>
-            Öğrenci ekle
+            + Öğrenci ekle
           </Btn>
         }
       />
@@ -71,8 +57,6 @@ export default function KocOgrenciListesi({ onSec, onEkle, onGeri }) {
             deger: toplamMesaj,
             alt: toplamMesaj ? 'Kontrol edin' : 'Güncel',
           },
-          { label: 'Bugün giriş yok', deger: bugunEksikSay, alt: 'Rutin veya günlük soru' },
-          { label: 'Denemesi olan', deger: denemeliSay, alt: 'Son net kaydı' },
         ]}
       />
 
@@ -105,7 +89,6 @@ export default function KocOgrenciListesi({ onSec, onEkle, onGeri }) {
             <div />
             <div>Öğrenci</div>
             <div>Sınav</div>
-            <div>Günlük</div>
             <div style={{ textAlign: 'center' }}>Son net</div>
             <div style={{ textAlign: 'right' }}>İşlem</div>
           </div>
@@ -130,10 +113,9 @@ export default function KocOgrenciListesi({ onSec, onEkle, onGeri }) {
               ogrenci={o}
               index={i}
               dashboard={dashboardMap[o.id]}
-              bugun={bugunMap[o.id]}
               okunmamis={okunmamisMap?.[o.id] || 0}
               onClick={() => onSec(o)}
-              onDenemeler={() => onSec(o, 'denemeler')}
+              onDenemeler={() => onSec(o, 'deneme')}
               mobil={mobil}
             />
           ))

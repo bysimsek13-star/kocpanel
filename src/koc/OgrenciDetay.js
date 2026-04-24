@@ -67,12 +67,7 @@ function ReadOnlyBanner({ ogrenci: _ogrenci, onBildirimGonder, s }) {
   );
 }
 
-export default function OgrenciDetay({
-  ogrenci,
-  onGeri,
-  initialTab = 'program',
-  onTabChange = null,
-}) {
+export default function OgrenciDetay({ ogrenci, onGeri, initialTab = 'ozet', onTabChange = null }) {
   const { s } = useTheme();
   const { kullanici, userData, isAdmin, canEdit } = useAuth();
   const toast = useToast();
@@ -110,7 +105,7 @@ export default function OgrenciDetay({
   }, [veriGetir]);
 
   useEffect(() => {
-    const gecerli = ['ozet', 'program', 'sorurutin', 'denemeler', 'mesajlar', 'hedef', 'mufredat'];
+    const gecerli = ['ozet', 'program', 'soruRutin', 'deneme', 'hedef', 'konuTakibi', 'mesajlar'];
     if (initialTab && gecerli.includes(initialTab)) setAktifSekme(initialTab);
   }, [initialTab]);
 

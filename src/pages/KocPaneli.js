@@ -91,7 +91,7 @@ export default function KocPaneli() {
   );
 
   const onNav = k => navigate(KOC_PATHS[k] || KOC_PATHS.ana);
-  const onSec = (o, tab = 'program') => navigate(`/koc/ogrenciler/${o.id}?tab=${tab}`);
+  const onSec = (o, tab = 'ozet') => navigate(`/koc/ogrenciler/${o.id}?tab=${tab}`);
 
   // Aktiflik kaydı — mount'ta bir kez çalışır
   useEffect(() => {

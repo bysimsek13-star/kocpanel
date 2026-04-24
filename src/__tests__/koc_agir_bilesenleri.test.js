@@ -105,10 +105,16 @@ vi.mock('../utils/auditLog', () => ({
 vi.mock('../utils/ogrenciUtils', () => ({
   buildTaskTemplates: vi.fn(() => []),
   generateSuggestions: vi.fn(() => []),
+  SINAV_TAKVIMI: [
+    { key: 'lgs', label: 'LGS 2026', date: '2026-06-14', turler: ['LGS'] },
+    { key: 'tyt', label: 'TYT 2026', date: '2026-06-20', turler: ['TYT'] },
+    { key: 'ayt', label: 'AYT 2026', date: '2026-06-21', turler: ['AYT'] },
+  ],
 }));
 
 vi.mock('../utils/sinavUtils', () => ({
   turdenBransDersler: vi.fn(() => []),
+  turBelirle: vi.fn(() => 'yks'),
 }));
 
 vi.mock('../components/koc/KocPanelUi', () => ({
@@ -375,6 +381,69 @@ describe('OgrenciDetay', () => {
     await waitFor(() => expect(document.body.textContent).toContain('Ali Yılmaz'), {
       timeout: 3000,
     });
+  });
+
+  it('varsayılan sekme ozet olur', () => {
+    renderWithProviders(<OgrenciDetay ogrenci={mockOgrenci} onGeri={vi.fn()} />);
+    const aktifSekmeler = document.querySelectorAll('[style*="color: var"]');
+    expect(document.body.textContent).toContain('Genel Özet');
+  });
+
+  it('tab bar 7 sekme gösterir', async () => {
+    renderWithProviders(<OgrenciDetay ogrenci={mockOgrenci} onGeri={vi.fn()} />);
+    await waitFor(() => {
+      expect(document.body.textContent).toContain('Program');
+      expect(document.body.textContent).toContain('Soru & Rutin');
+      expect(document.body.textContent).toContain('Deneme');
+      expect(document.body.textContent).toContain('Hedef');
+      expect(document.body.textContent).toContain('Konu Takibi');
+      expect(document.body.textContent).toContain('Mesajlar');
+    });
+  });
+
+  it('initialTab=deneme ile deneme sekmesi aktif olur', async () => {
+    renderWithProviders(
+      <OgrenciDetay ogrenci={mockOgrenci} onGeri={vi.fn()} initialTab="deneme" />
+    );
+    await waitFor(() => expect(document.body.textContent.length).toBeGreaterThan(0));
+  });
+
+  it('initialTab=soruRutin ile soru rutin sekmesi açılır', async () => {
+    renderWithProviders(
+      <OgrenciDetay ogrenci={mockOgrenci} onGeri={vi.fn()} initialTab="soruRutin" />
+    );
+    await waitFor(() => expect(document.body.textContent.length).toBeGreaterThan(0));
+  });
+
+  it('initialTab=hedef ile hedef sekmesi açılır', async () => {
+    renderWithProviders(<OgrenciDetay ogrenci={mockOgrenci} onGeri={vi.fn()} initialTab="hedef" />);
+    await waitFor(() => expect(document.body.textContent).toContain('Ali Yılmaz'));
+  });
+
+  it('initialTab=konuTakibi ile konu takibi sekmesi açılır', async () => {
+    renderWithProviders(
+      <OgrenciDetay ogrenci={mockOgrenci} onGeri={vi.fn()} initialTab="konuTakibi" />
+    );
+    await waitFor(() => expect(document.body.textContent.length).toBeGreaterThan(0));
+  });
+
+  it('initialTab=mesajlar ile mesajlar sekmesi açılır', async () => {
+    renderWithProviders(
+      <OgrenciDetay ogrenci={mockOgrenci} onGeri={vi.fn()} initialTab="mesajlar" />
+    );
+    await waitFor(() => expect(document.body.textContent).toContain('Mesajlar'));
+  });
+
+  it('tur badge tyt_12 öğrenci için TYT gösterir', async () => {
+    renderWithProviders(<OgrenciDetay ogrenci={mockOgrenci} onGeri={vi.fn()} />);
+    await waitFor(() => expect(document.body.textContent).toContain('TYT'));
+  });
+
+  it('geçersiz initialTab ozet sekmesine düşer', async () => {
+    renderWithProviders(
+      <OgrenciDetay ogrenci={mockOgrenci} onGeri={vi.fn()} initialTab="bilinmeyen_sekme" />
+    );
+    await waitFor(() => expect(document.body.textContent).toContain('Genel Özet'));
   });
 });
 

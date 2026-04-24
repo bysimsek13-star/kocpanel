@@ -183,7 +183,7 @@ export default function BransBolum({ dersId, dersLabel, dersRenk, dersMax, denem
                           color: p.tur === 'brans' ? RENK.brans : RENK.genel,
                         }}
                       >
-                        {p.tur === 'brans' ? '◆ Branş' : '● Genel'}
+                        {p.tur === 'brans' ? 'Branş' : 'Genel'}
                       </div>
                     </div>
                   );

@@ -171,6 +171,11 @@ vi.mock('../utils/readState', () => ({
 vi.mock('../utils/ogrenciUtils', () => ({
   buildTaskTemplates: vi.fn(() => []),
   generateSuggestions: vi.fn(() => []),
+  SINAV_TAKVIMI: [
+    { key: 'lgs', label: 'LGS 2026', date: '2026-06-14', turler: ['LGS'] },
+    { key: 'tyt', label: 'TYT 2026', date: '2026-06-20', turler: ['TYT'] },
+    { key: 'ayt', label: 'AYT 2026', date: '2026-06-21', turler: ['AYT'] },
+  ],
 }));
 
 vi.mock('../utils/izleme', () => ({
@@ -459,7 +464,7 @@ describe('OgrenciDetay — sekme geçişleri', () => {
 
   it('initialTab prop doğru sekmeyi açar', async () => {
     renderWithProviders(
-      <OgrenciDetay ogrenci={mockOgrenci} onGeri={vi.fn()} initialTab="denemeler" />
+      <OgrenciDetay ogrenci={mockOgrenci} onGeri={vi.fn()} initialTab="deneme" />
     );
     await waitFor(() => {
       expect(document.querySelector('[data-testid="deneme-listesi"]')).toBeTruthy();
@@ -473,7 +478,7 @@ describe('OgrenciDetay — sekme geçişleri', () => {
     );
     await waitFor(() => expect(document.body.textContent).toContain('📊 Deneme'));
     fireEvent.click(screen.getByText('📊 Deneme'));
-    expect(onTabChange).toHaveBeenCalledWith('denemeler');
+    expect(onTabChange).toHaveBeenCalledWith('deneme');
   });
 });
 

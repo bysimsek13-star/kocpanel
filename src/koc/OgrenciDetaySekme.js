@@ -53,11 +53,11 @@ export function OgrenciDetaySekme({
     );
   }
 
-  if (aktifSekme === 'sorurutin') {
+  if (aktifSekme === 'soruRutin') {
     return <OgrenciDetaySoruRutin ogrenci={ogrenci} s={s} />;
   }
 
-  if (aktifSekme === 'denemeler') {
+  if (aktifSekme === 'deneme') {
     return (
       <div style={{ maxWidth: 750 }}>
         <DenemeListesi
@@ -68,6 +68,28 @@ export function OgrenciDetaySekme({
           kocId={null}
           ogrenciTur={ogrenci.tur}
           ogrenciSinif={ogrenci.sinif}
+        />
+      </div>
+    );
+  }
+
+  if (aktifSekme === 'hedef') {
+    return (
+      <div style={{ maxWidth: 700 }}>
+        <OgrenciHedefKarti ogrenci={ogrenci} index={0} s={s} onHedefEkle={() => {}} />
+      </div>
+    );
+  }
+
+  if (aktifSekme === 'konuTakibi') {
+    return (
+      <div style={{ maxWidth: 860 }}>
+        <MufredatGoruntule
+          ogrenciId={ogrenci.id}
+          ogrenciTur={ogrenci.tur}
+          ogrenciSinif={ogrenci.sinif}
+          kocModu={duzenleyebilir}
+          denemeler={denemeler}
         />
       </div>
     );
@@ -88,28 +110,6 @@ export function OgrenciDetaySekme({
             🔒 Bu öğrencinin mesajlarını görüntüleme yetkiniz yok
           </div>
         )}
-      </div>
-    );
-  }
-
-  if (aktifSekme === 'hedef') {
-    return (
-      <div style={{ maxWidth: 700 }}>
-        <OgrenciHedefKarti ogrenci={ogrenci} index={0} s={s} onHedefEkle={() => {}} />
-      </div>
-    );
-  }
-
-  if (aktifSekme === 'mufredat') {
-    return (
-      <div style={{ maxWidth: 860 }}>
-        <MufredatGoruntule
-          ogrenciId={ogrenci.id}
-          ogrenciTur={ogrenci.tur}
-          ogrenciSinif={ogrenci.sinif}
-          kocModu={duzenleyebilir}
-          denemeler={denemeler}
-        />
       </div>
     );
   }

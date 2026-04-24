@@ -12,7 +12,8 @@ import {
 } from 'recharts';
 import { RENK } from './constants';
 
-const RENK_AYT = '#8B5CF6';
+const RENK_TYT = '#534AB7';
+const RENK_AYT = '#0F6E56';
 
 // ─── Genel deneme net grafiği — TYT ve AYT ayrı renkli çizgiler ───────────────
 export function GenelNetGrafik({ denemeler, s }) {
@@ -63,7 +64,7 @@ export function GenelNetGrafik({ denemeler, s }) {
             {showSplit && (
               <>
                 {' · '}
-                <span style={{ color: RENK.genel }}>TYT</span>
+                <span style={{ color: RENK_TYT }}>TYT</span>
                 {' · '}
                 <span style={{ color: RENK_AYT }}>AYT</span>
               </>
@@ -107,9 +108,9 @@ export function GenelNetGrafik({ denemeler, s }) {
                 connectNulls
                 type="monotone"
                 dataKey="tyt"
-                stroke={RENK.genel}
+                stroke={RENK_TYT}
                 strokeWidth={2}
-                dot={{ fill: RENK.genel, r: 4, strokeWidth: 0 }}
+                dot={{ fill: RENK_TYT, r: 4, strokeWidth: 0 }}
                 activeDot={{ r: 5 }}
               />
               <Line
@@ -126,9 +127,9 @@ export function GenelNetGrafik({ denemeler, s }) {
             <Line
               type="monotone"
               dataKey="net"
-              stroke={RENK.genel}
+              stroke={RENK_TYT}
               strokeWidth={2}
-              dot={{ fill: RENK.genel, r: 4, strokeWidth: 0 }}
+              dot={{ fill: RENK_TYT, r: 4, strokeWidth: 0 }}
               activeDot={{ r: 5 }}
             />
           )}

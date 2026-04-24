@@ -1,23 +1,35 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { collection, getDocs, addDoc, orderBy, query, serverTimestamp } from 'firebase/firestore';
+import {
+  collection,
+  addDoc,
+  orderBy,
+  query,
+  serverTimestamp,
+  onSnapshot,
+} from 'firebase/firestore';
 import { db } from '../firebase';
 import { SINAV_TAKVIMI } from '../utils/ogrenciUtils';
 import { turBelirle } from '../utils/sinavUtils';
 
 const TUR_LABEL = {
   tyt: 'TYT',
-  sayisal: 'Sayısal (TYT+AYT)',
-  ea: 'EA (TYT+AYT)',
-  sozel: 'Sözel (TYT+AYT)',
-  dil: 'Dil (TYT+AYT)',
+  tyt_10: 'TYT',
+  tyt_11: 'TYT',
+  tyt_12: 'TYT',
+  sayisal: 'AYT Sayısal',
+  ea: 'AYT EA',
+  sozel: 'AYT Sözel',
+  dil: 'AYT Dil',
   lgs: 'LGS',
+  lgs_7: '7. Sınıf',
+  lgs_8: '8. Sınıf / LGS',
   ortaokul: 'Ortaokul',
 };
 
 function turEtiket(tur) {
-  const base = (tur || '').toLowerCase().split('_')[0];
-  return TUR_LABEL[base] || tur || '—';
+  const key = (tur || '').toLowerCase();
+  return TUR_LABEL[key] || tur || '—';
 }
 
 function gunHesapla(tur) {
@@ -53,16 +65,13 @@ function NotKarti({ baslik, koleksiyon, ogrenciId, s }) {
   const [metin, setMetin] = useState('');
   const [kaydediliyor, setKaydediliyor] = useState(false);
 
-  const getir = useCallback(async () => {
-    const snap = await getDocs(
-      query(collection(db, 'ogrenciler', ogrenciId, koleksiyon), orderBy('tarih', 'desc'))
-    );
-    setNotlar(snap.docs.map(d => ({ id: d.id, ...d.data() })));
-  }, [ogrenciId, koleksiyon]);
-
   useEffect(() => {
-    getir();
-  }, [getir]);
+    const q = query(collection(db, 'ogrenciler', ogrenciId, koleksiyon), orderBy('tarih', 'desc'));
+    const unsub = onSnapshot(q, snap => {
+      setNotlar(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    });
+    return unsub;
+  }, [ogrenciId, koleksiyon]);
 
   const kaydet = async () => {
     if (!metin.trim()) return;
@@ -73,7 +82,6 @@ function NotKarti({ baslik, koleksiyon, ogrenciId, s }) {
     });
     setMetin('');
     setKaydediliyor(false);
-    getir();
   };
 
   const formatTarih = ts => {
@@ -211,9 +219,9 @@ export default function OgrenciDetayGenelOzet({ ogrenci, program, s }) {
         </div>
       )}
 
-      <NotKarti baslik="Koç notları" koleksiyon="kocNotlari" ogrenciId={ogrenci.id} s={s} />
+      <NotKarti baslik="📝 Koç notları" koleksiyon="kocNotlari" ogrenciId={ogrenci.id} s={s} />
       <NotKarti
-        baslik="Toplantı özetleri"
+        baslik="📝 Toplantı özetleri"
         koleksiyon="toplantıOzetleri"
         ogrenciId={ogrenci.id}
         s={s}
