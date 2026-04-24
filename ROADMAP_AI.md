@@ -6,6 +6,21 @@ sürekli güncellenen bir bağlam dosyasıdır. Kod üzerinde çalışmadan önc
 
 ---
 
+## Son Oturumda Yapılanlar (2026-04-24) — Koç Paneli Eksiklik Giderme
+
+### 6 eksiklik düzeltildi. 1299 test yeşil.
+
+| # | Dosya | Değişiklik |
+|---|---|---|
+| ✅ 1 | `src/koc/ui/KocOgrenciSatir.js` | LGS/TYT/AYT net ayrımı: `turBelirle` import edildi; öğrenci türüne göre `LGS: X`, `TYT: X`, `TYT: X / AYT: Y` ya da boş gösterim |
+| ✅ 2 | `src/koc/ui/KocSabahEkrani.js` | Durum etiketleri (Giriş yok / Mesaj var / Aktif) zaten uygulanmıştı — değişiklik yapılmadı |
+| ✅ 3 | `src/koc/OgrenciDetayGenelOzet.js` | `EksikKonularKarti` bileşeni eklendi; `ogrenciler/{id}/eksikKonular` koleksiyonunu okur, derse göre gruplar |
+| ✅ 4 | `src/utils/tarih.js` | `bugunStr()` artık `toLocaleDateString('sv-SE', { timeZone: 'Europe/Istanbul' })` kullanıyor |
+| ✅ 5 | `src/ogrenci/deneme/DenemeKart.js` | `kartBaslik`: AYT denemeler için `AYT — Sayısal/EA/Sözel/Dil` chip etiketi; detay grid mobilde 2 kolon |
+| ✅ 6 | `src/koc/OgrenciDetaySekme.js` | Mesajlar sekmesi açılınca `gonderen:'ogrenci'`, `okundu:false` mesajlar otomatik okundu işaretleniyor |
+
+---
+
 ## Son Oturumda Yapılanlar (2026-04-16) — Temiz Teknik Bakım
 
 ### BAKIM: Artık kodlar temizlendi, belgeler güncellendi.
