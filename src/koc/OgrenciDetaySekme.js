@@ -2,7 +2,6 @@ import React, { useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { collection, query, where, getDocs, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
-import { Card } from '../components/Shared';
 import DenemeListesi from '../ogrenci/DenemeListesi';
 import Mesajlar from '../ogrenci/Mesajlar';
 import HaftalikProgramSayfasi from './HaftalikProgram';
@@ -10,7 +9,6 @@ import MufredatGoruntule from '../ogrenci/MufredatGoruntule';
 import OgrenciHedefKarti from './hedef/OgrenciHedefKarti';
 import OgrenciDetayGenelOzet from './OgrenciDetayGenelOzet';
 import OgrenciDetaySoruRutin from './OgrenciDetaySoruRutin';
-import { OgrenciDetayBilgiler } from './OgrenciDetayBanner';
 
 export function OgrenciDetaySekme({
   aktifSekme,
@@ -20,10 +18,7 @@ export function OgrenciDetaySekme({
   veriGetir,
   denemeler,
   program,
-  oran,
-  setSilOnay,
   s,
-  mobil,
 }) {
   useEffect(() => {
     if (aktifSekme !== 'mesajlar' || !ogrenci?.id) return;
@@ -42,29 +37,7 @@ export function OgrenciDetaySekme({
   }
 
   if (aktifSekme === 'program') {
-    return (
-      <div style={{ display: 'grid', gridTemplateColumns: mobil ? '1fr' : '1.2fr 1fr', gap: 20 }}>
-        {duzenleyebilir ? (
-          <HaftalikProgramSayfasi ogrenciler={[ogrenci]} onGeri={veriGetir} />
-        ) : (
-          <Card style={{ padding: 20 }}>
-            <div style={{ fontWeight: 700, fontSize: 15, color: s.text, marginBottom: 14 }}>
-              📅 Mevcut Program
-            </div>
-            <div style={{ color: s.text3, fontSize: 13 }}>
-              Bu öğrencinin programını düzenleme yetkiniz yok.
-            </div>
-          </Card>
-        )}
-        <OgrenciDetayBilgiler
-          ogrenci={ogrenci}
-          oran={oran}
-          duzenleyebilir={duzenleyebilir}
-          setSilOnay={setSilOnay}
-          s={s}
-        />
-      </div>
-    );
+    return <HaftalikProgramSayfasi ogrenciler={[ogrenci]} onGeri={veriGetir} />;
   }
 
   if (aktifSekme === 'soruRutin') {
@@ -139,8 +112,6 @@ OgrenciDetaySekme.propTypes = {
   veriGetir: PropTypes.func,
   denemeler: PropTypes.array,
   program: PropTypes.array,
-  oran: PropTypes.number,
-  setSilOnay: PropTypes.func,
   s: PropTypes.object.isRequired,
   mobil: PropTypes.bool,
 };

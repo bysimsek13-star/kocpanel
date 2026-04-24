@@ -1,4 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
+
+const GorusmeTimeline = lazy(() => import('./GorusmeTimeline'));
+const HaftalikVerimlilik = lazy(() => import('./HaftalikVerimlilik'));
 import PropTypes from 'prop-types';
 import {
   collection,
@@ -274,6 +277,12 @@ export default function OgrenciDetayGenelOzet({ ogrenci, program, s }) {
         ogrenciId={ogrenci.id}
         s={s}
       />
+      <Suspense fallback={null}>
+        <GorusmeTimeline ogrenciId={ogrenci.id} />
+      </Suspense>
+      <Suspense fallback={null}>
+        <HaftalikVerimlilik ogrenciId={ogrenci.id} />
+      </Suspense>
     </div>
   );
 }
