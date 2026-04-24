@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { collection, getDocs, getDoc, doc, query, where, orderBy, limit } from 'firebase/firestore';
+import { collection, getDocs, getDoc, doc, query, where } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { haftalikOzetOlustur } from '../../utils/timelineUtils';
 import { generateSuggestions } from '../../utils/ogrenciUtils';
@@ -33,15 +33,7 @@ export default function useKocVeri(kocUid) {
           liste.map(o => getDoc(doc(db, 'ogrenciler', o.id, 'program_v2', haftaKey)))
         ),
         Promise.allSettled(
-          liste.map(o =>
-            getDocs(
-              query(
-                collection(db, 'ogrenciler', o.id, 'denemeler'),
-                orderBy('tarih', 'desc'),
-                limit(10)
-              )
-            )
-          )
+          liste.map(o => getDocs(collection(db, 'ogrenciler', o.id, 'denemeler')))
         ),
       ]);
 
