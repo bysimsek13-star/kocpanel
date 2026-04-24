@@ -1,5 +1,16 @@
 import React from 'react';
 import { TIPLER_NEON } from './ProgramBilesenleri';
+import { GUNLER } from '../utils/programAlgoritma';
+
+const GUN_KISA = {
+  pazartesi: 'Pzt',
+  sali: 'Sal',
+  carsamba: 'Çar',
+  persembe: 'Per',
+  cuma: 'Cum',
+  cumartesi: 'Cmt',
+  pazar: 'Paz',
+};
 
 export function HaftalikProgramHeader({
   compact,
@@ -22,6 +33,9 @@ export function HaftalikProgramHeader({
   onGeri,
   s,
   toast: _toast,
+  scrollRef,
+  bugunGun,
+  mobil,
 }) {
   if (compact) {
     return (
@@ -206,6 +220,45 @@ export function HaftalikProgramHeader({
         {kaydetiliyor && <div style={{ fontSize: 11, color: s.text3 }}>Kaydediliyor...</div>}
       </div>
       <TipLejant s={s} />
+      {mobil && (
+        <div
+          style={{
+            display: 'flex',
+            gap: 6,
+            overflowX: 'auto',
+            marginBottom: 12,
+            paddingBottom: 4,
+            WebkitOverflowScrolling: 'touch',
+          }}
+        >
+          {GUNLER.map((gun, idx) => {
+            const aktif = gun === bugunGun && haftaOffset === 0;
+            return (
+              <button
+                key={gun}
+                onClick={() => {
+                  if (scrollRef?.current) {
+                    scrollRef.current.scrollTo({ left: idx * (168 + 8), behavior: 'smooth' });
+                  }
+                }}
+                style={{
+                  flexShrink: 0,
+                  padding: '5px 12px',
+                  borderRadius: 20,
+                  border: `1px solid ${aktif ? s.accent : s.border}`,
+                  background: aktif ? s.accentSoft : s.surface2,
+                  color: aktif ? s.accent : s.text2,
+                  fontSize: 12,
+                  fontWeight: aktif ? 700 : 500,
+                  cursor: 'pointer',
+                }}
+              >
+                {GUN_KISA[gun] || gun}
+              </button>
+            );
+          })}
+        </div>
+      )}
       {slotKopya && duzenleme && (
         <div
           style={{

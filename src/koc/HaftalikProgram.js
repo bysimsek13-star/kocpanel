@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { useTheme } from '../context/ThemeContext';
 import { useMobil } from '../hooks/useMediaQuery';
@@ -60,6 +60,16 @@ export default function HaftalikProgramSayfasi({
     toast,
   } = useHaftalikProgram({ ogrenciler, ogrenciProp, readOnly, initialOffset });
 
+  const scrollRef = useRef(null);
+
+  useEffect(() => {
+    const idx = GUNLER.indexOf(bugunGun);
+    if (scrollRef.current && idx >= 0) {
+      const kolonGenislik = mobil ? 168 : scrollRef.current.offsetWidth / GUNLER.length;
+      scrollRef.current.scrollTo({ left: idx * (kolonGenislik + 8), behavior: 'smooth' });
+    }
+  }, [bugunGun, haftaOffset, mobil]);
+
   const programBaglam = ogrenciBaglaminiCoz({
     tur: secilenOgrenci?.tur,
     sinif: secilenOgrenci?.sinif,
@@ -85,6 +95,9 @@ export default function HaftalikProgramSayfasi({
         ogrenciler={ogrenciler}
         secilenOgrenci={secilenOgrenci}
         setSecilenOgrenci={setSecilenOgrenci}
+        scrollRef={scrollRef}
+        bugunGun={bugunGun}
+        mobil={mobil}
         haftaOffset={haftaOffset}
         setHaftaOffset={setHaftaOffset}
         haftaKey={haftaKey}
@@ -105,40 +118,52 @@ export default function HaftalikProgramSayfasi({
       {yukleniyor ? (
         <LoadingState />
       ) : (
-        <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+        <div
+          ref={scrollRef}
+          style={{
+            overflowX: 'auto',
+            WebkitOverflowScrolling: 'touch',
+            scrollSnapType: 'x mandatory',
+            scrollBehavior: 'smooth',
+          }}
+        >
           <div style={{ display: 'flex', gap: 8, minWidth: mobil ? GUNLER.length * 168 : 0 }}>
             {GUNLER.map(gun => (
-              <GunKolonu
-                key={gun}
-                gunAdi={gun}
-                slotlar={hafta[gun] || Array.from({ length: SLOT_SAYISI }, bosSlot)}
-                duzenleme={duzenleme}
-                tamamlandiMap={Object.fromEntries(
-                  Array.from({ length: SLOT_SAYISI }, (_, i) => [i, !!tamamlandiMap[`${gun}_${i}`]])
-                )}
-                onSlotClick={(g, i) => setModal({ gun: g, slotIndex: i })}
-                onToggle={(g, i) => togglTamamla(g, i)}
-                onVideoAc={videolar => setVideoModal(videolar)}
-                onKopyala={slot => {
-                  setSlotKopya(slot);
-                  toast('Slot kopyalandı — yapıştırmak için boş kutuya tıkla');
-                }}
-                onYapistir={(g, i) => {
-                  if (slotKopya) {
-                    slotGuncelle(g, i, { ...slotKopya });
-                    setSlotKopya(null);
-                    toast('Yapıştırıldı ✓');
-                  }
-                }}
-                onHizliSil={(g, i) => {
-                  slotGuncelle(g, i, bosSlot());
-                  toast('Slot silindi');
-                }}
-                slotKopya={slotKopya}
-                bugunMu={gun === bugunGun && haftaOffset === 0}
-                s={s}
-                mobil={mobil}
-              />
+              <div key={gun} style={{ scrollSnapAlign: 'start', flexShrink: 0 }}>
+                <GunKolonu
+                  gunAdi={gun}
+                  slotlar={hafta[gun] || Array.from({ length: SLOT_SAYISI }, bosSlot)}
+                  duzenleme={duzenleme}
+                  tamamlandiMap={Object.fromEntries(
+                    Array.from({ length: SLOT_SAYISI }, (_, i) => [
+                      i,
+                      !!tamamlandiMap[`${gun}_${i}`],
+                    ])
+                  )}
+                  onSlotClick={(g, i) => setModal({ gun: g, slotIndex: i })}
+                  onToggle={(g, i) => togglTamamla(g, i)}
+                  onVideoAc={videolar => setVideoModal(videolar)}
+                  onKopyala={slot => {
+                    setSlotKopya(slot);
+                    toast('Slot kopyalandı — yapıştırmak için boş kutuya tıkla');
+                  }}
+                  onYapistir={(g, i) => {
+                    if (slotKopya) {
+                      slotGuncelle(g, i, { ...slotKopya });
+                      setSlotKopya(null);
+                      toast('Yapıştırıldı ✓');
+                    }
+                  }}
+                  onHizliSil={(g, i) => {
+                    slotGuncelle(g, i, bosSlot());
+                    toast('Slot silindi');
+                  }}
+                  slotKopya={slotKopya}
+                  bugunMu={gun === bugunGun && haftaOffset === 0}
+                  s={s}
+                  mobil={mobil}
+                />
+              </div>
             ))}
           </div>
         </div>
