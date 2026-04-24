@@ -21,7 +21,6 @@ import { Btn, ConfirmDialog } from '../components/Shared';
 import { caprazKocBildirim, bildirimOlustur } from '../components/BildirimSistemi';
 import { haftaBaslangici, programV2ToGorevler } from '../utils/programAlgoritma';
 import { OgrenciDetayTabBar } from './OgrenciDetayTabBar';
-import { OgrenciDetayBanner } from './OgrenciDetayBanner';
 import { OgrenciDetaySekme } from './OgrenciDetaySekme';
 const VideoGorusme = React.lazy(() => import('../components/VideoGorusme'));
 
@@ -128,34 +127,6 @@ export default function OgrenciDetay({ ogrenci, onGeri, initialTab = 'ozet', onT
     }
   }, [ogrenci, kullanici, userData, toast]);
 
-  const dersBaslat = useCallback(async () => {
-    try {
-      const sessionRef = await addDoc(collection(db, 'goruntulu'), {
-        kocId: kullanici.uid,
-        kocIsim: userData?.isim || kullanici.email,
-        ogrenciId: ogrenci.id,
-        ogrenciIsim: ogrenci.isim,
-        kanal: `ders_${kullanici.uid}_${ogrenci.id}`,
-        durum: 'bekliyor',
-        olusturanAt: serverTimestamp(),
-      });
-      await bildirimOlustur({
-        aliciId: ogrenci.id,
-        tip: 'ders_daveti',
-        baslik: 'Görüntülü Ders Daveti',
-        mesaj: `${userData?.isim || 'Koçun'} sizi görüntülü derse davet ediyor.`,
-        gonderenId: kullanici.uid,
-        gonderen: userData?.isim || kullanici.email,
-        ogrenciId: ogrenci.id,
-        route: `/ogrenci/home?cagri=${sessionRef.id}`,
-        entityId: sessionRef.id,
-      });
-      setAktifGorusme({ id: sessionRef.id, kanal: `ders_${kullanici.uid}_${ogrenci.id}` });
-    } catch (e) {
-      toast('Görüşme başlatılamadı: ' + (e.message || 'Bilinmeyen hata'), 'error');
-    }
-  }, [kullanici, userData, ogrenci, toast]);
-
   const ogrenciSil = async () => {
     if (readOnly) {
       toast('Bu öğrenciyi silme yetkiniz yok', 'error');
@@ -202,12 +173,6 @@ export default function OgrenciDetay({ ogrenci, onGeri, initialTab = 'ozet', onT
       toast('İşlem başarısız: ' + (e.message || 'Bilinmeyen hata'), 'error');
     }
   };
-
-  const oran =
-    program.length > 0
-      ? Math.round((program.filter(p => p.tamamlandi).length / program.length) * 100)
-      : 0;
-  const sonDeneme = denemeler[0];
 
   if (aktifGorusme) {
     return (
@@ -257,19 +222,6 @@ export default function OgrenciDetay({ ogrenci, onGeri, initialTab = 'ozet', onT
         {readOnly && (
           <ReadOnlyBanner ogrenci={ogrenci} onBildirimGonder={caprazBildirimGonder} s={s} />
         )}
-        <OgrenciDetayBanner
-          ogrenci={ogrenci}
-          oran={oran}
-          sonDeneme={sonDeneme}
-          denemeler={denemeler}
-          program={program}
-          duzenleyebilir={duzenleyebilir}
-          dersBaslat={dersBaslat}
-          readOnly={readOnly}
-          setSilOnay={setSilOnay}
-          s={s}
-          mobil={mobil}
-        />
         <OgrenciDetaySekme
           aktifSekme={aktifSekme}
           ogrenci={ogrenci}
@@ -278,10 +230,7 @@ export default function OgrenciDetay({ ogrenci, onGeri, initialTab = 'ozet', onT
           veriGetir={veriGetir}
           denemeler={denemeler}
           program={program}
-          oran={oran}
-          setSilOnay={setSilOnay}
           s={s}
-          mobil={mobil}
         />
       </div>
     </div>
