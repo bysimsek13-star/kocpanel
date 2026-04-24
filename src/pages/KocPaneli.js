@@ -140,34 +140,14 @@ export default function KocPaneli() {
 
   const renderSayfa = () => {
     if (aktifSayfa === 'ogrenci_detay' && seciliOgrenci) {
-      const tab = new URLSearchParams(location.search).get('tab') || 'program';
+      const tab = new URLSearchParams(location.search).get('tab') || 'ozet';
       return (
-        <>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-            <button
-              onClick={() => navigate('/koc/ogrenciler')}
-              style={{
-                background: s.surface2,
-                border: `1px solid ${s.border}`,
-                borderRadius: 10,
-                padding: '8px 14px',
-                cursor: 'pointer',
-                color: s.text2,
-                fontSize: 13,
-                fontWeight: 600,
-              }}
-            >
-              ← Geri
-            </button>
-            <div style={{ fontSize: 20, fontWeight: 700, color: s.text }}>{seciliOgrenci.isim}</div>
-          </div>
-          <OgrenciDetay
-            ogrenci={seciliOgrenci}
-            initialTab={tab}
-            onGeri={() => navigate('/koc/ogrenciler')}
-            onTabChange={t => navigate(`/koc/ogrenciler/${seciliOgrenci.id}?tab=${t}`)}
-          />
-        </>
+        <OgrenciDetay
+          ogrenci={seciliOgrenci}
+          initialTab={tab}
+          onGeri={() => navigate('/koc/ogrenciler')}
+          onTabChange={t => navigate(`/koc/ogrenciler/${seciliOgrenci.id}?tab=${t}`)}
+        />
       );
     }
 
