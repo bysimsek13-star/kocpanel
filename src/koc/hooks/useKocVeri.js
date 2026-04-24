@@ -37,7 +37,7 @@ export default function useKocVeri(kocUid) {
             getDocs(
               query(
                 collection(db, 'ogrenciler', o.id, 'denemeler'),
-                orderBy('olusturma', 'desc'),
+                orderBy('tarih', 'desc'),
                 limit(10)
               )
             )
