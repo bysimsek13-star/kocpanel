@@ -1,4 +1,5 @@
 // AYT ders listeleri ve konu başlıkları
+import { aytEaKonular } from './konularAytEa';
 
 // Alan bazlı AYT ders setleri — ÖSYM YKS kılavuzuna göre (her alan max 80 net)
 export const AYT_SAY = [
@@ -44,73 +45,8 @@ export const AYT_DERSLER = [
 ];
 
 export const aytKonular = {
-  // ─── AYT MATEMATİK + GEOMETRİ ───
-  aytmat: [
-    'Temel Kavramlar',
-    'Sayı Basamakları',
-    'Rasyonel Sayılar',
-    'Ondalık Sayılar',
-    'Basit Eşitsizlikler',
-    'Mutlak Değer',
-    'Üslü Sayılar',
-    'Köklü Sayılar',
-    'Çarpanlara Ayırma',
-    'Denklem Çözme',
-    'Oran-Orantı',
-    'Problemler',
-    'Fonksiyonlar',
-    'Kümeler',
-    'Permütasyon',
-    'Kombinasyon',
-    'Binom',
-    'Olasılık',
-    'İstatistik',
-    '2. Dereceden Denklemler',
-    'Karmaşık Sayılar',
-    'Parabol',
-    'Polinomlar',
-    'Mantık',
-    'Modüler Aritmetik',
-    'Eşitsizlikler',
-    'Logaritma',
-    'Diziler',
-    'Seriler',
-    'Limit ve Süreklilik',
-    'Türev',
-    'İntegral',
-    'Doğruda ve Üçgende Açılar',
-    'Dik ve Özel Üçgenler',
-    'Dik Üçgende Trigonometrik Bağıntılar',
-    'İkizkenar ve Eşkenar Üçgen',
-    'Üçgende Alanlar',
-    'Üçgende Açıortay Bağıntıları',
-    'Üçgende Kenarortay Bağıntıları',
-    'Üçgende Eşlik ve Benzerlik',
-    'Üçgende Açı-Kenar Bağıntıları',
-    'Çokgenler',
-    'Dörtgenler',
-    'Yamuk',
-    'Paralelkenar',
-    'Eşkenar Dörtgen-Deltoid',
-    'Dikdörtgen',
-    'Çemberde Açılar',
-    'Çemberde Uzunluk',
-    'Daire',
-    'Prizmalar',
-    'Piramitler',
-    'Küre',
-    'Koordinat Düzlemi ve Noktanın Analitiği',
-    'Vektörler',
-    'Doğrunun Analitiği',
-    'Tekrar Eden, Dönen ve Yansıyan Şekiller',
-    'Uzay Geometri',
-    'Dönüşümlerle Geometri',
-    'Trigonometri',
-    'Çemberin Analitiği',
-    'Genel Konik Tanımı (Dış Merkezlik)',
-    'Elips',
-    'Hiperbol',
-  ],
+  // ─── AYT EA dersleri: aytmat, ede, tar, cog ───
+  ...aytEaKonular,
 
   // ─── AYT FİZİK ───
   fiz: [
@@ -184,54 +120,6 @@ export const aytKonular = {
     'Bitki Biyolojisi',
     'Sistemler (Sindirim, Dolaşım, Boşaltım vb.)',
     'Duyu Organları',
-  ],
-
-  // ─── AYT EDEBİYAT ───
-  ede: [
-    'Güzel Sanatlar ve Edebiyat',
-    'Metinlerin Sınıflandırılması',
-    'Coşku ve Heyecanı Dile Getiren Metinler (Şiir)',
-    'Şiir Bilgisi',
-    'Nazım Biçimleri ve Türleri',
-    'Edebi Sanatlar (Söz Sanatları)',
-    'Olay Çevresinde Oluşan Metinler',
-    'Öğretici Metinler',
-    'Sözlü Anlatım Türleri',
-    'İslamiyet Öncesi Türk Edebiyatı',
-    'İslami Dönem İlk Dil ve Edebiyat Ürünleri',
-    'Halk Edebiyatı',
-    'Divan Edebiyatı',
-    'Tanzimat Edebiyatı',
-    'Servetifünun Edebiyatı',
-    'Fecriati Edebiyatı',
-    'Milli Edebiyat',
-    'Cumhuriyet Dönemi Türk Edebiyatı',
-    'Türkiye Dışındaki Türk Edebiyatı',
-    'Edebi Akımlar',
-    'Dünya Edebiyatı',
-    'Türk ve Dünya Edebiyatındaki İlkler',
-  ],
-
-  // ─── AYT TARİH-1 ───
-  tar: [
-    'Tarih Bilimine Giriş',
-    'İlk Çağ Uygarlıkları',
-    'İslam Medeniyeti',
-    'Türk-İslam Devletleri',
-    'Osmanlı Devleti Kuruluş ve Yükseliş',
-    'Osmanlı Klasik Çağda Değişim',
-    'Osmanlı Gerileme ve Çöküş',
-    'I. Dünya Savaşı',
-    'Kurtuluş Savaşı',
-    'Atatürk Dönemi ve İnkılaplar',
-  ],
-
-  cog: [
-    'Doğal Sistemler',
-    'Beşeri Sistemler',
-    'Mekansal Bir Sentez: Türkiye',
-    'Küresel Ortam: Bölgeler ve Ülkeler',
-    'Çevre ve Toplum',
   ],
 
   tar2: [
