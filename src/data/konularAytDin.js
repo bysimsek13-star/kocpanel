@@ -1,0 +1,103 @@
+// Prefix: '## ' = ana bolum, '# ' = alt bolum, '### ' = grup, duz string = konu
+// AYT Din Kulturu ve Ahlak Bilgisi konu listesi
+
+export const aytDinKonular = [
+  '## Din Kültürü ve Ahlak Bilgisi',
+
+  '# İnsan ve Din',
+  '### İnanç ve Din',
+  'Dinin Tanımı ve Önemi',
+  'İnsan ve Din İlişkisi',
+  'Dinin İşlevleri',
+  'İnanç İhtiyacı',
+  'Bilgi ve İnanç Ayrımı',
+
+  "### İslam'ın Temel İnanç Esasları",
+  "Allah'a İman",
+  'Meleklere İman',
+  'Kitaplara İman',
+  'Peygamberlere İman',
+  'Ahirete İman',
+  'Kaza ve Kadere İman',
+
+  "# Kur'an-ı Kerim",
+  "### Kur'an'ın Anlaşılması",
+  "Kur'an'ın Tanımı ve Özellikleri",
+  "Kur'an'ın Yorumu (Tefsir)",
+  'Vahiy Kavramı',
+  'Vahiy ve Akıl İlişkisi ⭐',
+  "Kur'an ve Bilim",
+
+  "# Hz. Muhammed'in Hayatı ve Örnekliği ⭐",
+  "### Hz. Muhammed'in Hayatı",
+  'Doğumu ve Çocukluğu',
+  'Gençliği ve Peygamberlik Öncesi',
+  'Mekke Dönemi',
+  'Medine Dönemi',
+  'Veda Hutbesi ve Vefatı',
+
+  "### Hz. Muhammed'in Örnekliği",
+  'Bir Genç Olarak Hz. Muhammed',
+  'Hz. Muhammed ve Aile Hayatı',
+  'Hz. Muhammed ve Toplumsal Hayat',
+  "Hz. Muhammed'in Evrensel Mesajı",
+  "Kur'an'a Göre Hz. Muhammed",
+
+  '# İbadet',
+  "### İslam'da İbadet ⭐",
+  'İbadetin Tanımı ve Önemi',
+  'İbadetin Amacı ve Kapsamı',
+  'İbadet Yükümlülüğü',
+  'İbadet-Ahlak İlişkisi',
+
+  '### İbadet Türleri',
+  'Namaz',
+  'Oruç',
+  'Zekat',
+  'Hac',
+  'Diğer İbadetler',
+
+  '# İslam Ahlakı ve Değerler',
+  '### Ahlak ve Değerler ⭐',
+  "İslam'da Ahlakın Temelleri",
+  'Temel Ahlaki Değerler',
+  'Bireysel Ahlak',
+  'Toplumsal Ahlak',
+
+  '### İslam ve Sanat',
+  'İslam Sanatının Özellikleri',
+  'Mimari, Hat, Tezhip',
+  'Estetik ve Din İlişkisi',
+
+  "### İslam'da Bilim",
+  'İslam Medeniyetinde Bilim',
+  'Bilim ve Din İlişkisi',
+  'Müslüman Bilim İnsanları',
+
+  '# İslam Düşüncesinde Yorumlar',
+  '### İslam Düşüncesi',
+  'Kelam',
+  'Fıkıh',
+  'Tasavvuf',
+  'İslam Felsefesi',
+
+  '### Din Yorumları',
+  'Sünni Düşünce',
+  'Alevi-Bektaşi Geleneği',
+  'Maturidilik ve Eşarilik',
+
+  '# Laiklik ve Dinler',
+  '### Din ve Laiklik',
+  'Laiklik Kavramı',
+  'Din-Devlet İlişkisi',
+  "Türkiye'de Laiklik",
+  'Diyanet İşleri Başkanlığı',
+
+  '### Yaşayan Dünya Dinleri ⭐',
+  'Yahudilik',
+  'Hristiyanlık',
+  'Budizm',
+  'Hinduizm',
+  'Diğer Dinler',
+  'Dinlerarası Diyalog',
+];

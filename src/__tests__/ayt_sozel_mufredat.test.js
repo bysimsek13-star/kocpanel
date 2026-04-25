@@ -1,48 +1,47 @@
-import { aytSozelKonular } from '../data/konularAytSozel';
-import { aytEaKonular } from '../data/konularAytEa';
+import { aytTar2Konular } from '../data/konularAytTar2';
+import { aytFelKonular } from '../data/konularAytFel';
+import { aytDinKonular } from '../data/konularAytDin';
+import { aytCogKonular } from '../data/konularAytCog';
 import { aytKonular } from '../data/konularAyt';
 import { konuDuzListe, konuBasliklari } from '../utils/konuUtils';
 
-describe('AYT Sözel müfredat — konularAytSozel', () => {
-  test('aytSozelKonular dört dersi içeriyor: tar2, cog2, fel, din', () => {
-    expect(Object.keys(aytSozelKonular)).toEqual(
-      expect.arrayContaining(['tar2', 'cog2', 'fel', 'din'])
-    );
+describe('AYT Sözel müfredat — ders bazlı dosyalar', () => {
+  test('tar2, fel, din dosyaları mevcut ve dolu', () => {
+    expect(aytTar2Konular.length).toBeGreaterThan(0);
+    expect(aytFelKonular.length).toBeGreaterThan(0);
+    expect(aytDinKonular.length).toBeGreaterThan(0);
   });
 
   describe('tar2', () => {
-    const liste = aytSozelKonular.tar2;
-
     test('ana başlık AYT Tarih-2', () => {
-      expect(liste[0]).toBe('## AYT Tarih-2');
+      expect(aytTar2Konular[0]).toBe('## AYT Tarih-2');
     });
 
     test('konuDuzListe gerçek konuları döndürür', () => {
-      const duz = konuDuzListe(liste);
+      const duz = konuDuzListe(aytTar2Konular);
       expect(duz.length).toBeGreaterThan(10);
       expect(duz.some(k => k.includes('Soğuk Savaş'))).toBe(true);
     });
   });
 
-  describe('cog2', () => {
-    test('cog2 içeriği cog (Coğrafya-1) ile özdeş', () => {
-      expect(aytSozelKonular.cog2).toEqual(aytEaKonular.cog);
+  describe('cog2 referans testi', () => {
+    test('cog2 cog ile aynı referans (kopya yok)', () => {
+      expect(aytKonular.cog2).toBe(aytKonular.cog);
+      expect(aytKonular.cog2).toBe(aytCogKonular);
     });
 
     test('cog2 prefix formatlı (başlık var)', () => {
-      expect(aytSozelKonular.cog2[0]).toBe('## AYT Coğrafya-1');
+      expect(aytKonular.cog2[0]).toBe('## AYT Coğrafya-1');
     });
   });
 
   describe('fel', () => {
-    const liste = aytSozelKonular.fel;
-
     test('ana başlık AYT Felsefe Grubu', () => {
-      expect(liste[0]).toBe('## AYT Felsefe Grubu');
+      expect(aytFelKonular[0]).toBe('## AYT Felsefe Grubu');
     });
 
     test('Psikoloji, Sosyoloji, Mantık, Felsefe bölümleri mevcut', () => {
-      const altlar = konuBasliklari(liste)
+      const altlar = konuBasliklari(aytFelKonular)
         .filter(p => p.tip === 'alt')
         .map(p => p.baslik);
       expect(altlar.some(b => b.includes('Psikoloji'))).toBe(true);
@@ -52,24 +51,21 @@ describe('AYT Sözel müfredat — konularAytSozel', () => {
     });
 
     test('konuDuzListe en az 40 konu döndürür', () => {
-      expect(konuDuzListe(liste).length).toBeGreaterThan(40);
+      expect(konuDuzListe(aytFelKonular).length).toBeGreaterThan(40);
     });
   });
 
   describe('din', () => {
-    const liste = aytSozelKonular.din;
-
     test('ana başlık Din Kültürü ve Ahlak Bilgisi', () => {
-      expect(liste[0]).toBe('## Din Kültürü ve Ahlak Bilgisi');
+      expect(aytDinKonular[0]).toBe('## Din Kültürü ve Ahlak Bilgisi');
     });
 
     test('konuDuzListe en az 10 konu döndürür', () => {
-      expect(konuDuzListe(liste).length).toBeGreaterThan(10);
+      expect(konuDuzListe(aytDinKonular).length).toBeGreaterThan(10);
     });
 
     test('Hz. Muhammed bölümü mevcut', () => {
-      const duz = konuDuzListe(liste);
-      expect(duz.some(k => k.includes('Muhammed'))).toBe(true);
+      expect(konuDuzListe(aytDinKonular).some(k => k.includes('Muhammed'))).toBe(true);
     });
   });
 });

@@ -1,22 +1,24 @@
-import { aytSayisalKonular } from '../data/konularAytSayisal';
+import { aytFizKonular } from '../data/konularAytFiz';
+import { aytKimKonular } from '../data/konularAytKim';
+import { aytBiyKonular } from '../data/konularAytBiy';
+import { aytMatKonular } from '../data/konularAytMat';
 import { aytKonular } from '../data/konularAyt';
 import { konuDuzListe, konuBasliklari } from '../utils/konuUtils';
 
-describe('AYT Sayısal müfredat — konularAytSayisal', () => {
-  test('aytSayisalKonular üç dersi içeriyor: fiz, kim, biy', () => {
-    expect(Object.keys(aytSayisalKonular)).toEqual(expect.arrayContaining(['fiz', 'kim', 'biy']));
-    expect(Object.keys(aytSayisalKonular)).not.toContain('aytmat');
+describe('AYT Sayısal müfredat — ders bazlı dosyalar', () => {
+  test('fiz, kim, biy dosyaları mevcut ve dolu', () => {
+    expect(aytFizKonular.length).toBeGreaterThan(0);
+    expect(aytKimKonular.length).toBeGreaterThan(0);
+    expect(aytBiyKonular.length).toBeGreaterThan(0);
   });
 
   describe('fiz', () => {
-    const liste = aytSayisalKonular.fiz;
-
     test('ana başlık AYT Fizik', () => {
-      expect(liste[0]).toBe('## AYT Fizik (14 soru)');
+      expect(aytFizKonular[0]).toBe('## AYT Fizik (14 soru)');
     });
 
     test('konuDuzListe başlıkları filtreler', () => {
-      const duz = konuDuzListe(liste);
+      const duz = konuDuzListe(aytFizKonular);
       expect(
         duz.every(k => !k.startsWith('## ') && !k.startsWith('# ') && !k.startsWith('### '))
       ).toBe(true);
@@ -24,56 +26,52 @@ describe('AYT Sayısal müfredat — konularAytSayisal', () => {
     });
 
     test('Mekanik, Elektrik, Modern Fizik ana bölümleri var', () => {
-      const analar = konuBasliklari(liste)
+      const altlar = konuBasliklari(aytFizKonular)
         .filter(p => p.tip === 'alt')
         .map(p => p.baslik);
-      expect(analar.some(b => b.includes('Mekanik'))).toBe(true);
-      expect(analar.some(b => b.includes('Elektrik'))).toBe(true);
-      expect(analar.some(b => b.includes('Modern Fizik'))).toBe(true);
+      expect(altlar.some(b => b.includes('Mekanik'))).toBe(true);
+      expect(altlar.some(b => b.includes('Elektrik'))).toBe(true);
+      expect(altlar.some(b => b.includes('Modern Fizik'))).toBe(true);
     });
 
     test('Isı ve Termodinamik listede yok (TYT konusu)', () => {
-      expect(liste.every(k => !k.includes('Termodinamik'))).toBe(true);
+      expect(aytFizKonular.every(k => !k.includes('Termodinamik'))).toBe(true);
     });
 
     test('Dalga Mekaniği ve Kinematik mevcut', () => {
-      const duz = konuDuzListe(liste);
+      const duz = konuDuzListe(aytFizKonular);
       expect(duz.some(k => k.includes('Doppler'))).toBe(true);
       expect(duz.some(k => k.includes('Yatay Atış'))).toBe(true);
     });
   });
 
   describe('kim', () => {
-    const liste = aytSayisalKonular.kim;
-
     test('ana başlık AYT Kimya', () => {
-      expect(liste[0]).toBe('## AYT Kimya (13 soru)');
+      expect(aytKimKonular[0]).toBe('## AYT Kimya (13 soru)');
     });
 
     test('konuDuzListe en az 30 konu döndürür', () => {
-      expect(konuDuzListe(liste).length).toBeGreaterThan(30);
+      expect(konuDuzListe(aytKimKonular).length).toBeGreaterThan(30);
     });
 
     test('Organik Kimya bölümü mevcut', () => {
-      const duz = konuDuzListe(liste);
+      const duz = konuDuzListe(aytKimKonular);
       expect(duz.some(k => k.includes('Alkan'))).toBe(true);
       expect(duz.some(k => k.includes('Esterleşme'))).toBe(true);
     });
   });
 
   describe('biy', () => {
-    const liste = aytSayisalKonular.biy;
-
     test('ana başlık AYT Biyoloji', () => {
-      expect(liste[0]).toBe('## AYT Biyoloji (13 soru)');
+      expect(aytBiyKonular[0]).toBe('## AYT Biyoloji (13 soru)');
     });
 
     test('konuDuzListe en az 40 konu döndürür', () => {
-      expect(konuDuzListe(liste).length).toBeGreaterThan(40);
+      expect(konuDuzListe(aytBiyKonular).length).toBeGreaterThan(40);
     });
 
     test('Fotosentez ve Hücresel Solunum mevcut', () => {
-      const duz = konuDuzListe(liste);
+      const duz = konuDuzListe(aytBiyKonular);
       expect(duz.some(k => k.includes('Calvin'))).toBe(true);
       expect(duz.some(k => k.includes('Krebs'))).toBe(true);
     });
@@ -88,6 +86,7 @@ describe('aytKonular — Sayısal entegrasyonu', () => {
   });
 
   test('aytmat EA ortaklığı bozulmadı', () => {
+    expect(aytKonular.aytmat).toBe(aytMatKonular);
     expect(aytKonular.aytmat[0]).toBe('## AYT Matematik');
   });
 });

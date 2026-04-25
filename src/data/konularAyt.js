@@ -1,7 +1,15 @@
 // AYT ders listeleri ve konu başlıkları
-import { aytEaKonular } from './konularAytEa';
-import { aytSayisalKonular } from './konularAytSayisal';
-import { aytSozelKonular } from './konularAytSozel';
+// Her ders kendi dosyasında; paylaşımlı dersler tek kaynaktan referans alır.
+import { aytMatKonular } from './konularAytMat';
+import { aytEdeKonular } from './konularAytEde';
+import { aytTarKonular } from './konularAytTar';
+import { aytCogKonular } from './konularAytCog';
+import { aytFizKonular } from './konularAytFiz';
+import { aytKimKonular } from './konularAytKim';
+import { aytBiyKonular } from './konularAytBiy';
+import { aytTar2Konular } from './konularAytTar2';
+import { aytFelKonular } from './konularAytFel';
+import { aytDinKonular } from './konularAytDin';
 
 // Alan bazlı AYT ders setleri — ÖSYM YKS kılavuzuna göre (her alan max 80 net)
 export const AYT_SAY = [
@@ -47,13 +55,17 @@ export const AYT_DERSLER = [
 ];
 
 export const aytKonular = {
-  // ─── AYT EA dersleri: aytmat, ede, tar, cog ───
-  ...aytEaKonular,
-  // ─── AYT Sayısal dersleri: fiz, kim, biy ───
-  ...aytSayisalKonular,
-  // ─── AYT Sözel dersleri: tar2, cog2, fel, din ───
-  ...aytSozelKonular,
-
+  aytmat: aytMatKonular,
+  ede: aytEdeKonular,
+  tar: aytTarKonular,
+  cog: aytCogKonular,
+  cog2: aytCogKonular, // Coğrafya-2 içeriği Coğrafya-1 ile aynı — kopya yok, aynı referans
+  fiz: aytFizKonular,
+  kim: aytKimKonular,
+  biy: aytBiyKonular,
+  tar2: aytTar2Konular,
+  fel: aytFelKonular,
+  din: aytDinKonular,
   yabdil: [
     'Vocabulary',
     'Grammar',

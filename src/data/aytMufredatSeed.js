@@ -1,8 +1,15 @@
 // aytMufredatSeed.js — AYT müfredat ağaçları (EA / Sayısal / Sözel)
 // Prefix listelerini {ad, cocuklar} ağaç formatına dönüştürür; agaciDuzlestir ile seed edilir.
-import { aytEaKonular } from './konularAytEa';
-import { aytSayisalKonular } from './konularAytSayisal';
-import { aytSozelKonular } from './konularAytSozel';
+import { aytMatKonular } from './konularAytMat';
+import { aytEdeKonular } from './konularAytEde';
+import { aytTarKonular } from './konularAytTar';
+import { aytCogKonular } from './konularAytCog';
+import { aytFizKonular } from './konularAytFiz';
+import { aytKimKonular } from './konularAytKim';
+import { aytBiyKonular } from './konularAytBiy';
+import { aytTar2Konular } from './konularAytTar2';
+import { aytFelKonular } from './konularAytFel';
+import { aytDinKonular } from './konularAytDin';
 
 // '## ' → kök düğüm, '# ' → 2. seviye, '### ' → 3. seviye, düz satır → yaprak
 function prefixToAgac(liste) {
@@ -33,25 +40,25 @@ function prefixToAgac(liste) {
 }
 
 export const AYT_EA_AGAC = [
-  ...prefixToAgac(aytEaKonular.aytmat),
-  ...prefixToAgac(aytEaKonular.ede),
-  ...prefixToAgac(aytEaKonular.tar),
-  ...prefixToAgac(aytEaKonular.cog),
+  ...prefixToAgac(aytMatKonular),
+  ...prefixToAgac(aytEdeKonular),
+  ...prefixToAgac(aytTarKonular),
+  ...prefixToAgac(aytCogKonular),
 ];
 
 export const AYT_SAYISAL_AGAC = [
-  ...prefixToAgac(aytEaKonular.aytmat),
-  ...prefixToAgac(aytSayisalKonular.fiz),
-  ...prefixToAgac(aytSayisalKonular.kim),
-  ...prefixToAgac(aytSayisalKonular.biy),
+  ...prefixToAgac(aytMatKonular),
+  ...prefixToAgac(aytFizKonular),
+  ...prefixToAgac(aytKimKonular),
+  ...prefixToAgac(aytBiyKonular),
 ];
 
 export const AYT_SOZEL_AGAC = [
-  ...prefixToAgac(aytEaKonular.ede),
-  ...prefixToAgac(aytEaKonular.tar),
-  ...prefixToAgac(aytEaKonular.cog),
-  ...prefixToAgac(aytSozelKonular.tar2),
-  ...prefixToAgac(aytSozelKonular.cog2),
-  ...prefixToAgac(aytSozelKonular.fel),
-  ...prefixToAgac(aytSozelKonular.din),
+  ...prefixToAgac(aytEdeKonular),
+  ...prefixToAgac(aytTarKonular),
+  ...prefixToAgac(aytCogKonular),
+  ...prefixToAgac(aytTar2Konular),
+  ...prefixToAgac(aytCogKonular), // cog2 = cog içeriği
+  ...prefixToAgac(aytFelKonular),
+  ...prefixToAgac(aytDinKonular),
 ];
