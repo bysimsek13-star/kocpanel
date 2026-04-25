@@ -143,19 +143,26 @@ describe('agaciDuzlestir', () => {
 });
 
 describe('aytMufredatSeed', () => {
-  it('EA: 4 ders kök düğümü üretir', () => {
+  it('EA: Matematik+Geometri+Edebiyat+Tarih-1+Coğrafya-1 kök düğümleri', () => {
     const docs = agaciDuzlestir('ayt_ea', AYT_EA_AGAC);
-    expect(docs.filter(d => !d.parentId)).toHaveLength(4);
+    const kokler = docs.filter(d => !d.parentId);
+    // aytmat → 2 kök (AYT Matematik + AYT Geometri), + ede + tar + cog = 5
+    expect(kokler).toHaveLength(5);
+    expect(kokler.map(d => d.ad)).toContain('AYT Matematik');
+    expect(kokler.map(d => d.ad)).toContain('AYT Geometri');
   });
 
-  it('Sayısal: 4 ders kök düğümü üretir', () => {
+  it('Sayısal: Matematik+Geometri+Fizik+Kimya+Biyoloji kök düğümleri', () => {
     const docs = agaciDuzlestir('ayt_sayisal', AYT_SAYISAL_AGAC);
-    expect(docs.filter(d => !d.parentId)).toHaveLength(4);
+    const kokler = docs.filter(d => !d.parentId);
+    expect(kokler).toHaveLength(5);
+    expect(kokler.map(d => d.ad)).toContain('AYT Fizik (14 soru)');
   });
 
-  it('Sözel: 5 ders kök düğümü üretir', () => {
+  it('Sözel: 7 ders kök düğümü üretir', () => {
     const docs = agaciDuzlestir('ayt_sozel', AYT_SOZEL_AGAC);
-    expect(docs.filter(d => !d.parentId)).toHaveLength(5);
+    // ede + tar + cog + tar2 + cog2 + fel + din = 7
+    expect(docs.filter(d => !d.parentId)).toHaveLength(7);
   });
 
   it('EA Coğrafya alt başlıkları seviye 2 olur', () => {
