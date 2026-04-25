@@ -101,9 +101,9 @@ describe('aytKonular — konularAyt entegrasyonu', () => {
     expect(aytKonular.aytmat.some(k => k.startsWith('## '))).toBe(true);
   });
 
-  test('fiz ve kim flat listeler korunuyor', () => {
+  test('fiz ve kim prefix formatlı listeler mevcut', () => {
     expect(aytKonular.fiz.length).toBeGreaterThan(0);
-    expect(aytKonular.fiz.every(k => !k.startsWith('## '))).toBe(true);
+    expect(aytKonular.fiz[0]).toBe('## AYT Fizik (14 soru)');
     expect(aytKonular.kim.length).toBeGreaterThan(0);
   });
 

@@ -1,5 +1,7 @@
 // AYT ders listeleri ve konu başlıkları
 import { aytEaKonular } from './konularAytEa';
+import { aytSayisalKonular } from './konularAytSayisal';
+import { aytSozelKonular } from './konularAytSozel';
 
 // Alan bazlı AYT ders setleri — ÖSYM YKS kılavuzuna göre (her alan max 80 net)
 export const AYT_SAY = [
@@ -47,134 +49,10 @@ export const AYT_DERSLER = [
 export const aytKonular = {
   // ─── AYT EA dersleri: aytmat, ede, tar, cog ───
   ...aytEaKonular,
-
-  // ─── AYT FİZİK ───
-  fiz: [
-    'Vektörler',
-    'Bağıl Hareket',
-    "Newton'un Hareket Yasaları",
-    'Bir Boyutta Sabit İvmeli Hareket',
-    'İki Boyutta Sabit İvmeli Hareket',
-    'Enerji ve Hareket',
-    'İtme ve Çizgisel Momentum',
-    'Tork',
-    'Denge',
-    'Basit Makineler',
-    'Elektriksel Kuvvet ve Elektrik Alanı',
-    'Elektriksel Potansiyel',
-    'Düzgün Elektrik Alanı ve Sığa',
-    'Manyetizma ve Elektromanyetik İndükleme',
-    'Alternatif Akım',
-    'Transformatörler',
-    'Düzgün Çembersel Hareket',
-    'Dönerek Öteleme Hareketi',
-    'Açısal Momentum',
-    'Kütle Çekimi ve Kepler Kanunu',
-    'Basit Harmonik Hareket',
-    'Dalgalarda Kırınım, Girişim ve Doppler Olayı',
-    'Elektromanyetik Dalgalar',
-    'Atom Fiziğine Giriş ve Radyoaktivite',
-    'Özel Görelilik',
-    'Kuantum Fiziğine Giriş',
-    'Fotoelektrik Olayı',
-    'Modern Fizik Uygulamaları',
-  ],
-
-  // ─── AYT KİMYA ───
-  kim: [
-    'Modern Atom Teorisi',
-    'Kimyasal Hesaplamalar',
-    'Gazlar',
-    'Sıvı Çözeltiler',
-    'Kimya ve Enerji',
-    'Tepkimelerde Hız',
-    'Kimyasal Denge',
-    'Sıvı Çözeltilerde Denge',
-    'Kimya ve Elektrik (Elektrokimya)',
-    'Karbon Kimyasına Giriş',
-    'Organik Bileşikler',
-    'Hayatımızdaki Kimya',
-  ],
-
-  // ─── AYT BİYOLOJİ ───
-  biy: [
-    'Biyoloji Bilimi ve İnorganik Bileşikler',
-    'Organik Bileşikler',
-    'Hücre',
-    'Madde Geçişleri',
-    'DNA-RNA',
-    'Protein Sentezi',
-    'Enzimler',
-    'Canlıların Sınıflandırılması',
-    'Ekoloji',
-    'Hücre Bölünmeleri',
-    'Eşeysiz ve Eşeyli Üreme',
-    'İnsanda Üreme ve Gelişme',
-    'Mendel Genetiği',
-    'Kan Grupları',
-    'Cinsiyete Bağlı Kalıtım',
-    'Biyoteknoloji ve Evrim',
-    'Solunum',
-    'Fotosentez',
-    'Kemosentez',
-    'Bitki Biyolojisi',
-    'Sistemler (Sindirim, Dolaşım, Boşaltım vb.)',
-    'Duyu Organları',
-  ],
-
-  tar2: [
-    "Osmanlı Devleti'nde Değişme ve Süreklilik",
-    'Değişen Dünya Dengeleri Karşısında Osmanlı Siyaseti',
-    '19. Yüzyılda Değişim ve Diplomasi',
-    '20. Yüzyıl Başlarında Osmanlı Devleti',
-    "Birinci Dünya Savaşı'nda Osmanlı",
-    'Cumhuriyetin İlk Yılları',
-    'Türkiye Cumhuriyeti Tarihi',
-    'İkinci Dünya Savaşı ve Sonrası',
-    'Soğuk Savaş Dönemi',
-    'Yakın Dönem Türkiye Tarihi',
-  ],
-
-  cog2: [
-    'Mekânsal Bir Sentez: Türkiye',
-    "Türkiye'de Nüfus ve Yerleşme",
-    "Türkiye'nin Ekonomisi",
-    'Küresel Ortam: Bölgeler ve Ülkeler',
-    'Çevre ve Toplum',
-    'Küreselleşen Dünya',
-  ],
-
-  fel: [
-    'Felsefeye Giriş',
-    'Bilgi Felsefesi',
-    'Varlık Felsefesi',
-    'Ahlak Felsefesi',
-    'Siyaset Felsefesi',
-    'Din Felsefesi',
-    'Sanat Felsefesi',
-    'Bilim Felsefesi',
-    'Mantığa Giriş',
-    'Klasik Mantık',
-    'Mantık ve Dil',
-    'Sembolik Mantık',
-    'Psikolojinin Temel Süreçleri',
-    'Öğrenme, Bellek, Düşünme',
-    'Ruh Sağlığının Temelleri',
-    'Birey ve Toplum',
-    'Toplumsal Yapı',
-    'Toplumsal Değişme ve Gelişme',
-    'Toplum ve Kültür',
-    'Toplumsal Kurumlar',
-  ],
-
-  din: [
-    "İslam'ın İnanç Esasları",
-    'İbadet',
-    "Hz. Muhammed'in Hayatı",
-    'İslam Düşüncesinde Yorumlar',
-    'Ahlak ve Değerler',
-    'Yaşayan Dünya Dinleri',
-  ],
+  // ─── AYT Sayısal dersleri: fiz, kim, biy ───
+  ...aytSayisalKonular,
+  // ─── AYT Sözel dersleri: tar2, cog2, fel, din ───
+  ...aytSozelKonular,
 
   yabdil: [
     'Vocabulary',
