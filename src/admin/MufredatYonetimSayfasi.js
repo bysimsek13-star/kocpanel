@@ -150,12 +150,29 @@ export default function MufredatYonetimSayfasi({ s, mobil }) {
     if (!agac) return;
     if (
       !window.confirm(
-        `${seciliTur.toUpperCase()} müfredatını yükle? Mevcut veriler üzerine yazılır.`
+        `${seciliTur.toUpperCase()} müfredatını sıfırdan yükle? Eski düğümler silinir, yenileri yazılır.`
       )
     )
       return;
     setSeedYukleniyor(true);
     try {
+      // 1. Mevcut tüm düğümleri sil (eski ID'ler karışmasın)
+      const mevcutSnap = await getDocs(collection(db, 'mufredat', seciliTur, 'dugumler'));
+      if (!mevcutSnap.empty) {
+        let silBatch = writeBatch(db);
+        let silSayac = 0;
+        for (const d of mevcutSnap.docs) {
+          silBatch.delete(d.ref);
+          silSayac++;
+          if (silSayac % 400 === 0) {
+            await silBatch.commit();
+            silBatch = writeBatch(db);
+          }
+        }
+        await silBatch.commit();
+      }
+
+      // 2. Yeni düğümleri yaz
       const docs = agaciDuzlestir(seciliTur, agac);
       let batch = writeBatch(db);
       let sayac = 0;
