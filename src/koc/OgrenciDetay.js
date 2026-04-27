@@ -108,6 +108,34 @@ export default function OgrenciDetay({ ogrenci, onGeri, initialTab = 'ozet', onT
     if (initialTab && gecerli.includes(initialTab)) setAktifSekme(initialTab);
   }, [initialTab]);
 
+  const dersBaslat = useCallback(async () => {
+    try {
+      const sessionRef = await addDoc(collection(db, 'goruntulu'), {
+        kocId: kullanici.uid,
+        kocIsim: userData?.isim || kullanici.email,
+        ogrenciId: ogrenci.id,
+        ogrenciIsim: ogrenci.isim,
+        kanal: `ders_${kullanici.uid}_${ogrenci.id}`,
+        durum: 'bekliyor',
+        olusturanAt: serverTimestamp(),
+      });
+      await bildirimOlustur({
+        aliciId: ogrenci.id,
+        tip: 'ders_daveti',
+        baslik: 'Görüntülü Ders Daveti',
+        mesaj: `${userData?.isim || 'Koçun'} sizi görüntülü derse davet ediyor.`,
+        gonderenId: kullanici.uid,
+        gonderen: userData?.isim || kullanici.email,
+        ogrenciId: ogrenci.id,
+        route: `/ogrenci/home?cagri=${sessionRef.id}`,
+        entityId: sessionRef.id,
+      });
+      setAktifGorusme({ id: sessionRef.id, kanal: `ders_${kullanici.uid}_${ogrenci.id}` });
+    } catch (e) {
+      toast('Görüşme başlatılamadı: ' + (e.message || 'Bilinmeyen hata'), 'error');
+    }
+  }, [kullanici, userData, ogrenci, toast]);
+
   const caprazBildirimGonder = useCallback(async () => {
     if (!ogrenci.kocId || ogrenci.kocId === kullanici.uid) return;
     try {
@@ -230,6 +258,7 @@ export default function OgrenciDetay({ ogrenci, onGeri, initialTab = 'ozet', onT
           veriGetir={veriGetir}
           denemeler={denemeler}
           program={program}
+          dersBaslat={dersBaslat}
           s={s}
         />
       </div>

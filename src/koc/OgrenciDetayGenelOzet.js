@@ -210,7 +210,7 @@ function NotKarti({ baslik, koleksiyon, ogrenciId, s }) {
   );
 }
 
-export default function OgrenciDetayGenelOzet({ ogrenci, program, s }) {
+export default function OgrenciDetayGenelOzet({ ogrenci, program, dersBaslat, s }) {
   const gun = gunHesapla(ogrenci.tur);
   const tamamlanmamis = program.filter(p => !p.tamamlandi);
 
@@ -277,6 +277,30 @@ export default function OgrenciDetayGenelOzet({ ogrenci, program, s }) {
         ogrenciId={ogrenci.id}
         s={s}
       />
+      {dersBaslat && (
+        <button
+          onClick={dersBaslat}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            width: '100%',
+            padding: '14px 20px',
+            marginBottom: 14,
+            background: 'linear-gradient(135deg, #5B4FE8, #818CF8)',
+            border: 'none',
+            borderRadius: 14,
+            color: '#fff',
+            fontSize: 14,
+            fontWeight: 700,
+            cursor: 'pointer',
+            boxShadow: '0 4px 16px rgba(91,79,232,0.3)',
+          }}
+        >
+          <span style={{ fontSize: 20 }}>📹</span>
+          Görüntülü Ders Başlat
+        </button>
+      )}
       <Suspense fallback={null}>
         <GorusmeTimeline ogrenciId={ogrenci.id} />
       </Suspense>
@@ -309,5 +333,6 @@ NotKarti.propTypes = {
 OgrenciDetayGenelOzet.propTypes = {
   ogrenci: PropTypes.object.isRequired,
   program: PropTypes.array.isRequired,
+  dersBaslat: PropTypes.func,
   s: PropTypes.object.isRequired,
 };
