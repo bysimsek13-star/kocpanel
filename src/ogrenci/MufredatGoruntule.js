@@ -36,21 +36,17 @@ function yapraklariTopla(dugum) {
   return dugum._cocuklar.flatMap(c => yapraklariTopla(c));
 }
 
-async function derslerGetir(anahtarlar, mevcutDurumlar = {}) {
-  const bosDurumlar = Object.keys(mevcutDurumlar).length === 0;
+async function derslerGetir(anahtarlar, _mevcutDurumlar = {}) {
   const tumDersler = [];
   for (const anahtar of anahtarlar) {
     try {
       const dugSnap = await getDocs(collection(db, 'mufredat', anahtar, 'dugumler'));
       if (!dugSnap.empty) {
+        // dugumler varsa her zaman kullan; eski konu_takip ID'leri eşleşmese de
+        // güncel müfredat ağacı gösterilmeli (eski eşleme konular fallback'ini kaldırdık)
         const agac = dugumlerdenAgac(dugSnap.docs.map(d => ({ id: d.id, ...d.data() })));
-        const idsEslesiyor =
-          bosDurumlar || agac.flatMap(d => yapraklariTopla(d)).some(id => id in mevcutDurumlar);
-        if (idsEslesiyor) {
-          tumDersler.push(...agac);
-          continue;
-        }
-        // dugumler ID'leri mevcut konu_takip ile eşleşmiyor → konular formatına geç
+        tumDersler.push(...agac);
+        continue;
       }
       const konSnap = await getDocs(
         query(collection(db, 'mufredat', anahtar, 'konular'), orderBy('sira'))
