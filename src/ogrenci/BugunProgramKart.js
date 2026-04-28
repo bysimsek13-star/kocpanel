@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { doc, setDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
 import { slotTamamlamaKaydet } from '../utils/slotTamamlamaUtils';
+import { dersSetiniBelirle } from '../utils/ogrenciBaglam';
 import { useMobil } from '../hooks/useMediaQuery';
 import { VideoIzleModal } from '../koc/HaftalikProgram';
 import { bugunGunAdi, haftaBasStr } from '../utils/tarih';
@@ -68,11 +69,21 @@ export default function BugunProgramKart({
     await setDoc(ref, { tamamlandi: yeni }, { merge: true });
 
     if (yeniTamamlandi) {
-      const slot = slotlar.find(sl => sl._idx === idx);
-      if (slot?.dersId && slot.tip !== 'deneme') {
-        slotTamamlamaKaydet(slot, ogrenciId).catch(e =>
-          console.error('slotTamamlamaKaydet hatası:', e.message)
-        );
+      const slotHam = slotlar.find(sl => sl._idx === idx);
+      if (slotHam?.tip && slotHam.tip !== 'deneme') {
+        // Eski slotlarda dersId yoksa ders etiketinden çözümlemeyi dene
+        let dersId = slotHam.dersId;
+        if (!dersId && slotHam.ders) {
+          const dersList = dersSetiniBelirle(ogrenciTur, ogrenciSinif);
+          const eslesen = dersList.find(d => d.label === slotHam.ders);
+          if (eslesen) dersId = eslesen.id;
+        }
+        const slot = dersId ? { ...slotHam, dersId } : slotHam;
+        if (slot.dersId) {
+          slotTamamlamaKaydet(slot, ogrenciId).catch(e =>
+            console.error('slotTamamlamaKaydet hatası:', e.message)
+          );
+        }
       }
     }
   };

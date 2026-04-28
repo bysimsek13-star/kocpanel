@@ -10,6 +10,7 @@ import {
   where,
 } from 'firebase/firestore';
 import { slotTamamlamaKaydet } from '../utils/slotTamamlamaUtils';
+import { dersSetiniBelirle } from '../utils/ogrenciBaglam';
 import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
@@ -144,8 +145,18 @@ export function useHaftalikProgram({ ogrenciler, ogrenciProp, readOnly, initialO
 
     if (!yeniTamamlandi) return; // geri alındıysa konu yazma
 
-    const slot = hafta[gun]?.[index];
-    if (!slot?.dersId) return;
+    const slotHam = hafta[gun]?.[index];
+    if (!slotHam?.tip) return;
+
+    // Eski slotlarda dersId yoksa ders etiketinden çözümlemeyi dene
+    let dersId = slotHam.dersId;
+    if (!dersId && slotHam.ders) {
+      const dersList = dersSetiniBelirle(secilenOgrenci.tur, secilenOgrenci.sinif);
+      const eslesen = dersList.find(d => d.label === slotHam.ders);
+      if (eslesen) dersId = eslesen.id;
+    }
+    const slot = dersId ? { ...slotHam, dersId } : slotHam;
+    if (!slot.dersId) return; // ders bulunamadıysa çık
 
     if (slot.tip === 'deneme') {
       // Deneme slotu: girilmemiş deneme varsa uyarı
