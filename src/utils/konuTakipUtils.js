@@ -8,6 +8,21 @@ import { doc, setDoc, getDoc, serverTimestamp, arrayUnion, increment } from 'fir
 import { db } from '../firebase';
 
 /**
+ * Konu adını normalize eder (dersId olmadan).
+ * "Türev Alma Kuralları" → "türev_alma_kuralları"
+ * Harita oluştururken ve arama yaparken tutarlı eşleştirme sağlar.
+ */
+export function normalizeKonuAdi(konuAdi) {
+  if (!konuAdi) return 'genel';
+  return konuAdi
+    .trim()
+    .toLowerCase()
+    .replace(/[\s/\\.,;:!?()[\]{}'"-]/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_|_$/g, '');
+}
+
+/**
  * Konu adını Firestore doküman ID'sine dönüştürür.
  * "Türev Alma Kuralları" → "türev_alma_kuralları"
  */

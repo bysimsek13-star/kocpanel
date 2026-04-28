@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import {
   collection,
   getDocs,
+  onSnapshot,
   doc,
   setDoc,
   query,
@@ -13,6 +14,7 @@ import { db } from '../firebase';
 import { useTheme } from '../context/ThemeContext';
 import { LoadingState } from '../components/Shared';
 import { mufredatAnahtarlariniBelirle } from '../utils/ogrenciBaglam';
+import { normalizeKonuAdi } from '../utils/konuTakipUtils';
 import { dersiRenk } from './mufredatUtils';
 import { Chip, NodSatiri } from './MufredatDers';
 
@@ -105,34 +107,44 @@ export default function MufredatGoruntule({
     [ogrenciTur, ogrenciSinif]
   );
 
-  const durumGetir = useCallback(async () => {
-    try {
-      const snap = await getDocs(collection(db, 'ogrenciler', ogrenciId, 'konu_takip'));
-      const harita = {};
-      const adHarita = {};
-      snap.docs.forEach(d => {
-        const data = d.data();
-        harita[d.id] = data;
-        // İkincil index: konu adına göre çalışma verisi (konuTakipUtils formatı)
-        if (data.konuAdi && data.kaynaklar) {
-          adHarita[data.konuAdi] = data;
-        }
-      });
-      setKonuDurumlar(harita);
-      setKonuAdHaritasi(adHarita);
-      return harita;
-    } catch (e) {
-      console.error(e);
-      return {};
-    }
-  }, [ogrenciId]);
-
+  // konu_takip'i onSnapshot ile dinle — sayfa açıkken yeni kayıt gelince otomatik güncellenir
   useEffect(() => {
     setYukleniyor(true);
-    durumGetir()
-      .then(kd => mufredatiGetir(kd))
-      .finally(() => setYukleniyor(false));
-  }, [durumGetir, mufredatiGetir]);
+    let mufredatYuklendi = false;
+
+    const unsub = onSnapshot(
+      collection(db, 'ogrenciler', ogrenciId, 'konu_takip'),
+      snap => {
+        const harita = {};
+        const adHarita = {};
+        snap.docs.forEach(d => {
+          const data = d.data();
+          harita[d.id] = data;
+          // konuIdOlustur() ile normalize edilmiş konu adını anahtar olarak kullan
+          if (data.konuAdi && data.kaynaklar) {
+            adHarita[normalizeKonuAdi(data.konuAdi)] = data;
+          }
+        });
+        setKonuDurumlar(harita);
+        setKonuAdHaritasi(adHarita);
+
+        // İlk snapshot'ta müfredatı da yükle
+        if (!mufredatYuklendi) {
+          mufredatYuklendi = true;
+          mufredatiGetir(harita).finally(() => setYukleniyor(false));
+        }
+      },
+      e => {
+        console.error('konu_takip snapshot hatası:', e.message);
+        if (!mufredatYuklendi) {
+          mufredatYuklendi = true;
+          mufredatiGetir({}).finally(() => setYukleniyor(false));
+        }
+      }
+    );
+
+    return unsub;
+  }, [ogrenciId, mufredatiGetir]);
 
   const toggle = useCallback(
     async (konuId, hedef) => {

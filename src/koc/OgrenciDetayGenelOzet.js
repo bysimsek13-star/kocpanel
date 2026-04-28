@@ -6,7 +6,6 @@ import PropTypes from 'prop-types';
 import {
   collection,
   addDoc,
-  getDocs,
   orderBy,
   query,
   serverTimestamp,
@@ -224,10 +223,14 @@ export default function OgrenciDetayGenelOzet({
   const tamamlanmamis = program.filter(p => !p.tamamlandi);
   const [konuTakipListesi, setKonuTakipListesi] = useState([]);
 
+  // onSnapshot — sayfa açıkken yeni konu_takip kaydı gelince otomatik güncellenir
   useEffect(() => {
-    getDocs(collection(db, 'ogrenciler', ogrenci.id, 'konu_takip'))
-      .then(snap => setKonuTakipListesi(snap.docs.map(d => ({ id: d.id, ...d.data() }))))
-      .catch(e => console.error('konuTakip yüklenemedi:', e.message));
+    const unsub = onSnapshot(
+      collection(db, 'ogrenciler', ogrenci.id, 'konu_takip'),
+      snap => setKonuTakipListesi(snap.docs.map(d => ({ id: d.id, ...d.data() }))),
+      e => console.error('konuTakip snapshot hatası:', e.message)
+    );
+    return unsub;
   }, [ogrenci.id]);
 
   const { dersBazliOzet, genelOzet } = dersOzetiHesapla(konuTakipListesi, mufredatDersler || []);

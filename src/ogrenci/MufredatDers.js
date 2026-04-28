@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { DURUM } from './mufredatUtils';
 import { saatFormat, kaynakEtiketleri } from '../utils/dersOzetiUtils';
+import { normalizeKonuAdi } from '../utils/konuTakipUtils';
 
 const DERINLIK_RENK = ['#5B4FE8', '#0891B2', '#059669'];
 
@@ -24,7 +25,8 @@ export function NodSatiri({
 
   if (yaprak) {
     const durum = konuDurumlar[dugum.id]?.durum || null;
-    const calismaVeri = konuAdHaritasi?.[dugum.ad] || null;
+    // konuIdOlustur() normalizasyonu ile eşleştir (ham ad yerine normalize)
+    const calismaVeri = konuAdHaritasi?.[normalizeKonuAdi(dugum.ad)] || null;
     if (!kocModu && filtre && filtre !== 'hepsi' && durum !== filtre) return null;
     const risk = konuDurumlar[dugum.id]?.riskSeviyesi || null;
     const kaynakDeneme = konuDurumlar[dugum.id]?.kaynak === 'deneme';
