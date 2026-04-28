@@ -20,6 +20,7 @@ import { useMobil } from '../hooks/useMediaQuery';
 import { Btn, ConfirmDialog } from '../components/Shared';
 import { caprazKocBildirim, bildirimOlustur } from '../components/BildirimSistemi';
 import { haftaBaslangici, programV2ToGorevler } from '../utils/programAlgoritma';
+import { dersSetiniBelirle } from '../utils/ogrenciBaglam';
 import { OgrenciDetayTabBar } from './OgrenciDetayTabBar';
 import { OgrenciDetaySekme } from './OgrenciDetaySekme';
 const VideoGorusme = React.lazy(() => import('../components/VideoGorusme'));
@@ -80,6 +81,10 @@ export default function OgrenciDetay({ ogrenci, onGeri, initialTab = 'ozet', onT
 
   const duzenleyebilir = useMemo(() => canEdit(ogrenci), [canEdit, ogrenci]);
   const readOnly = !duzenleyebilir;
+  const mufredatDersler = useMemo(
+    () => dersSetiniBelirle(ogrenci.tur, ogrenci.sinif),
+    [ogrenci.tur, ogrenci.sinif]
+  );
 
   const veriGetir = useCallback(async () => {
     try {
@@ -259,6 +264,7 @@ export default function OgrenciDetay({ ogrenci, onGeri, initialTab = 'ozet', onT
           denemeler={denemeler}
           program={program}
           dersBaslat={dersBaslat}
+          mufredatDersler={mufredatDersler}
           s={s}
         />
       </div>

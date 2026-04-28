@@ -19,6 +19,7 @@ export function OgrenciDetaySekme({
   denemeler,
   program,
   dersBaslat,
+  mufredatDersler,
   s,
 }) {
   useEffect(() => {
@@ -35,7 +36,13 @@ export function OgrenciDetaySekme({
 
   if (aktifSekme === 'ozet') {
     return (
-      <OgrenciDetayGenelOzet ogrenci={ogrenci} program={program} dersBaslat={dersBaslat} s={s} />
+      <OgrenciDetayGenelOzet
+        ogrenci={ogrenci}
+        program={program}
+        dersBaslat={dersBaslat}
+        mufredatDersler={mufredatDersler}
+        s={s}
+      />
     );
   }
 
@@ -116,6 +123,7 @@ OgrenciDetaySekme.propTypes = {
   denemeler: PropTypes.array,
   program: PropTypes.array,
   dersBaslat: PropTypes.func,
+  mufredatDersler: PropTypes.array,
   s: PropTypes.object.isRequired,
   mobil: PropTypes.bool,
 };

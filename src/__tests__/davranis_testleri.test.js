@@ -185,6 +185,7 @@ vi.mock('../utils/izleme', () => ({
 
 vi.mock('../utils/ogrenciBaglam', () => ({
   ogrenciBaglaminiCoz: vi.fn(() => ({ tur: 'yks', sinif: 12 })),
+  dersSetiniBelirle: vi.fn(() => []),
   LGS_DERSLER: [],
 }));
 

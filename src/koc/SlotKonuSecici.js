@@ -4,6 +4,7 @@ import { KONULAR, TYT_DERSLER, AYT_DERSLER } from '../data/konular';
 import { lgsKonular } from '../data/konularLgs';
 import { LGS_DERSLER } from '../utils/ogrenciBaglam';
 import { konuDuzListe } from '../utils/konuUtils';
+import { konuIdOlustur } from '../utils/konuTakipUtils';
 
 const TUM_DERSLER = [...TYT_DERSLER, ...AYT_DERSLER, ...LGS_DERSLER];
 
@@ -46,7 +47,14 @@ function vurgula(metin, arama) {
   );
 }
 
-export default function SlotKonuSecici({ ders, dersId, seciliKonular, onToggle, s }) {
+export default function SlotKonuSecici({
+  ders,
+  dersId,
+  seciliKonular,
+  onToggle,
+  onKonularDegisti,
+  s,
+}) {
   const [aramaQuery, setAramaQuery] = useState('');
 
   const tumKonular = useMemo(
@@ -61,6 +69,16 @@ export default function SlotKonuSecici({ ders, dersId, seciliKonular, onToggle, 
   }, [tumKonular, aramaQuery]);
 
   const secili = useMemo(() => new Set(seciliListesi(seciliKonular)), [seciliKonular]);
+
+  const konuToggle = k => {
+    onToggle(k); // geriye dönük uyumluluk
+    if (onKonularDegisti && dersId) {
+      const yeniSecili = new Set(secili);
+      if (yeniSecili.has(k)) yeniSecili.delete(k);
+      else yeniSecili.add(k);
+      onKonularDegisti([...yeniSecili].map(ad => ({ id: konuIdOlustur(dersId, ad), ad })));
+    }
+  };
 
   if (!tumKonular.length) return null;
 
@@ -106,7 +124,7 @@ export default function SlotKonuSecici({ ders, dersId, seciliKonular, onToggle, 
               <button
                 key={i}
                 type="button"
-                onClick={() => onToggle(k)}
+                onClick={() => konuToggle(k)}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -155,5 +173,6 @@ SlotKonuSecici.propTypes = {
   dersId: PropTypes.string,
   seciliKonular: PropTypes.string,
   onToggle: PropTypes.func.isRequired,
+  onKonularDegisti: PropTypes.func,
   s: PropTypes.object.isRequired,
 };

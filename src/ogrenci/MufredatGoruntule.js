@@ -90,6 +90,7 @@ export default function MufredatGoruntule({
 }) {
   const { s } = useTheme();
   const [konuDurumlar, setKonuDurumlar] = useState({});
+  const [konuAdHaritasi, setKonuAdHaritasi] = useState({});
   const [dersler, setDersler] = useState([]);
   const [yukleniyor, setYukleniyor] = useState(true);
   const [acikDers, setAcikDers] = useState(null);
@@ -108,10 +109,17 @@ export default function MufredatGoruntule({
     try {
       const snap = await getDocs(collection(db, 'ogrenciler', ogrenciId, 'konu_takip'));
       const harita = {};
+      const adHarita = {};
       snap.docs.forEach(d => {
-        harita[d.id] = d.data();
+        const data = d.data();
+        harita[d.id] = data;
+        // İkincil index: konu adına göre çalışma verisi (konuTakipUtils formatı)
+        if (data.konuAdi && data.kaynaklar) {
+          adHarita[data.konuAdi] = data;
+        }
       });
       setKonuDurumlar(harita);
+      setKonuAdHaritasi(adHarita);
       return harita;
     } catch (e) {
       console.error(e);
@@ -392,6 +400,7 @@ export default function MufredatGoruntule({
                         key={c.id}
                         dugum={c}
                         konuDurumlar={konuDurumlar}
+                        konuAdHaritasi={konuAdHaritasi}
                         derinlik={0}
                         kocModu={kocModu}
                         onToggle={toggle}

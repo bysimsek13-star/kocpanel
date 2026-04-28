@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { DURUM } from './mufredatUtils';
+import { saatFormat, kaynakEtiketleri } from '../utils/dersOzetiUtils';
 
 const DERINLIK_RENK = ['#5B4FE8', '#0891B2', '#059669'];
 
@@ -8,12 +9,22 @@ function altAgactaEslesen(dugum, filtre, konuDurumlar) {
   return dugum._cocuklar.some(c => altAgactaEslesen(c, filtre, konuDurumlar));
 }
 
-export function NodSatiri({ dugum, konuDurumlar, derinlik, kocModu, onToggle, filtre, s }) {
+export function NodSatiri({
+  dugum,
+  konuDurumlar,
+  konuAdHaritasi,
+  derinlik,
+  kocModu,
+  onToggle,
+  filtre,
+  s,
+}) {
   const [acik, setAcik] = useState(true);
   const yaprak = !dugum._cocuklar?.length;
 
   if (yaprak) {
     const durum = konuDurumlar[dugum.id]?.durum || null;
+    const calismaVeri = konuAdHaritasi?.[dugum.ad] || null;
     if (!kocModu && filtre && filtre !== 'hepsi' && durum !== filtre) return null;
     const risk = konuDurumlar[dugum.id]?.riskSeviyesi || null;
     const kaynakDeneme = konuDurumlar[dugum.id]?.kaynak === 'deneme';
@@ -25,6 +36,7 @@ export function NodSatiri({ dugum, konuDurumlar, derinlik, kocModu, onToggle, fi
         riskSeviyesi={risk}
         kaynakDeneme={kaynakDeneme}
         sonDenemeTarihi={konuDurumlar[dugum.id]?.sonDenemeTarihi || null}
+        calismaVeri={calismaVeri}
         onToggle={hedef => onToggle?.(dugum.id, hedef)}
         s={s}
       />
@@ -34,6 +46,7 @@ export function NodSatiri({ dugum, konuDurumlar, derinlik, kocModu, onToggle, fi
         durum={durum}
         kritik={dugum.kritik}
         riskSeviyesi={risk}
+        calismaVeri={calismaVeri}
         s={s}
       />
     );
@@ -83,6 +96,7 @@ export function NodSatiri({ dugum, konuDurumlar, derinlik, kocModu, onToggle, fi
             key={c.id}
             dugum={c}
             konuDurumlar={konuDurumlar}
+            konuAdHaritasi={konuAdHaritasi}
             derinlik={derinlik + 1}
             kocModu={kocModu}
             onToggle={onToggle}
@@ -101,6 +115,7 @@ export function KocSatiri({
   riskSeviyesi,
   kaynakDeneme,
   sonDenemeTarihi,
+  calismaVeri,
   onToggle,
   s,
 }) {
@@ -124,6 +139,26 @@ export function KocSatiri({
       >
         {konu}
       </span>
+      {calismaVeri && (
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          {calismaVeri.kaynaklar?.length > 0 && (
+            <span style={{ fontSize: 10, color: s.text3 }}>
+              {kaynakEtiketleri(calismaVeri.kaynaklar)}
+            </span>
+          )}
+          {saatFormat(calismaVeri.videoSaat) && (
+            <span style={{ fontSize: 10, color: s.text3 }}>
+              {saatFormat(calismaVeri.videoSaat)}
+            </span>
+          )}
+          {calismaVeri.soruSayisi > 0 && (
+            <span style={{ fontSize: 10, color: s.text3 }}>{calismaVeri.soruSayisi} soru</span>
+          )}
+          {calismaVeri.sonCalisma && (
+            <span style={{ fontSize: 10, color: s.text3 }}>Son: {calismaVeri.sonCalisma}</span>
+          )}
+        </div>
+      )}
       {kaynakDeneme && (
         <span
           style={{
@@ -181,7 +216,7 @@ const RISK_CFG = {
   kritik: { ikon: '🚨', renk: '#DC2626', label: 'Kritik' },
 };
 
-export function OgrenciSatiri({ konu, durum, kritik, riskSeviyesi, s }) {
+export function OgrenciSatiri({ konu, durum, kritik, riskSeviyesi, calismaVeri, s }) {
   const riskCfg = riskSeviyesi && riskSeviyesi !== 'dusuk' ? RISK_CFG[riskSeviyesi] : null;
 
   if (!durum) {
@@ -199,6 +234,9 @@ export function OgrenciSatiri({ konu, durum, kritik, riskSeviyesi, s }) {
       >
         {kritik && <span style={{ fontSize: 11 }}>🔥</span>}
         <span style={{ flex: 1, fontSize: 13, color: s.text2 }}>{konu}</span>
+        {calismaVeri?.sonCalisma && (
+          <span style={{ fontSize: 10, color: s.text3 }}>Son: {calismaVeri.sonCalisma}</span>
+        )}
         {riskCfg && (
           <span style={{ fontSize: 10, color: riskCfg.renk, fontWeight: 700 }}>
             {riskCfg.ikon} {riskCfg.label}

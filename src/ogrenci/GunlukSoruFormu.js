@@ -18,6 +18,7 @@ import { TYT_DERSLER, AYT_DERSLER } from '../data/konular';
 import { useToast } from '../components/Toast';
 import { Card, Btn } from '../components/Shared';
 import { bugunStr, dateToStr } from '../utils/tarih';
+import { konuTakipYaz } from '../utils/konuTakipUtils';
 import GunlukSoruFormBaslik from './GunlukSoruFormBaslik';
 import GunlukSoruDersListesi from './GunlukSoruDersListesi';
 import GunlukSoruGecmis from './GunlukSoruGecmis';
@@ -153,6 +154,22 @@ export default function GunlukSoruFormu({ ogrenciId }) {
         { merge: true }
       );
       toast('Günlük soru kaydı güncellendi.');
+
+      // konu_takip'e yaz — her ders için soru sayısını kaydet
+      const konuTakipYazmalari = Object.entries(temizDersler).map(([dersId, row]) => {
+        const soruSayisi = (row.d || 0) + (row.y || 0) + (row.b || 0);
+        // Konu detayı varsa her konuya ayrı yaz, yoksa derse genel yaz
+        const konuGruplari = filteredKonu[dersId];
+        if (konuGruplari && Object.keys(konuGruplari).length) {
+          return Object.keys(konuGruplari).map(konuAdi =>
+            konuTakipYaz(ogrenciId, dersId, konuAdi, 'gunlukSoru', { soruSayisi })
+          );
+        }
+        return [konuTakipYaz(ogrenciId, dersId, '', 'gunlukSoru', { soruSayisi })];
+      });
+      Promise.all(konuTakipYazmalari.flat()).catch(e =>
+        console.error('GunlukSoru konuTakip hatası:', e.message)
+      );
     } catch (e) {
       toast('Kaydedilemedi: ' + (e.message || 'hata'), 'error');
     }

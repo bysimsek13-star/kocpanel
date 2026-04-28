@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { doc, setDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
+import { slotTamamlamaKaydet } from '../utils/slotTamamlamaUtils';
 import { useMobil } from '../hooks/useMediaQuery';
 import { VideoIzleModal } from '../koc/HaftalikProgram';
 import { bugunGunAdi, haftaBasStr } from '../utils/tarih';
@@ -60,10 +61,20 @@ export default function BugunProgramKart({
 
   const toggle = async idx => {
     const key = `${BUGUN_GUN}_${idx}`;
-    const yeni = { ...tamamlandi, [key]: !tamamlandi[key] };
+    const yeniTamamlandi = !tamamlandi[key];
+    const yeni = { ...tamamlandi, [key]: yeniTamamlandi };
     setTamamlandi(yeni);
     const ref = doc(db, 'ogrenciler', ogrenciId, 'program_v2', HAFTA_BAZ);
     await setDoc(ref, { tamamlandi: yeni }, { merge: true });
+
+    if (yeniTamamlandi) {
+      const slot = slotlar.find(sl => sl._idx === idx);
+      if (slot?.dersId && slot.tip !== 'deneme') {
+        slotTamamlamaKaydet(slot, ogrenciId).catch(e =>
+          console.error('slotTamamlamaKaydet hatası:', e.message)
+        );
+      }
+    }
   };
 
   if (slotlar.length === 0) return null;

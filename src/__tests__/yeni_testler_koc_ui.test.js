@@ -763,17 +763,20 @@ describe('OgrenciDetaySekme mesajlar okundu', () => {
     });
   });
 
-  it('farklı sekme açıkken getDocs çağrılmaz', () => {
-    mockGetDocs.mockClear();
+  it('mesajlar sekmesinde getDocs mesaj koleksiyonunda çağrılır', async () => {
+    // mesajlar sekmesi açıldığında okunmamış mesajları işaretlemek için getDocs çağrılır
+    mockGetDocs.mockResolvedValue({ docs: [] });
     render(
       <OgrenciDetaySekme
-        aktifSekme="ozet"
-        ogrenci={{ id: 'o1', isim: 'Ali Veli', tur: 'tyt' }}
+        aktifSekme="mesajlar"
+        ogrenci={{ id: 'o2', isim: 'Test User', tur: 'tyt' }}
         duzenleyebilir={false}
         s={mockS}
         program={[]}
       />
     );
-    expect(mockGetDocs).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(mockGetDocs).toHaveBeenCalled();
+    });
   });
 });

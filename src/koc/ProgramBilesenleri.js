@@ -41,6 +41,8 @@ export function SlotModal({
       ders: slot.ders || '',
       dersId,
       videolar: slot.videolar || [],
+      konular: slot.konular || [],
+      videoToplamDakika: slot.videoToplamDakika || 0,
     };
   });
 
@@ -156,6 +158,7 @@ export function SlotModal({
               const yeni = idx === -1 ? [...mevcut, konu] : mevcut.filter((_, i) => i !== idx);
               set('icerik', yeni.join(', '));
             }}
+            onKonularDegisti={konular => set('konular', konular)}
             s={s}
           />
         </div>
@@ -164,7 +167,11 @@ export function SlotModal({
           <VideoSecici
             kocUid={kocUid}
             seciliVideolar={form.videolar}
-            onChange={v => set('videolar', v)}
+            onChange={v => {
+              set('videolar', v);
+              const toplamDakika = v.reduce((t, vid) => t + (vid.duration || 0), 0);
+              set('videoToplamDakika', toplamDakika);
+            }}
             ders={form.ders}
             dersId={form.dersId}
             ogrenciTur={ogrenciTur}

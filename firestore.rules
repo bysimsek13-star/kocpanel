@@ -199,7 +199,7 @@ service cloud.firestore {
       match /konu_takip/{docId} {
         allow read, write: if isAdmin();
         allow read, write: if isKoc() && isActive() && isOgrencininKocu(ogrenciId);
-        allow read: if isKendisi(ogrenciId) && isActive();
+        allow read, write: if isKendisi(ogrenciId) && isActive();
         allow read: if isVeli() && isActive() && isVelininOgrencisi(ogrenciId);
       }
 

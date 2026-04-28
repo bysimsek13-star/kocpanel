@@ -1,5 +1,15 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import {
+  doc,
+  getDoc,
+  setDoc,
+  serverTimestamp,
+  getDocs,
+  collection,
+  query,
+  where,
+} from 'firebase/firestore';
+import { slotTamamlamaKaydet } from '../utils/slotTamamlamaUtils';
 import { db } from '../firebase';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../components/Toast';
@@ -122,13 +132,48 @@ export function useHaftalikProgram({ ogrenciler, ogrenciProp, readOnly, initialO
   const togglTamamla = async (gun, index) => {
     if (!secilenOgrenci) return;
     const key = `${gun}_${index}`;
-    const yeni = { ...tamamlandiMap, [key]: !tamamlandiMap[key] };
+    const yeniTamamlandi = !tamamlandiMap[key];
+    const yeni = { ...tamamlandiMap, [key]: yeniTamamlandi };
     setTamamlandiMap(yeni);
     // merge:true — sadece tamamlandi alanına dokunuluyor, koçun hafta verisi korunuyor
     await setDoc(
       doc(db, 'ogrenciler', secilenOgrenci.id, 'program_v2', haftaKey),
       { tamamlandi: yeni },
       { merge: true }
+    );
+
+    if (!yeniTamamlandi) return; // geri alındıysa konu yazma
+
+    const slot = hafta[gun]?.[index];
+    if (!slot?.dersId) return;
+
+    if (slot.tip === 'deneme') {
+      // Deneme slotu: girilmemiş deneme varsa uyarı
+      try {
+        const bitis = new Date(haftaKey);
+        bitis.setDate(bitis.getDate() + 7);
+        const snap = await getDocs(
+          query(
+            collection(db, 'ogrenciler', secilenOgrenci.id, 'denemeler'),
+            where('tarih', '>=', haftaKey),
+            where('tarih', '<', bitis.toISOString().slice(0, 10))
+          )
+        );
+        const haftadakiDenemeSayisi = Object.values(hafta)
+          .flat()
+          .filter(s => s?.tip === 'deneme').length;
+        if (snap.docs.length < haftadakiDenemeSayisi) {
+          toast('Deneme sonucunu girmeyi unutma! Deneme ekranından ekleyebilirsin.', 'warning');
+        }
+      } catch (e) {
+        console.error('Deneme slot kontrol hatası:', e.message);
+      }
+      return;
+    }
+
+    // Diğer slot tipleri: konu_takip'e yaz
+    slotTamamlamaKaydet(slot, secilenOgrenci.id).catch(e =>
+      console.error('slotTamamlamaKaydet hatası:', e.message)
     );
   };
 

@@ -6,12 +6,15 @@ import PropTypes from 'prop-types';
 import {
   collection,
   addDoc,
+  getDocs,
   orderBy,
   query,
   serverTimestamp,
   onSnapshot,
 } from 'firebase/firestore';
 import { db } from '../firebase';
+import { dersOzetiHesapla } from '../utils/dersOzetiUtils';
+import DersCalismaOzeti from './DersCalismaOzeti';
 import { SINAV_TAKVIMI } from '../utils/ogrenciUtils';
 import { turBelirle } from '../utils/sinavUtils';
 
@@ -210,9 +213,24 @@ function NotKarti({ baslik, koleksiyon, ogrenciId, s }) {
   );
 }
 
-export default function OgrenciDetayGenelOzet({ ogrenci, program, dersBaslat, s }) {
+export default function OgrenciDetayGenelOzet({
+  ogrenci,
+  program,
+  dersBaslat,
+  mufredatDersler,
+  s,
+}) {
   const gun = gunHesapla(ogrenci.tur);
   const tamamlanmamis = program.filter(p => !p.tamamlandi);
+  const [konuTakipListesi, setKonuTakipListesi] = useState([]);
+
+  useEffect(() => {
+    getDocs(collection(db, 'ogrenciler', ogrenci.id, 'konu_takip'))
+      .then(snap => setKonuTakipListesi(snap.docs.map(d => ({ id: d.id, ...d.data() }))))
+      .catch(e => console.error('konuTakip yüklenemedi:', e.message));
+  }, [ogrenci.id]);
+
+  const { dersBazliOzet, genelOzet } = dersOzetiHesapla(konuTakipListesi, mufredatDersler || []);
 
   const kayitTarihi = ogrenci.kayitTarihi
     ? new Date(ogrenci.kayitTarihi).toLocaleDateString('tr-TR')
@@ -270,6 +288,17 @@ export default function OgrenciDetayGenelOzet({ ogrenci, program, dersBaslat, s 
       )}
 
       <EksikKonularKarti ogrenciId={ogrenci.id} s={s} />
+
+      <div style={{ fontSize: 13, fontWeight: 700, color: s.text, margin: '16px 0 10px' }}>
+        📊 Ders Bazlı Çalışma
+      </div>
+      <DersCalismaOzeti
+        dersBazliOzet={dersBazliOzet}
+        genelOzet={genelOzet}
+        mufredatDersler={mufredatDersler}
+        calisilmayanDersler={genelOzet.calisilmayanDersler}
+        s={s}
+      />
       <NotKarti baslik="📝 Koç notları" koleksiyon="kocNotlari" ogrenciId={ogrenci.id} s={s} />
       <NotKarti
         baslik="📝 Toplantı özetleri"
@@ -334,5 +363,6 @@ OgrenciDetayGenelOzet.propTypes = {
   ogrenci: PropTypes.object.isRequired,
   program: PropTypes.array.isRequired,
   dersBaslat: PropTypes.func,
+  mufredatDersler: PropTypes.array,
   s: PropTypes.object.isRequired,
 };
