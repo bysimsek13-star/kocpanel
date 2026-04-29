@@ -16,6 +16,7 @@ export function dersOzetiHesapla(konuTakipListesi = [], mufredatDersler = []) {
 
   konuTakipListesi.forEach(konu => {
     const { dersId } = konu;
+    if (!dersId) return; // dersId olmayan kayıtları (koç manuel toggle) atla
     if (!dersler[dersId]) {
       dersler[dersId] = {
         dersId,

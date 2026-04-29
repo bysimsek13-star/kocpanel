@@ -236,6 +236,11 @@ export function OgrenciSatiri({ konu, durum, kritik, riskSeviyesi, calismaVeri, 
       >
         {kritik && <span style={{ fontSize: 11 }}>🔥</span>}
         <span style={{ flex: 1, fontSize: 13, color: s.text2 }}>{konu}</span>
+        {calismaVeri?.kaynaklar?.length > 0 && (
+          <span style={{ fontSize: 10, color: s.text3 }}>
+            {kaynakEtiketleri(calismaVeri.kaynaklar)}
+          </span>
+        )}
         {calismaVeri?.sonCalisma && (
           <span style={{ fontSize: 10, color: s.text3 }}>Son: {calismaVeri.sonCalisma}</span>
         )}

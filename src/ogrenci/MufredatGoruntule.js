@@ -121,7 +121,8 @@ export default function MufredatGoruntule({
           const data = d.data();
           harita[d.id] = data;
           // konuIdOlustur() ile normalize edilmiş konu adını anahtar olarak kullan
-          if (data.konuAdi && data.kaynaklar) {
+          // kaynaklar koşulu kaldırıldı — konuAdi olan her kayıt haritaya girer
+          if (data.konuAdi) {
             adHarita[normalizeKonuAdi(data.konuAdi)] = data;
           }
         });
