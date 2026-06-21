@@ -19,7 +19,7 @@ messaging.onBackgroundMessage((payload) => {
   const tip         = payload.data?.tip         || '';
   const entityId    = payload.data?.entityId    || '';
   const reddetToken = payload.data?.reddetToken || '';
-  const link        = 'https://kocpaneli.web.app' + route;
+  const link        = 'https://app.elsway.com.tr' + route;
 
   const dersDaveti = tip === 'ders_daveti';
 
@@ -62,13 +62,13 @@ self.addEventListener('notificationclick', (event) => {
       return;
     }
     // Katıl veya bildirim gövdesine tıklama
-    link = `https://kocpaneli.web.app/ogrenci/home?cagri=${entityId}`;
+    link = `https://app.elsway.com.tr/ogrenci/home?cagri=${entityId}`;
   }
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((list) => {
       for (const client of list) {
-        if (client.url.startsWith('https://kocpaneli.web.app') && 'focus' in client) {
+        if (client.url.startsWith('https://app.elsway.com.tr') && 'focus' in client) {
           client.navigate(link);
           return client.focus();
         }

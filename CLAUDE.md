@@ -76,35 +76,65 @@ src/
 ├── pages/          # Rota entry point'leri (lazy load edilir)
 │   ├── GirisEkrani.js
 │   ├── KocPaneli.js
-│   ├── OgrenciPaneli.js
+│   ├── OgrenciPaneli.js        # ince shell — veriyi OgrenciPaneliVeri'ye devreder
+│   ├── OgrenciPaneliVeri.js    # Firestore bağlantısı + state yönetimi
+│   ├── OgrenciPaneliSayfa.js   # Sekme render mantığı
 │   ├── VeliPaneli.js
 │   ├── VeliMesajlar.js
 │   ├── VeliProgram.js
 │   └── YoneticiPaneli.js
 │
 ├── koc/            # Koç paneli bileşenleri ve sayfaları
-│   ├── ui/         # KocTopBar, KocSolMenu, KocAltTabBar, KocSabahEkrani vb.
+│   ├── ui/         # KocTopBar, KocSolMenu, KocAltTabBar, KocSabahEkrani,
+│   │               # KocOgrenciListesi, KocOgrenciSatir, KocGununSozuMini,
+│   │               # KocGirisDurumuModal vb.
 │   ├── gunluk/     # BugunProgrami, GunlukIlerlemePano, OgrenciRutinKarti vb.
 │   ├── hedef/      # HedefEkleModal, OgrenciHedefKarti, hedefUtils vb.
 │   ├── hooks/      # useKocVeri, useOkunmamis
-│   ├── HaftalikProgram.js   # Haftalık slot programı ana bileşeni
-│   ├── ProgramBilesenleri.js # TIPLER_NEON, SlotModal, GunKolonu
-│   ├── VideoIzleModal.js
-│   ├── OgrenciDetay.js
+│   ├── HaftalikProgram.js        # Haftalık slot programı ana bileşeni
+│   ├── HaftalikProgramHeader.js  # Program başlık + hızlı eylemler
+│   ├── useHaftalikProgram.js     # Haftalık program hook (Firestore CRUD)
+│   ├── ProgramBilesenleri.js     # TIPLER_NEON, SlotModal, GunKolonu
+│   ├── SlotKonuSecici.js         # Slot için konu seçimi (müfredat entegrasyonu)
+│   ├── SlotTipSecici.js          # Slot tipi seçimi
+│   ├── OgrenciDetay.js           # Öğrenci detay ana bileşeni (7 sekme)
+│   ├── OgrenciDetayTabBar.js     # Sekme çubuğu
+│   ├── OgrenciDetaySekme.js      # Sekme içerik router'ı
+│   ├── OgrenciDetayGenelOzet.js  # Genel özet sekmesi (EksikKonularKarti dahil)
+│   ├── OgrenciDetaySoruRutin.js  # Soru & rutin sekmesi
+│   ├── DersCalismaOzeti.js       # Ders bazlı çalışma özeti kartı
 │   ├── DenemeYonetimi.js
+│   ├── VideoIzleModal.js
+│   ├── KitapVideoKutuphane.js    # Kitap + video + playlist birleşik panel
+│   ├── KitapVideoVideoPlaylist.js # Video-Playlist alt bileşeni
+│   ├── VideoSecici.js            # Video seçici modal
+│   ├── VideoSeciciVideoPanel.js  # Video seçici panel
+│   ├── PlaylistYonetimi.js       # Playlist ana bileşeni
+│   ├── PlaylistKarti.js          # Tek playlist kartı
+│   ├── PlaylistEkleModal.js      # Playlist ekleme/düzenleme modal
+│   ├── kitapVideoUtils.js        # Kitap/video yardımcı fonksiyonlar
 │   └── ... (diğer sayfalar)
 │
 ├── ogrenci/        # Öğrenci paneli bileşenleri
-│   ├── deneme/     # DenemeModal, DenemeKart, BransBolum, DersKarti, GrafikModal
+│   ├── deneme/     # DenemeModal, DenemeKart, BransBolum, BransBolumTablo,
+│   │               # DersKarti, GrafikModal
 │   ├── AnaSayfaKartlari.js
 │   ├── BugunProgramKart.js
+│   ├── BugunSlotSatir.js   # Bugün program satır bileşeni
 │   ├── GeriSayimKart.js
 │   ├── GunlukRutinKart.js
+│   ├── GunlukSoruFormu.js
+│   ├── GunlukSoruGecmis.js # Geçmiş soru kayıtları
 │   ├── DenemeListesi.js
+│   ├── MufredatGoruntule.js
+│   ├── MufredatDers.js     # Müfredat içindeki tek ders görünümü
+│   ├── SlotKonularPanel.js # Slot'a bağlı konu listesi (öğrenci görünümü)
 │   ├── OgrenciNav.js       # PATHS, BASLIK, SolMenu, AltTabBar
 │   └── ...
 │
 ├── admin/          # Yönetici paneli bileşenleri
+│   ├── MufredatAgaci.js      # Recursive admin müfredat ağacı
+│   ├── MufredatYonetimSayfasi.js
 │   ├── KocPerformansPaneli.js
 │   ├── SistemDurumuPaneli.js
 │   ├── CanliOperasyonPaneli.js
@@ -127,22 +157,43 @@ src/
 │   └── ThemeContext.js      # s (style objesi), tema değiştirme
 │
 ├── utils/
-│   ├── sinavUtils.js        # turBelirle(), turdenBransDersler()
-│   ├── ogrenciUtils.js      # SINAV_TAKVIMI, upcomingExams, calculateStreak, generateSuggestions vb.
-│   ├── kocSkorUtils.js      # computeCoachPerformance(), coachScoreMeta() — koç performans algoritması
-│   ├── programAlgoritma.js  # Haftalık program otomatik oluşturma
-│   ├── tarih.js             # Tarih yardımcıları
-│   ├── aktiflikKaydet.js    # Son aktiflik zamanını Firestore'a yazar
-│   ├── readState.js         # Mesaj okundu/okunmadı durumu
-│   ├── auditLog.js          # Admin işlem logu
-│   ├── izleme.js            # Hata loglama (logIstemciHatasi, logPerformansMetriği)
-│   └── ...
+│   ├── sinavUtils.js           # turBelirle(), turdenBransDersler()
+│   ├── ogrenciUtils.js         # SINAV_TAKVIMI, upcomingExams, calculateStreak, generateSuggestions vb.
+│   ├── kocSkorUtils.js         # computeCoachPerformance(), coachScoreMeta() — koç performans algoritması
+│   ├── programAlgoritma.js     # Haftalık program otomatik oluşturma
+│   ├── slotTamamlamaUtils.js   # Slot tamamlanma durumu hesaplama
+│   ├── konuTakipUtils.js       # Konu takip yardımcıları (normalizeKonuAdi vb.)
+│   ├── konuUtils.js            # Konu düğümü yardımcıları
+│   ├── dersOzetiUtils.js       # Ders bazlı çalışma özeti hesaplama
+│   ├── tarih.js                # Tarih yardımcıları (bugunStr: Europe/Istanbul timezone-aware)
+│   ├── aktiflikKaydet.js       # Son aktiflik zamanını Firestore'a yazar
+│   ├── readState.js            # Mesaj okundu/okunmadı durumu
+│   ├── auditLog.js             # Admin işlem logu
+│   ├── izleme.js               # Hata loglama (logIstemciHatasi, logPerformansMetriği)
+│   └── timelineUtils.js        # Görüşme timeline yardımcıları
 │
 ├── data/
-│   └── konular.js           # TYT_DERSLER, AYT_DERSLER, AYT_SAY/EA/SOZ/DIL, KONULAR, netHesapla, renkler
+│   ├── konular.js              # TYT_DERSLER, AYT_DERSLER, AYT_SAY/EA/SOZ/DIL, KONULAR, netHesapla, renkler
+│   ├── tytMufredatSeed.js      # TYT 4 seviyeli hiyerarşi (agaciDuzlestir yardımcısı)
+│   ├── aytMufredatSeed.js      # AYT EA/Sayısal/Sözel/Dil hiyerarşi (prefixToAgac)
+│   ├── lgsMufredatSeed.js      # LGS müfredat seed
+│   ├── lise9Seed.js            # 9. sınıf müfredat seed
+│   ├── lise10Seed.js           # 10. sınıf müfredat seed
+│   ├── konularTyt.js           # TYT konu listesi (ham veri)
+│   ├── konularAyt.js           # AYT ortak konu listesi (ham veri)
+│   ├── konularAytMat.js        # AYT Matematik konuları
+│   ├── konularAytFiz.js        # AYT Fizik konuları
+│   ├── konularAytKim.js        # AYT Kimya konuları
+│   ├── konularAytBiy.js        # AYT Biyoloji konuları
+│   ├── konularAytEde.js        # AYT Edebiyat konuları
+│   ├── konularAytFel.js        # AYT Felsefe konuları
+│   ├── konularAytCog.js        # AYT Coğrafya konuları
+│   ├── konularAytDin.js        # AYT Din Kültürü konuları
+│   └── konularAytTar.js / konularAytTar2.js  # AYT Tarih konuları (iki dosya)
 │
 ├── constants/
-│   └── slotTipleri.js       # SLOT_TIPLERI (haftalık program slot türleri: neonRenk, neonAcik)
+│   ├── slotTipleri.js       # SLOT_TIPLERI (haftalık program slot türleri: neonRenk, neonAcik)
+│   └── playlistSabitleri.js # Playlist sabitleri
 │
 ├── hooks/
 │   ├── useMediaQuery.js     # useMobil(), useTablet()
@@ -210,11 +261,14 @@ src/
 | `ogrenciler/{id}/program_v2` | Slot bazlı haftalık programlar |
 | `ogrenciler/{id}/mesajlar` | Koç-öğrenci mesajları |
 | `ogrenciler/{id}/hedefler` | Öğrenci hedefleri |
+| `ogrenciler/{id}/konu_takip` | Konu tamamlanma durumları (koç işaretlemesi) |
+| `ogrenciler/{id}/calisma` | Günlük çalışma kayıtları (çalışma takip FAZ 1-4) |
 | `ogrenciler/{id}/veliRaporlari` | Koçun haftalık öğrenci raporları |
 | `bildirimler` | Uygulama içi bildirimler |
 | `auditLog` | Admin işlem geçmişi |
 | `istemciHataKayitlari` | Frontend hata logları |
 | `goruntulu` | Video görüşme oturumları |
+| `mufredat/{tur}/dugumler/{id}` | Hiyerarşik müfredat düğümleri (`{ id, parentId, seviye, ad, sira, kritik? }`) |
 | `playlists` | Koç playlist'leri |
 | `kutuphane` | Kitap/video kütüphane içerikleri |
 | `destekTalepleri` | Destek/silme talepleri |

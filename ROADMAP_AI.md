@@ -6,6 +6,39 @@ sürekli güncellenen bir bağlam dosyasıdır. Kod üzerinde çalışmadan önc
 
 ---
 
+## Son Oturumda Yapılanlar (2026-04-24 → 2026-05-28) — Büyük Özellik Dalgası
+
+### Tamamlanan büyük özellikler (git log özetinden):
+
+| Commit | Değişiklik |
+|---|---|
+| `5bd077c` | **Çalışma Takip Sistemi — FAZ 1-4 tam implementasyon**: `ogrenciler/{id}/calisma` koleksiyonu, `dersOzetiUtils.js`, `DersCalismaOzeti.js`, `slotTamamlamaUtils.js` |
+| `f7c648a` | **TYT müfredatı 4 seviyeli hiyerarşik yapı** — mat/geo ayrıldı; `konularTyt.js` oluşturuldu |
+| `a9b2270` | **AYT EA müfredatı** hiyerarşik yapıya geçirildi |
+| `3bad496` | **AYT Sayısal ve Sözel müfredatı** hiyerarşik yapıya geçirildi |
+| `5f4c652` | AYT konu dosyaları ders bazlı bölündü: `konularAytMat/Fiz/Kim/Biy/Ede/Fel/Cog/Din/Tar.js` |
+| `15e1c39` | `aytMufredatSeed` `prefixToAgac` ile yeniden yazıldı |
+| `454f490` | **Program sayfası** scroll-snap, gün chip navigasyonu, bugüne otomatik scroll |
+| `9ea7dd5` | **Kaynak kütüphanesi** video-playlist birleştirildi; sınıf sekmeleri güncellendi |
+| `38d3a79` | **Öğrenci detay** 7 sekmeye yeniden tasarlandı (genel özet, soru/rutin, deneme, mesajlar) |
+| `7e0d151` | Öğrenci detay sekmeleri yeniden tasarım (ilk tur) |
+| `74c71fd` | **Ana sayfa yeniden tasarım**, saat dilimi düzeltmesi, onboarding fix |
+| `f64ce14` | Koç paneli eksiklik giderme — LGS/TYT/AYT net ayrımı, eksikKonular, mesaj okundu |
+| `7d9e6bf` | Konu takip — `normalizeKonuAdi` ile eşleştirme, `onSnapshot` ile realtime güncelleme |
+| `3c1c7c8` | Ders adı ve kaynak bilgisi undefined görünme düzeltmesi |
+
+### Yeni dosyalar (CLAUDE.md'ye eklendi):
+- `src/koc/`: SlotKonuSecici, SlotTipSecici, DersCalismaOzeti, OgrenciDetaySekme, OgrenciDetayTabBar, OgrenciDetayGenelOzet, OgrenciDetaySoruRutin, HaftalikProgramHeader, useHaftalikProgram, KitapVideoKutuphane, KitapVideoVideoPlaylist, VideoSecici, VideoSeciciVideoPanel, PlaylistKarti, PlaylistEkleModal, kitapVideoUtils, KocGununSozuMini, KocGirisDurumuModal
+- `src/ogrenci/`: MufredatDers, BugunSlotSatir, GunlukSoruGecmis, SlotKonularPanel
+- `src/pages/`: OgrenciPaneliVeri, OgrenciPaneliSayfa (OgrenciPaneli bölündü)
+- `src/utils/`: slotTamamlamaUtils, konuTakipUtils, konuUtils, dersOzetiUtils
+- `src/data/`: aytMufredatSeed, lgsMufredatSeed, lise9Seed, lise10Seed, konularTyt, konularAyt*.js (10 dosya)
+- `src/constants/`: playlistSabitleri
+
+### Test durumu: bilinmiyor — çalışmadan önce `npm test -- --run` koşulmalı
+
+---
+
 ## Son Oturumda Yapılanlar (2026-04-24) — Koç Paneli Eksiklik Giderme
 
 ### 6 eksiklik düzeltildi. 1299 test yeşil.

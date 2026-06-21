@@ -1,6 +1,6 @@
 // Build script her deploy'da SHELL_CACHE degerini otomatik gunceller
 const CHUNKS_CACHE = 'elsway-chunks';
-const SHELL_CACHE  = 'elsway-v1776902260888';   // <- build script bunu gunceller (pattern: elsway-v[^']+)
+const SHELL_CACHE  = 'elsway-v1781999752920';   // <- build script bunu gunceller (pattern: elsway-v[^']+)
 
 const isFirebaseAPI = (url) =>
   url.includes('firestore.googleapis.com') ||
@@ -85,17 +85,28 @@ self.addEventListener('fetch', e => {
     return;
   }
 
+  // Sadece same-origin statik dosyalari yakala (manifest, favicon vb.)
+  // Cross-origin istekler (gstatic, fonts vb.) SW'dan gecsin — TypeError uretirler
+  try {
+    const reqUrl = new URL(url);
+    if (reqUrl.origin !== self.location.origin) return;
+  } catch {
+    return;
+  }
+
   // Diger statik (manifest, favicon) -> Cache-first
   e.respondWith(
     caches.match(e.request).then(cached => {
       if (cached) return cached;
-      return fetch(e.request).then(res => {
-        if (res.ok && res.type === 'basic') {
-          const resClone = res.clone();
-          caches.open(SHELL_CACHE).then(c => c.put(e.request, resClone));
-        }
-        return res;
-      });
+      return fetch(e.request)
+        .then(res => {
+          if (res.ok && res.type === 'basic') {
+            const resClone = res.clone();
+            caches.open(SHELL_CACHE).then(c => c.put(e.request, resClone));
+          }
+          return res;
+        })
+        .catch(() => new Response('', { status: 503, statusText: 'Offline' }));
     })
   );
 });

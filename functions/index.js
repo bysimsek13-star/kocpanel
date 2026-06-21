@@ -9,6 +9,8 @@
  *   bildirim.js  — FCM push + temizlik
  *   zamanlama.js — Scheduled jobs (risk skoru, günlük sıfırlama)
  *   medya.js     — YouTube playlist + Agora token + görüntülü reddet
+ *   odeme.js     — İyzico checkout + kupon + aylık otomatik çekim
+ *   kayit.js     — PayTR kayıt akışı (fiyatSorgula, kayitBaslat, paytrCallback)
  *   helpers.js   — Paylaşılan yardımcılar (import edilmez, alt modüller kullanır)
  *
  * Deploy: firebase deploy --only functions
@@ -27,3 +29,5 @@ Object.assign(exports, require('./mesaj'));
 Object.assign(exports, require('./bildirim'));
 Object.assign(exports, require('./zamanlama'));
 Object.assign(exports, require('./medya'));
+Object.assign(exports, require('./odeme'));
+Object.assign(exports, require('./kayit'));
