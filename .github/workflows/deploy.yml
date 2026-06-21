@@ -38,12 +38,6 @@ jobs:
           projectId: kocpaneli
           channelId: live
 
-      - name: Firestore rules ve index deploy
-        run: |
-          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > /tmp/gsa.json
-          GOOGLE_APPLICATION_CREDENTIALS=/tmp/gsa.json npx firebase-tools@13 deploy --only firestore:rules,firestore:indexes --project kocpaneli --force
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: /tmp/gsa.json
 
       - name: Smoke test
         run: node scripts/smoke_test.js

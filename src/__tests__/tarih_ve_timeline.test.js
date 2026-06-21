@@ -83,7 +83,10 @@ describe('haftaBasStr', () => {
 
   it('bu haftanın içinde kalır (0-6 gün farkı)', () => {
     const pazartesi = new Date(haftaBasStr() + 'T00:00:00');
-    const fark = Math.round((new Date() - pazartesi) / 86400000);
+    // Saat bileşenini sıfırla — akşam saatlerinde yuvarlama hatası önlenir
+    const bugun = new Date();
+    bugun.setHours(0, 0, 0, 0);
+    const fark = Math.round((bugun - pazartesi) / 86400000);
     expect(fark).toBeGreaterThanOrEqual(0);
     expect(fark).toBeLessThanOrEqual(6);
   });
