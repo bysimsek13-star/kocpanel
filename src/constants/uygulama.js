@@ -1,0 +1,1 @@
+export const GUNCEL_SOZLESME_SURUMU = '2026-06';
