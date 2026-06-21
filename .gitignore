@@ -51,3 +51,7 @@ yarn-error.log*
 # ── Proje içi zip'ler (kaynak kontrolüne girmesin) ───────────────────────────
 *.zip
 *.tar.gz
+
+# repomix artifacts
+repomix-*.xml
+repomix-output.txt
