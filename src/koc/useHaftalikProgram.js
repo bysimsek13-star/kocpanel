@@ -215,6 +215,14 @@ export function useHaftalikProgram({ ogrenciler, ogrenciProp, readOnly, initialO
     setKopyalaniyor(false);
   };
 
+  const slotEkle = gun => {
+    const gunSlotlar = hafta[gun] || [];
+    if (gunSlotlar.length >= 10) return;
+    const yeniHafta = { ...hafta, [gun]: [...gunSlotlar, bosSlot()] };
+    setHafta(yeniHafta);
+    kaydet(yeniHafta);
+  };
+
   const haftayaTasi = async slotForm => {
     if (!secilenOgrenci || !modal) return;
     try {
@@ -266,6 +274,7 @@ export function useHaftalikProgram({ ogrenciler, ogrenciProp, readOnly, initialO
     bugunGun,
     modalSlot,
     slotGuncelle,
+    slotEkle,
     togglTamamla,
     haftayiKopyala,
     haftayaTasi,

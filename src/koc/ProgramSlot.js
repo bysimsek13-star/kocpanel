@@ -254,6 +254,7 @@ export function GunKolonu({
   onKopyala,
   onYapistir,
   onHizliSil,
+  onSlotEkle,
   slotKopya,
   bugunMu,
   s,
@@ -324,6 +325,25 @@ export function GunKolonu({
             />
           </div>
         ))}
+        {duzenleme && onSlotEkle && slotlar.length < 10 && (
+          <button
+            onClick={() => onSlotEkle(gunAdi)}
+            style={{
+              width: '100%',
+              padding: '8px 0',
+              borderRadius: 10,
+              border: `1.5px dashed ${s.border}`,
+              background: 'transparent',
+              color: s.text3,
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: 'pointer',
+              marginTop: 2,
+            }}
+          >
+            + Slot Ekle
+          </button>
+        )}
       </div>
     </div>
   );

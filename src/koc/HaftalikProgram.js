@@ -53,6 +53,7 @@ export default function HaftalikProgramSayfasi({
     bugunGun,
     modalSlot,
     slotGuncelle,
+    slotEkle,
     togglTamamla,
     haftayiKopyala,
     haftayaTasi,
@@ -135,7 +136,7 @@ export default function HaftalikProgramSayfasi({
                   slotlar={hafta[gun] || Array.from({ length: SLOT_SAYISI }, bosSlot)}
                   duzenleme={duzenleme}
                   tamamlandiMap={Object.fromEntries(
-                    Array.from({ length: SLOT_SAYISI }, (_, i) => [
+                    (hafta[gun] || Array.from({ length: SLOT_SAYISI }, bosSlot)).map((_, i) => [
                       i,
                       !!tamamlandiMap[`${gun}_${i}`],
                     ])
@@ -158,6 +159,7 @@ export default function HaftalikProgramSayfasi({
                     slotGuncelle(g, i, bosSlot());
                     toast('Slot silindi');
                   }}
+                  onSlotEkle={!readOnly ? slotEkle : undefined}
                   slotKopya={slotKopya}
                   bugunMu={gun === bugunGun && haftaOffset === 0}
                   s={s}
