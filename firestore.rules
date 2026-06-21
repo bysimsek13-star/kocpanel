@@ -102,11 +102,11 @@ service cloud.firestore {
       allow read: if isKendisi(ogrenciId) && isActive();
       allow read: if isVeli() && isActive() && isVelininOgrencisi(ogrenciId);
 
-      // Öğrenci kendi aktiflik alanlarını günceller.
-      // girisSayisi/gunlukDakika: istemci artırır, CF gece sıfırlar (zamanlama.js)
+      // Öğrenci yalnızca sonAktif alanını günceller.
+      // girisSayisi/gunlukDakika Cloud Functions tarafından yönetilir (server-owned).
       allow update: if isKendisi(ogrenciId) && isActive()
         && request.resource.data.diff(resource.data).affectedKeys()
-           .hasOnly(['sonAktif', 'girisSayisi', 'gunlukDakika']);
+           .hasOnly(['sonAktif']);
 
       match /program/{docId} {
         allow read, write: if isAdmin();
