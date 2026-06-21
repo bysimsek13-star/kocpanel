@@ -5,7 +5,6 @@ export const PATHS = {
   denemeler: '/veli/denemeler',
   program: '/veli/program',
   mesajlar: '/veli/mesajlar',
-  duyurular: '/veli/duyurular',
 };
 
 export function sayfaGetir(pathname) {
@@ -14,11 +13,10 @@ export function sayfaGetir(pathname) {
 }
 
 export const MENU = [
-  { k: 'ana', l: 'Ana', ikon: '🏠' },
-  { k: 'denemeler', l: 'Deneme', ikon: '📊' },
+  { k: 'ana', l: 'Genel', ikon: '🏠' },
+  { k: 'denemeler', l: 'Sınavlar', ikon: '📊' },
   { k: 'program', l: 'Program', ikon: '📅' },
-  { k: 'mesajlar', l: 'Mesaj', ikon: '💬' },
-  { k: 'duyurular', l: 'Duyurular', ikon: '📢' },
+  { k: 'mesajlar', l: 'Koçum', ikon: '💬' },
 ];
 
 function MenuSatir({ item, aktif, git, s }) {
