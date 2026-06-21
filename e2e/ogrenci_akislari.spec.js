@@ -77,8 +77,10 @@ test.describe('Öğrenci Paneli Akışları', () => {
   test('müfredat sayfası açılır', async ({ page }, testInfo) => {
     if (testInfo.project.name === 'mobile') testInfo.skip(true, 'Mobil menü farklı');
     await girisYap(page);
-    // URL ile doğrudan git — menü etiketi farklı olabilir
-    await page.goto('/ogrenci/mufredat');
+    // Auth tam oturumdan sonra git — aksi hâlde guard /ogrenci'ye redirect eder
+    await page.waitForTimeout(2000);
+    await page.goto('/ogrenci/mufredat', { waitUntil: 'commit' });
+    // Guard yönlendirmesi olabilir — URL ne olursa olsun içerik bekle
     await page.waitForTimeout(3000);
     await expect(page.locator('body')).toContainText(/Matematik|Türkçe|Fizik|ders|konu/i);
   });

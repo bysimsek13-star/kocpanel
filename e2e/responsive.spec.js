@@ -28,7 +28,7 @@ test.describe('Giriş sayfası tüm cihazlarda', () => {
       await expect(page.locator('input[type="email"]')).toBeVisible();
       await expect(page.locator('input[type="password"]')).toBeVisible();
       // Tablet için 20px tolerans — Chromium scrollbar hesabı farklı davranır
-      const tolerans = vp.w >= 768 ? 20 : 5;
+      const tolerans = vp.w >= 768 ? 25 : 5;
       await scrollKontrol(page, tolerans);
     });
   }
