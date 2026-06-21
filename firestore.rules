@@ -22,6 +22,10 @@ service cloud.firestore {
       return isAuth() && myRole() == 'admin';
     }
 
+    function isFinans() {
+      return isAuth() && (myRole() == 'finans' || myRole() == 'admin');
+    }
+
     function isKoc() {
       return isAuth() && (myRole() == 'koc' || myRole() == 'admin');
     }
@@ -54,7 +58,9 @@ service cloud.firestore {
         // Koç sadece kendi öğrencilerinin ve velilerinin kaydını okuyabilir
         (isKoc() && isActive() && resource.data.kocId == request.auth.uid) ||
         // Koç admin kullanıcılarını okuyabilir (bildirim göndermek için)
-        (isKoc() && isActive() && resource.data.rol == 'admin')
+        (isKoc() && isActive() && resource.data.rol == 'admin') ||
+        // Finans rolü koçları okuyabilir (lead sorumlu dropdown için)
+        (isFinans() && resource.data.rol == 'koc')
       );
 
       allow create: if isAdmin()
@@ -67,7 +73,7 @@ service cloud.firestore {
         || (
           isAuth() && request.auth.uid == userId
           && request.resource.data.diff(resource.data).affectedKeys()
-             .hasOnly(['isim', 'email', 'sonAktif', 'fcmToken', 'onboardingTamamlandi'])
+             .hasOnly(['isim', 'email', 'sonAktif', 'fcmToken', 'onboardingTamamlandi', 'sozlesmeOnay'])
         );
 
       allow delete: if isAdmin();
@@ -81,6 +87,11 @@ service cloud.firestore {
 
     match /ogrenciler/{ogrenciId} {
       allow read, write: if isAdmin();
+      // Finans rolü öğrencileri okur, ücret alanlarını günceller
+      allow read: if isFinans();
+      allow update: if isFinans()
+        && request.resource.data.diff(resource.data).affectedKeys()
+           .hasOnly(['aylikUcret', 'baslangicAyi', 'iskontoOrani', 'iskontoKodu']);
 
       // resource.data.kocId → collection query ile uyumlu (where kocId == uid)
       allow read: if isKoc() && isActive() && resource.data.kocId == request.auth.uid;
@@ -91,11 +102,11 @@ service cloud.firestore {
       allow read: if isKendisi(ogrenciId) && isActive();
       allow read: if isVeli() && isActive() && isVelininOgrencisi(ogrenciId);
 
-      // Öğrenci yalnızca kendi aktiflik zaman damgasını günceller
-      // gunlukDakika/girisSayisi/bugunGirisSayisi → CF'ye ait, istemci yazamaz
+      // Öğrenci kendi aktiflik alanlarını günceller.
+      // girisSayisi/gunlukDakika: istemci artırır, CF gece sıfırlar (zamanlama.js)
       allow update: if isKendisi(ogrenciId) && isActive()
         && request.resource.data.diff(resource.data).affectedKeys()
-           .hasOnly(['sonAktif']);
+           .hasOnly(['sonAktif', 'girisSayisi', 'gunlukDakika']);
 
       match /program/{docId} {
         allow read, write: if isAdmin();
@@ -186,6 +197,7 @@ service cloud.firestore {
         allow read, write: if isAdmin();
         allow read, write: if isKoc() && isActive() && isOgrencininKocu(ogrenciId);
         allow read, write: if isKendisi(ogrenciId) && isActive();
+        allow read: if isVeli() && isActive() && isVelininOgrencisi(ogrenciId);
       }
 
       match /gunlukSoru/{docId} {
@@ -208,6 +220,24 @@ service cloud.firestore {
         allow read, write: if isKoc() && isActive() && isOgrencininKocu(ogrenciId);
         allow read: if isKendisi(ogrenciId) && isActive();
         allow read: if isVeli() && isActive() && isVelininOgrencisi(ogrenciId);
+      }
+
+      // Koç notları ve toplantı özetleri (OgrenciDetayGenelOzet — NotKarti)
+      match /kocNotlari/{docId} {
+        allow read, write: if isAdmin();
+        allow read, write: if isKoc() && isActive() && isOgrencininKocu(ogrenciId);
+      }
+
+      match /toplantiOzetleri/{docId} {
+        allow read, write: if isAdmin();
+        allow read, write: if isKoc() && isActive() && isOgrencininKocu(ogrenciId);
+      }
+
+      // Eksik konular (OgrenciDetayGenelOzet — EksikKonularKarti)
+      match /eksikKonular/{docId} {
+        allow read, write: if isAdmin();
+        allow read, write: if isKoc() && isActive() && isOgrencininKocu(ogrenciId);
+        allow read: if isKendisi(ogrenciId) && isActive();
       }
     }
 
@@ -301,15 +331,13 @@ service cloud.firestore {
 
     // ── Kaynak Kütüphanesi ───────────────────────────────────────────────────
     match /kutuphane/{kaynakId} {
-      allow read:   if isAuth() && isActive() && (
-        isAdmin() ||
-        resource.data.koc_uid == request.auth.uid ||
-        // Öğrenci kendi koçunun kaynaklarını okuyabilir
-        (isOgrenci() && get(/databases/$(database)/documents/ogrenciler/$(request.auth.uid)).data.kocId == resource.data.koc_uid)
-      );
-      allow create: if isKoc() && isActive() && request.resource.data.koc_uid == request.auth.uid;
-      allow update: if isActive() && (isAdmin() || resource.data.koc_uid == request.auth.uid);
-      allow delete: if isActive() && (isAdmin() || resource.data.koc_uid == request.auth.uid);
+      // Koç kendi kaynaklarını okur/yazar; admin her şeyi
+      allow read:   if isAdmin() || (isKoc() && isActive() && resource.data.koc_uid == request.auth.uid);
+      // Koç kendi koc_uid'siyle kaynak oluşturabilir — başka koça atama engeli
+      allow create: if isAdmin() || (isKoc() && isActive() && request.resource.data.koc_uid == request.auth.uid);
+      allow update, delete: if isAdmin() || (isKoc() && isActive() && resource.data.koc_uid == request.auth.uid);
+      // Öğrenci kaynakları okuyabilir (müfredat ders kaynakları için)
+      allow read: if isOgrenci() && isActive();
     }
 
     // ── YouTube Playlists ────────────────────────────────────────────────────
@@ -361,9 +389,69 @@ service cloud.firestore {
         && request.resource.data.durum in ['reddedildi', 'tamamlandi', 'iptal'];
     }
 
+    // Abonelik bilgileri — sadece kendi velisi okuyabilir, yazma sadece Admin SDK (CF)
+    match /abonelikler/{uid} {
+      allow read: if isAuth() && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    // Kuponlar — sadece okunabilir (doğrulama CF üzerinden), yazma sadece Admin SDK
+    match /kuponlar/{kod} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // Kişiye özel indirim kodları — kullanıcı CF üzerinden sorgular, admin yönetir
+    match /discountCodes/{kod} {
+      allow read:   if isAdmin();
+      allow write:  if isAdmin();
+    }
+
+    // Onboarding başvuruları — kayıt formu create yapabilir, admin okur/yazar/siler
+    match /onboardingApplications/{odemeId} {
+      allow read, update, delete: if isAdmin();
+      allow create: if true;
+    }
+
+    // Fiyat planları — herkes okur, sadece admin yazar
+    match /pricingPlans/{planId} {
+      allow read:  if true;
+      allow write: if isAdmin();
+    }
+
+    // Abonelikler (yeni — PayTR tabanlı)
+    match /subscriptions/{odemeId} {
+      allow read:  if isAdmin();
+      allow write: if false;
+    }
+
+    // Ödeme kayıtları
+    match /payments/{odemeId} {
+      allow read:  if isAdmin();
+      allow write: if false;
+    }
+
     // Rate limit kayıtları — sadece admin SDK (CF) yazar, istemci okuyamaz/yazamaz
     match /rateLimits/{docId} {
       allow read, write: if false;
+    }
+
+    match /odemeler/{odemeId} {
+      allow read, write: if isFinans();
+    }
+
+    match /giderler/{giderId} {
+      allow read, write: if isFinans();
+    }
+
+    match /leads/{leadId} {
+      allow read, write: if isFinans();
+      match /gorusmeler/{gorusmeId} {
+        allow read, write: if isFinans();
+      }
+      match /gorevler/{gorevId} {
+        allow read, write: if isFinans();
+      }
     }
 
     match /{document=**} {

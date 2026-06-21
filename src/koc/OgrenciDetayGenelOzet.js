@@ -12,8 +12,6 @@ import {
   onSnapshot,
 } from 'firebase/firestore';
 import { db } from '../firebase';
-import { dersOzetiHesapla } from '../utils/dersOzetiUtils';
-import DersCalismaOzeti from './DersCalismaOzeti';
 import { SINAV_TAKVIMI } from '../utils/ogrenciUtils';
 import { turBelirle } from '../utils/sinavUtils';
 
@@ -216,24 +214,11 @@ export default function OgrenciDetayGenelOzet({
   ogrenci,
   program,
   dersBaslat,
-  mufredatDersler,
+  _mufredatDersler,
   s,
 }) {
   const gun = gunHesapla(ogrenci.tur);
   const tamamlanmamis = program.filter(p => !p.tamamlandi);
-  const [konuTakipListesi, setKonuTakipListesi] = useState([]);
-
-  // onSnapshot — sayfa açıkken yeni konu_takip kaydı gelince otomatik güncellenir
-  useEffect(() => {
-    const unsub = onSnapshot(
-      collection(db, 'ogrenciler', ogrenci.id, 'konu_takip'),
-      snap => setKonuTakipListesi(snap.docs.map(d => ({ id: d.id, ...d.data() }))),
-      e => console.error('konuTakip snapshot hatası:', e.message)
-    );
-    return unsub;
-  }, [ogrenci.id]);
-
-  const { dersBazliOzet, genelOzet } = dersOzetiHesapla(konuTakipListesi, mufredatDersler || []);
 
   const kayitTarihi = ogrenci.kayitTarihi
     ? new Date(ogrenci.kayitTarihi).toLocaleDateString('tr-TR')
@@ -292,20 +277,10 @@ export default function OgrenciDetayGenelOzet({
 
       <EksikKonularKarti ogrenciId={ogrenci.id} s={s} />
 
-      <div style={{ fontSize: 13, fontWeight: 700, color: s.text, margin: '16px 0 10px' }}>
-        📊 Ders Bazlı Çalışma
-      </div>
-      <DersCalismaOzeti
-        dersBazliOzet={dersBazliOzet}
-        genelOzet={genelOzet}
-        mufredatDersler={mufredatDersler}
-        calisilmayanDersler={genelOzet.calisilmayanDersler}
-        s={s}
-      />
       <NotKarti baslik="📝 Koç notları" koleksiyon="kocNotlari" ogrenciId={ogrenci.id} s={s} />
       <NotKarti
         baslik="📝 Toplantı özetleri"
-        koleksiyon="toplantıOzetleri"
+        koleksiyon="toplantiOzetleri"
         ogrenciId={ogrenci.id}
         s={s}
       />
@@ -366,6 +341,5 @@ OgrenciDetayGenelOzet.propTypes = {
   ogrenci: PropTypes.object.isRequired,
   program: PropTypes.array.isRequired,
   dersBaslat: PropTypes.func,
-  mufredatDersler: PropTypes.array,
   s: PropTypes.object.isRequired,
 };
