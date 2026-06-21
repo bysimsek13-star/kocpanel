@@ -114,8 +114,7 @@ export default function KocOgrenciListesi({ onSec, onEkle, onGeri }) {
               index={i}
               dashboard={dashboardMap[o.id]}
               okunmamis={okunmamisMap?.[o.id] || 0}
-              onClick={() => onSec(o)}
-              onDenemeler={() => onSec(o, 'deneme')}
+              onSec={onSec}
               mobil={mobil}
             />
           ))

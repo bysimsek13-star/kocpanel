@@ -43,6 +43,7 @@ export function KaynakModal({ koc_uid, mevcut, onKapat, onKaydet, s }) {
         aciklama: aciklama.trim(),
         seviye,
         dersler,
+        ilgiliDersler: dersler,
         koc_uid,
         guncelleme: new Date(),
       };

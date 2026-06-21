@@ -151,7 +151,7 @@ export default function GunlukIlerlemePano({ ogrenciler, s, mobil }) {
           {[
             {
               baslik: 'Rutin',
-              alt: 'Uyku / su / egzersiz',
+              alt: 'Uyku / su',
               deger: `${ozet.rutinSay}/${ozet.n}`,
               yuzde: ozet.yuzdeRutin,
               renk: s.ok || '#8FADA3',

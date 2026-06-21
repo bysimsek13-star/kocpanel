@@ -679,7 +679,7 @@ describe('KocOgrenciSatir net ayrımı', () => {
         index={0}
         dashboard={{ sonDenemeNet: 55 }}
         okunmamis={0}
-        onClick={vi.fn()}
+        onSec={vi.fn()}
       />
     );
     expect(document.body.textContent).toMatch(/TYT:/);
@@ -693,7 +693,7 @@ describe('KocOgrenciSatir net ayrımı', () => {
         index={1}
         dashboard={{ sonDenemeNet: 70 }}
         okunmamis={0}
-        onClick={vi.fn()}
+        onSec={vi.fn()}
       />
     );
     expect(document.body.textContent).toMatch(/LGS:/);
@@ -706,7 +706,7 @@ describe('KocOgrenciSatir net ayrımı', () => {
         index={2}
         dashboard={{ sonTytNet: 80, sonAytNet: 60 }}
         okunmamis={0}
-        onClick={vi.fn()}
+        onSec={vi.fn()}
       />
     );
     expect(document.body.textContent).toMatch(/TYT:/);
@@ -720,7 +720,7 @@ describe('KocOgrenciSatir net ayrımı', () => {
         index={3}
         dashboard={{ sonDenemeNet: null }}
         okunmamis={0}
-        onClick={vi.fn()}
+        onSec={vi.fn()}
       />
     );
     expect(container.textContent).not.toMatch(/TYT:/);
@@ -733,10 +733,20 @@ describe('KocOgrenciSatir net ayrımı', () => {
         index={4}
         dashboard={{ sonDenemeNet: 45 }}
         okunmamis={0}
-        onClick={vi.fn()}
+        onSec={vi.fn()}
       />
     );
     expect(document.body.textContent).not.toMatch(/LGS:|TYT:|AYT:/);
+  });
+
+  it('onSec satıra tıklayınca çağrılır', () => {
+    const onSec = vi.fn();
+    const ogrenci = { id: 'o6', isim: 'Test', tur: 'tyt' };
+    const { container } = render(
+      <KocOgrenciSatir ogrenci={ogrenci} index={0} okunmamis={0} onSec={onSec} />
+    );
+    fireEvent.click(container.firstChild);
+    expect(onSec).toHaveBeenCalledWith(ogrenci);
   });
 });
 
@@ -777,6 +787,25 @@ describe('OgrenciDetaySekme mesajlar okundu', () => {
     );
     await waitFor(() => {
       expect(mockGetDocs).toHaveBeenCalled();
+    });
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// VeliRaporlariSayfasi
+// ─────────────────────────────────────────────────────────────────────────────
+import VeliRaporlariSayfasi from '../koc/VeliRaporlari';
+
+describe('VeliRaporlariSayfasi', () => {
+  it('render olur ve çökmez', async () => {
+    render(<VeliRaporlariSayfasi ogrenciler={[]} onGeri={vi.fn()} />);
+    await waitFor(() => expect(document.body).toBeTruthy());
+  });
+
+  it('öğrenci listesi boşken yükleme biter', async () => {
+    render(<VeliRaporlariSayfasi ogrenciler={[]} onGeri={vi.fn()} />);
+    await waitFor(() => {
+      expect(document.body.textContent.length).toBeGreaterThan(0);
     });
   });
 });

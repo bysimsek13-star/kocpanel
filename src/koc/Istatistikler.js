@@ -38,7 +38,13 @@ export default function IstatistiklerSayfasi({ ogrenciler, onGeri }) {
                   limit(50)
                 )
               ),
-              getDocs(collection(db, 'ogrenciler', o.id, 'calisma')),
+              getDocs(
+                query(
+                  collection(db, 'ogrenciler', o.id, 'calisma'),
+                  orderBy('__name__', 'desc'),
+                  limit(90)
+                )
+              ),
               getDocs(
                 query(
                   collection(db, 'ogrenciler', o.id, 'program_v2'),

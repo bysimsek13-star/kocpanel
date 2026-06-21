@@ -1,8 +1,8 @@
 export const SINAV_TAKVIMI = [
-  { key: 'lgs', label: 'LGS 2026', date: '2026-06-14', turler: ['LGS'] },
-  { key: 'tyt', label: 'TYT 2026', date: '2026-06-20', turler: ['TYT', 'TYT-AYT', 'AYT', 'YKS'] },
-  { key: 'ayt', label: 'AYT 2026', date: '2026-06-21', turler: ['AYT', 'TYT-AYT', 'YKS'] },
-  { key: 'ydt', label: 'YDT 2026', date: '2026-06-21', turler: ['YDT', 'DIL'] },
+  { key: 'lgs', label: 'LGS 2027', date: '2027-06-13', turler: ['LGS'] },
+  { key: 'tyt', label: 'TYT 2027', date: '2027-06-20', turler: ['TYT', 'TYT-AYT', 'AYT', 'YKS'] },
+  { key: 'ayt', label: 'AYT 2027', date: '2027-06-21', turler: ['AYT', 'TYT-AYT', 'YKS'] },
+  { key: 'ydt', label: 'YDT 2027', date: '2027-06-21', turler: ['YDT', 'DIL'] },
 ];
 
 export function upcomingExams(tur) {

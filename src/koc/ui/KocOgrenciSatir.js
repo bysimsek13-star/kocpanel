@@ -59,22 +59,23 @@ const KocOgrenciSatir = memo(function KocOgrenciSatir({
   index,
   dashboard,
   okunmamis,
-  onClick,
-  onDenemeler,
+  onSec,
   mobil,
 }) {
   const { s } = useTheme();
+  const handleClick = () => onSec(ogrenci);
+  const handleDenemeler = () => onSec(ogrenci, 'deneme');
 
   const satirlar = netSatirlar(ogrenci.tur, dashboard);
   const netHuc = satirlar ? (
     <div
       onClick={e => {
         e.stopPropagation();
-        onDenemeler?.();
+        handleDenemeler();
       }}
       style={{
         textAlign: mobil ? 'right' : 'center',
-        cursor: onDenemeler ? 'pointer' : 'default',
+        cursor: 'pointer',
       }}
     >
       {satirlar.map(s2 => (
@@ -130,7 +131,7 @@ const KocOgrenciSatir = memo(function KocOgrenciSatir({
   if (mobil)
     return (
       <div
-        onClick={onClick}
+        onClick={handleClick}
         style={{ ...row, display: 'flex', flexDirection: 'column', gap: 10, padding: '14px 18px' }}
         onMouseEnter={e => (e.currentTarget.style.background = s.surface2)}
         onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
@@ -151,7 +152,7 @@ const KocOgrenciSatir = memo(function KocOgrenciSatir({
 
   return (
     <div
-      onClick={onClick}
+      onClick={handleClick}
       style={{
         ...row,
         display: 'grid',
@@ -183,7 +184,6 @@ KocOgrenciSatir.propTypes = {
   index: PropTypes.number.isRequired,
   dashboard: PropTypes.object,
   okunmamis: PropTypes.number,
-  onClick: PropTypes.func,
-  onDenemeler: PropTypes.func,
+  onSec: PropTypes.func.isRequired,
   mobil: PropTypes.bool,
 };

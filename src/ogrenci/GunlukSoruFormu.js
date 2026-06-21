@@ -14,8 +14,8 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useTheme } from '../context/ThemeContext';
-import { TYT_DERSLER, AYT_DERSLER } from '../data/konular';
 import { useToast } from '../components/Toast';
+import { dersleriBelirle, yksOgrencisiMi } from './gunlukSoruUtils';
 import { Card, Btn } from '../components/Shared';
 import { bugunStr, dateToStr } from '../utils/tarih';
 import { konuTakipYaz } from '../utils/konuTakipUtils';
@@ -23,7 +23,7 @@ import GunlukSoruFormBaslik from './GunlukSoruFormBaslik';
 import GunlukSoruDersListesi from './GunlukSoruDersListesi';
 import GunlukSoruGecmis from './GunlukSoruGecmis';
 
-export default function GunlukSoruFormu({ ogrenciId }) {
+export default function GunlukSoruFormu({ ogrenciId, tur, sinif }) {
   const { s } = useTheme();
   const toast = useToast();
   const [tarih, setTarih] = useState(() => bugunStr());
@@ -54,7 +54,8 @@ export default function GunlukSoruFormu({ ogrenciId }) {
       .catch(console.error);
   }, [ogrenciId, yukleniyor]);
 
-  const dersler = sinav === 'TYT' ? TYT_DERSLER : AYT_DERSLER;
+  const yksOgrencisi = yksOgrencisiMi(tur, sinif);
+  const dersler = dersleriBelirle(tur, sinif, sinav);
 
   const guncelle = (dersId, tip, deger) =>
     setVeriler(prev => ({
@@ -205,6 +206,7 @@ export default function GunlukSoruFormu({ ogrenciId }) {
           setSureDk={setSureDk}
           minTarih={minTarih}
           bugun={bugun}
+          yksOgrencisi={yksOgrencisi}
           s={s}
         />
 
@@ -229,4 +231,6 @@ export default function GunlukSoruFormu({ ogrenciId }) {
 
 GunlukSoruFormu.propTypes = {
   ogrenciId: PropTypes.string.isRequired,
+  tur: PropTypes.string,
+  sinif: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
 };

@@ -570,16 +570,26 @@ describe('waMetniOlustur()', () => {
   it('koç notu eklenince metinde görünür', () => {
     const r = waMetniOlustur({ ...baseArgs, kocNotu: 'Harika ilerleme!' });
     expect(r).toContain('Harika ilerleme!');
-    expect(r).toContain('KOÇ NOTU');
+    expect(r).toContain('Koç notu');
   });
 
-  it('deneme sonucu eklenince DENEME SONUÇLARI bölümü çıkar', () => {
+  it('deneme sonucu eklenince deneme bölümü çıkar', () => {
     const r = waMetniOlustur({
       ...baseArgs,
       denemeler: [{ ad: 'TYT Deneme 1', toplamNet: '55' }],
     });
-    expect(r).toContain('DENEME SONUÇLARI');
+    expect(r).toContain('Deneme sonuçları');
     expect(r).toContain('TYT Deneme 1');
+  });
+
+  it('ElsWay Koçluk ile biter', () => {
+    const r = waMetniOlustur(baseArgs);
+    expect(r).toContain('ElsWay Koçluk');
+  });
+
+  it('Sayın Veli ile başlar', () => {
+    const r = waMetniOlustur(baseArgs);
+    expect(r).toContain('Sayın Veli');
   });
 });
 

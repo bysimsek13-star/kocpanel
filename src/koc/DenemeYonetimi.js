@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { useNavigate } from 'react-router-dom';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useTheme } from '../context/ThemeContext';
 import { useMobil } from '../hooks/useMediaQuery';
@@ -25,9 +25,14 @@ export default function DenemeYonetimiSayfasi({ ogrenciler, onGeri }) {
       const sonuclar = await Promise.all(
         ogrenciler.map(async o => {
           try {
-            const snap = await getDocs(collection(db, 'ogrenciler', o.id, 'denemeler'));
+            const snap = await getDocs(
+              query(
+                collection(db, 'ogrenciler', o.id, 'denemeler'),
+                orderBy('tarih', 'desc'),
+                limit(50)
+              )
+            );
             const l = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-            l.sort((a, b) => new Date(b.tarih) - new Date(a.tarih));
             return [o.id, l];
           } catch {
             return [o.id, []];

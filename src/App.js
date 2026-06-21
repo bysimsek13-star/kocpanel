@@ -12,6 +12,7 @@ const KocPaneli = lazy(() => import('./pages/KocPaneli'));
 const OgrenciPaneli = lazy(() => import('./pages/OgrenciPaneli'));
 const VeliPaneli = lazy(() => import('./pages/VeliPaneli'));
 const YoneticiPaneli = lazy(() => import('./pages/YoneticiPaneli'));
+const CrmPaneli = lazy(() => import('./pages/CrmPaneli'));
 
 function YuklemeEkrani() {
   const { s } = useTheme();
@@ -139,6 +140,7 @@ function AppRoutes() {
 
   const rolMap = {
     admin: { basePath: '/admin', component: YoneticiPaneli },
+    finans: { basePath: '/crm', component: CrmPaneli },
     ogrenci: { basePath: '/ogrenci', component: OgrenciPaneli },
     veli: { basePath: '/veli', component: VeliPaneli },
     koc: { basePath: '/koc', component: KocPaneli },
@@ -146,7 +148,9 @@ function AppRoutes() {
   const hedef = rolMap[rol];
   if (!hedef) return <EngelliEkran tip="unauthorized" />;
 
-  if (!location.pathname.startsWith(hedef.basePath)) {
+  // Admin hem /admin hem /crm'e girebilir
+  const crmYolu = rol === 'admin' && location.pathname.startsWith('/crm');
+  if (!location.pathname.startsWith(hedef.basePath) && !crmYolu) {
     return <Navigate to={hedef.basePath} replace />;
   }
 
@@ -156,6 +160,7 @@ function AppRoutes() {
     <Suspense fallback={<YuklemeEkrani />}>
       <Routes>
         <Route path={`${hedef.basePath}/*`} element={<PanelComponent />} />
+        {rol === 'admin' && <Route path="/crm/*" element={<CrmPaneli />} />}
         <Route path="*" element={<Navigate to={hedef.basePath} replace />} />
       </Routes>
     </Suspense>

@@ -10,6 +10,8 @@ import TemaSecici from '../components/TemaSecici';
 import { LoadingState } from '../components/Shared';
 import DestekTalebiModal from '../components/DestekTalebiModal';
 import { BildirimZili, BildirimPaneli } from '../components/BildirimSistemi';
+import SozlesmeOnayModal from '../components/SozlesmeOnayModal';
+import { GUNCEL_SOZLESME_SURUMU } from '../constants/uygulama';
 import { PATHS, BASLIK, SolMenu, AltTabBar } from '../ogrenci/OgrenciNav';
 import KutlamaEkrani from '../ogrenci/KutlamaEkrani';
 import { useOgrenciPaneliVeri } from './OgrenciPaneliVeri';
@@ -33,6 +35,7 @@ export default function OgrenciPaneli() {
   const [bildirimAcik, setBildirimAcik] = useState(false);
   const [gelenCagri, setGelenCagri] = useState(null);
   const [aktifGorusme, setAktifGorusme] = useState(null);
+  const [sozlesmeModalAcik, setSozlesmeModalAcik] = useState(false);
 
   const {
     yukleniyor,
@@ -56,6 +59,17 @@ export default function OgrenciPaneli() {
     if (location.pathname === '/ogrenci' || location.pathname === '/ogrenci/')
       navigate(PATHS.ana, { replace: true });
   }, [location.pathname, navigate]);
+
+  // Sözleşme onay modalı: SADECE mezun kategorisindeki öğrencilerde
+  // tur değeri "_mezun" ile bitmiyorsa (lise öğrencisi) → modal çıkmaz
+  useEffect(() => {
+    if (!userData) return;
+    if (!String(userData.tur || '').endsWith('_mezun')) return;
+    const onay = userData.sozlesmeOnay;
+    if (!onay || onay.surum !== GUNCEL_SOZLESME_SURUMU) {
+      setSozlesmeModalAcik(true);
+    }
+  }, [userData]);
 
   useEffect(() => {
     document.title = `${BASLIK[aktifSayfa] || 'Öğrenci'} | ElsWay`;
@@ -106,6 +120,10 @@ export default function OgrenciPaneli() {
 
   return (
     <div style={{ minHeight: '100vh', background: s.bg, fontFamily: 'Inter, sans-serif' }}>
+      {sozlesmeModalAcik && kullanici && (
+        <SozlesmeOnayModal uid={kullanici.uid} onOnaylandi={() => setSozlesmeModalAcik(false)} />
+      )}
+
       {kutlamaGoster && (
         <KutlamaEkrani
           tema={kutlamaTema}

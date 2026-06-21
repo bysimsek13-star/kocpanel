@@ -6,7 +6,6 @@ import { useMobil } from '../hooks/useMediaQuery';
 import ElsWayLogo from '../components/ElsWayLogo';
 import TemaSecici from '../components/TemaSecici';
 import { EmptyState } from '../components/Shared';
-import DuyuruMerkezi from '../components/DuyuruMerkezi';
 import VeliMesajlar from './VeliMesajlar';
 import VeliProgram from './VeliProgram';
 import DenemeListesi from '../ogrenci/DenemeListesi';
@@ -76,7 +75,7 @@ export default function VeliPaneli() {
     if (aktif === 'denemeler')
       return (
         <>
-          <GeriTusu baslik="Denemeler" />
+          <GeriTusu baslik="Sınavlar" />
           {ogrenciId ? (
             <DenemeListesi
               ogrenciId={ogrenciId}
@@ -98,15 +97,8 @@ export default function VeliPaneli() {
     if (aktif === 'mesajlar')
       return (
         <>
-          <GeriTusu baslik="Koç Mesajları" />
+          <GeriTusu baslik="Koçum" />
           <VeliMesajlar ogrenciId={ogrenciId} onGeri={() => git('ana')} />
-        </>
-      );
-    if (aktif === 'duyurular')
-      return (
-        <>
-          <GeriTusu baslik="Duyurular" />
-          <DuyuruMerkezi title="" />
         </>
       );
     return (
@@ -122,13 +114,13 @@ export default function VeliPaneli() {
         git={git}
         s={s}
         mobil={mobil}
+        uid={kullanici?.uid}
       />
     );
   };
 
   return (
     <div style={{ minHeight: '100vh', background: s.bg, fontFamily: 'Inter, sans-serif' }}>
-      {/* Üst çubuk */}
       <div
         style={{
           position: 'sticky',

@@ -25,7 +25,7 @@ if ('serviceWorker' in navigator) {
       .register('/sw.js')
       .then(registration => {
         // Arka planda güncelleme kontrolü (her 60 dakikada bir)
-        setInterval(() => registration.update(), 60 * 60 * 1000);
+        setInterval(() => registration.update().catch(() => {}), 60 * 60 * 1000);
       })
       .catch(() => {});
 

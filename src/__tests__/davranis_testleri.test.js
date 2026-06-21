@@ -669,19 +669,11 @@ describe('OgrenciRutinKarti — rutin durumu', () => {
     });
   });
 
-  it('haftalık uyku / su / egzersiz stat kartları render edilir', async () => {
+  it('haftalık uyku / su stat kartları render edilir', async () => {
     renderSade(<OgrenciRutinKarti ogrenci={mockOgrenci} index={0} s={mockS} />);
     await waitFor(() => {
       expect(document.body.textContent).toContain('Ort. Uyku');
       expect(document.body.textContent).toContain('Su (7 gün)');
-      expect(document.body.textContent).toContain('Egzersiz');
-    });
-  });
-
-  it('"Günün hareketi" önerisi render edilir', async () => {
-    renderSade(<OgrenciRutinKarti ogrenci={mockOgrenci} index={0} s={mockS} />);
-    await waitFor(() => {
-      expect(document.body.textContent).toContain('Günün hareketi');
     });
   });
 

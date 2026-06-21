@@ -143,11 +143,32 @@ export default function BugunProgrami({ ogrenciId, s }) {
                     </div>
                   )}
                   {slot.ders && (
-                    <div style={{ fontSize: 13, fontWeight: 700, color: bitti ? s.text3 : s.text }}>
+                    <div
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 700,
+                        color: bitti ? s.text3 : s.text,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
                       {slot.ders}
                     </div>
                   )}
-                  {slot.icerik && <div style={{ fontSize: 11, color: s.text2 }}>{slot.icerik}</div>}
+                  {slot.icerik && (
+                    <div
+                      style={{
+                        fontSize: 11,
+                        color: s.text2,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {slot.icerik}
+                    </div>
+                  )}
                   <div
                     style={{
                       marginTop: 4,

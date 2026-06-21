@@ -5,6 +5,7 @@ export const OGRENCI_SAYFA_BOYUTU = 20;
 
 export const ADMIN_MENU_PATHS = {
   ana: '/admin/home',
+  leads: '/admin/leads',
   koclar: '/admin/koclar',
   ogrenciler: '/admin/ogrenciler',
   yasamdongusu: '/admin/yasam-dongusu',
@@ -16,6 +17,10 @@ export const ADMIN_MENU_PATHS = {
   canlioperasyon: '/admin/canli-operasyon',
   mufredat: '/admin/mufredat',
   tursync: '/admin/tur-sync',
+  kodlar: '/admin/kodlar',
+  yeniKayitlar: '/admin/yeni-kayitlar',
+  odemeler: '/admin/odemeler',
+  mali: '/admin/mali',
 };
 
 export function adminSayfaAnahtariGetir(pathname) {
@@ -25,6 +30,7 @@ export function adminSayfaAnahtariGetir(pathname) {
 
 export const MENU = [
   { key: 'ana', icon: '🏠', label: 'Genel Bakış' },
+  { key: 'leads', icon: '🎯', label: 'Lead Takip' },
   { key: 'koclar', icon: '👨‍🏫', label: 'Koç Yönetimi' },
   { key: 'ogrenciler', icon: '👥', label: 'Öğrenci Portföyü' },
   { key: 'yasamdongusu', icon: '🔄', label: 'Kullanıcı Döngüsü' },
@@ -34,6 +40,10 @@ export const MENU = [
   { key: 'sistem', icon: '🩺', label: 'Sistem Durumu' },
   { key: 'mufredat', icon: '📚', label: 'Müfredat' },
   { key: 'tursync', icon: '🔀', label: 'Tur Toplu Sync' },
+  { key: 'kodlar', icon: '🏷️', label: 'İndirim Kodları' },
+  { key: 'yeniKayitlar', icon: '📥', label: 'Yeni Kayıtlar' },
+  { key: 'odemeler', icon: '💳', label: 'Ödemeler' },
+  { key: 'mali', icon: '💰', label: 'Mali Yönetim' },
 ];
 
 export const ALT_TABS = [

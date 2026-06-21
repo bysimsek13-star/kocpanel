@@ -7,15 +7,6 @@ import { useGunlukTarih } from '../../utils/tarih';
 import { Card, Avatar, LoadingState } from '../../components/Shared';
 import BugunProgrami from './BugunProgrami';
 
-const HAREKET_ONERILERI = [
-  '10 dakika yürüyüş yap',
-  '20 squat + 10 şınav',
-  '5 dakika esneme hareketi',
-  '2 dakika derin nefes egzersizi',
-  '15 dakika açık havada dur',
-  '30 saniyede 10 zıplama',
-];
-
 // ─── Koç için öğrenci rutin kartı ─────────────────────────────────────────────
 export default function OgrenciRutinKarti({ ogrenci, index, s }) {
   const { bugun: BUGUN } = useGunlukTarih();
@@ -64,7 +55,6 @@ export default function OgrenciRutinKarti({ ogrenci, index, s }) {
     ? (rutinler.reduce((a, r) => a + (r.uyku || 0), 0) / rutinler.length).toFixed(1)
     : '—';
   const suGun = rutinler.filter(r => r.su).length;
-  const egzersizGun = rutinler.filter(r => r.egzersiz).length;
 
   const uyarilar = [];
   if (bugunRutin?.uyku < 6) uyarilar.push('Dün gece az uyudu');
@@ -118,30 +108,6 @@ export default function OgrenciRutinKarti({ ogrenci, index, s }) {
                 : ''}
             </div>
           )}
-          {ogrenci.gunlukDakika >= 1 &&
-            (() => {
-              const dk = Math.round(ogrenci.gunlukDakika);
-              const s2 = Math.floor(dk / 60);
-              const m = dk % 60;
-              const etiket = s2 > 0 ? (m > 0 ? `${s2}s ${m}dk` : `${s2}s`) : `${m}dk`;
-              return (
-                <span
-                  style={{
-                    display: 'inline-block',
-                    marginTop: 4,
-                    fontSize: 10,
-                    fontWeight: 700,
-                    padding: '2px 7px',
-                    borderRadius: 6,
-                    background: s.bilgiSoft || 'rgba(99,132,153,0.12)',
-                    color: s.bilgi || '#6384A0',
-                    border: `1px solid ${s.border}`,
-                  }}
-                >
-                  ⏱ {etiket}
-                </span>
-              );
-            })()}
         </div>
       </div>
 
@@ -155,7 +121,7 @@ export default function OgrenciRutinKarti({ ogrenci, index, s }) {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(3,1fr)',
+              gridTemplateColumns: 'repeat(2,1fr)',
               gap: 8,
               marginBottom: 12,
             }}
@@ -170,11 +136,6 @@ export default function OgrenciRutinKarti({ ogrenci, index, s }) {
                 label: 'Su (7 gün)',
                 val: `${suGun}/7`,
                 renk: suGun < 4 ? s.uyari || '#B89A6E' : s.ok || '#8FADA3',
-              },
-              {
-                label: 'Egzersiz',
-                val: `${egzersizGun}/7`,
-                renk: egzersizGun < 3 ? s.uyari || '#B89A6E' : s.ok || '#8FADA3',
               },
             ].map(stat => (
               <div
@@ -272,32 +233,6 @@ export default function OgrenciRutinKarti({ ogrenci, index, s }) {
                 <div style={{ fontSize: 12, color: s.text2, fontStyle: 'italic' }}>"{r.not}"</div>
               </div>
             ))}
-
-          {/* Günün hareketi önerisi */}
-          {(() => {
-            const oneri = HAREKET_ONERILERI[new Date().getDate() % HAREKET_ONERILERI.length];
-            return (
-              <div
-                style={{
-                  marginTop: 10,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  background: s.surface2,
-                  border: `1px solid ${s.border}`,
-                  borderRadius: 20,
-                  padding: '5px 12px',
-                  fontSize: 11,
-                  color: s.text2,
-                }}
-              >
-                <span>🏃</span>
-                <span>
-                  <strong style={{ color: s.text }}>Günün hareketi:</strong> {oneri}
-                </span>
-              </div>
-            );
-          })()}
 
           {/* Bugünün program slotları */}
           <BugunProgrami ogrenciId={ogrenci.id} s={s} />

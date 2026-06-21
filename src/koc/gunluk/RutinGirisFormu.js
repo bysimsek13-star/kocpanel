@@ -98,12 +98,9 @@ export default function RutinGirisFormu({ ogrenciId, s, onKaydet }) {
           )}
         </div>
 
-        {/* Su + Egzersiz */}
+        {/* Su */}
         <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
-          {[
-            { key: 'su', val: su, set: setSu, label: 'Su içtim' },
-            { key: 'egzersiz', val: egzersiz, set: setEgzersiz, label: 'Egzersiz yaptım' },
-          ].map(item => (
+          {[{ key: 'su', val: su, set: setSu, label: 'Su içtim' }].map(item => (
             <div
               key={item.key}
               onClick={() => item.set(!item.val)}

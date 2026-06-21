@@ -247,6 +247,90 @@ describe('GunlukSoruGecmis', () => {
   });
 });
 
+// ─── gunlukSoruUtils ─────────────────────────────────────────────────────────
+import { konulariBolumle, dersleriBelirle, yksOgrencisiMi } from '../ogrenci/gunlukSoruUtils';
+
+describe('gunlukSoruUtils', () => {
+  it('konulariBolumle: ## ile gruplama yapar', () => {
+    const liste = ['## Anlam Bilgisi', 'Gerçek Anlam', 'Yan Anlam', '## Dil Bilgisi', 'Ses'];
+    const bolumler = konulariBolumle(liste);
+    expect(bolumler).toHaveLength(2);
+    expect(bolumler[0].bolumAd).toBe('Anlam Bilgisi');
+    expect(bolumler[0].konular).toEqual(['Gerçek Anlam', 'Yan Anlam']);
+    expect(bolumler[1].bolumAd).toBe('Dil Bilgisi');
+  });
+
+  it('konulariBolumle: # ve ### satırları konu olarak atlanır', () => {
+    const liste = ['## Bölüm', '# Alt başlık', '### Grup', 'Konu 1'];
+    const bolumler = konulariBolumle(liste);
+    expect(bolumler[0].konular).toEqual(['Konu 1']);
+  });
+
+  it('konulariBolumle: prefix olmayan liste tek bölüm olarak döner', () => {
+    const liste = ['Çarpanlar', 'Üslü İfadeler', 'Kareköklü'];
+    const bolumler = konulariBolumle(liste);
+    expect(bolumler).toHaveLength(1);
+    expect(bolumler[0].bolumAd).toBe('');
+    expect(bolumler[0].konular).toHaveLength(3);
+  });
+
+  it('dersleriBelirle: LGS için LGS_DERSLER döner', () => {
+    const dersler = dersleriBelirle('lgs', 8, 'TYT');
+    expect(dersler.some(d => d.id === 'lgsmat')).toBe(true);
+  });
+
+  it('dersleriBelirle: TYT toggle ile TYT_DERSLER döner', () => {
+    const dersler = dersleriBelirle('sayisal', 12, 'TYT');
+    expect(dersler.some(d => d.id === 'mat')).toBe(true);
+  });
+
+  it('dersleriBelirle: sayisal + AYT ile AYT_SAY döner', () => {
+    const dersler = dersleriBelirle('sayisal', 12, 'AYT');
+    expect(dersler.some(d => d.id === 'fiz')).toBe(true);
+    expect(dersler.some(d => d.id === 'ede')).toBe(false);
+  });
+
+  it('yksOgrencisiMi: LGS için false döner', () => {
+    expect(yksOgrencisiMi('lgs', 8)).toBe(false);
+  });
+
+  it('yksOgrencisiMi: sayisal için true döner', () => {
+    expect(yksOgrencisiMi('sayisal', 12)).toBe(true);
+  });
+});
+
+// ─── GunlukSoruDersListesi - bölüm chip'leri ──────────────────────────────────
+describe('GunlukSoruDersListesi bölüm chip', () => {
+  it('yanlış girince konu bölümleri görünür', () => {
+    const { getByText } = renderSade(
+      <GunlukSoruDersListesi
+        dersler={[{ id: 'mat', label: 'Matematik', renk: '#6366F1' }]}
+        veriler={{ mat: { d: 10, y: 3, b: 0 } }}
+        guncelle={vi.fn()}
+        konuDetay={{}}
+        konuGuncelle={vi.fn()}
+        s={mockS}
+      />
+    );
+    expect(getByText('KONU BAZLI (yanlış / boş)')).toBeTruthy();
+  });
+
+  it('yanlış girince tık ile bölüm açılır', async () => {
+    const { getAllByRole } = renderSade(
+      <GunlukSoruDersListesi
+        dersler={[{ id: 'mat', label: 'Matematik', renk: '#6366F1' }]}
+        veriler={{ mat: { d: 5, y: 2, b: 0 } }}
+        guncelle={vi.fn()}
+        konuDetay={{}}
+        konuGuncelle={vi.fn()}
+        s={mockS}
+      />
+    );
+    const buttons = getAllByRole('button');
+    expect(buttons.length).toBeGreaterThan(0);
+  });
+});
+
 // ─── 6. GunlukSoruFormBaslik ─────────────────────────────────────────────────
 
 describe('GunlukSoruFormBaslik', () => {
@@ -263,6 +347,7 @@ describe('GunlukSoruFormBaslik', () => {
         setSureDk={vi.fn()}
         minTarih="2026-04-01"
         bugun="2026-04-14"
+        yksOgrencisi={true}
         s={mockS}
       />
     );

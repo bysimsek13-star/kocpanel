@@ -300,3 +300,32 @@ describe('lise10Seed', () => {
     });
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LeadKarti
+// ─────────────────────────────────────────────────────────────────────────────
+import { render, fireEvent, screen } from '@testing-library/react';
+import LeadKarti from '../admin/crm/LeadKarti';
+
+describe('LeadKarti', () => {
+  const lead = {
+    adSoyad: 'Ahmet Yılmaz',
+    telefon: '0555 123 4567',
+    kademe: 'Sıcak',
+    durum: 'Görüşme',
+    kaynak: 'Instagram',
+  };
+
+  it('isim ve telefon gösterilir', () => {
+    render(<LeadKarti lead={lead} onDetay={vi.fn()} s={mockS} />);
+    expect(screen.getByText('Ahmet Yılmaz')).toBeInTheDocument();
+    expect(screen.getByText('0555 123 4567')).toBeInTheDocument();
+  });
+
+  it('Detay butonuna tıklayınca onDetay çağrılır', () => {
+    const onDetay = vi.fn();
+    render(<LeadKarti lead={lead} onDetay={onDetay} s={mockS} />);
+    fireEvent.click(screen.getByText('Detay →'));
+    expect(onDetay).toHaveBeenCalled();
+  });
+});

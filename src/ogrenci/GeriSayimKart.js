@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { ogrenciBaglaminiCoz } from '../utils/ogrenciBaglam';
 
-const YKS_TARIH = new Date('2026-06-20');
-const AYT_TARIH = new Date('2026-06-21');
-const LGS_TARIH = new Date('2026-06-13');
+const YKS_TARIH = new Date('2027-06-20');
+const AYT_TARIH = new Date('2027-06-21');
+const LGS_TARIH = new Date('2027-06-13');
 
 function kalaniHesapla(hedef) {
   const fark = hedef - Date.now();
@@ -106,10 +106,10 @@ export default function GeriSayimKart({ tur, sinif, s }) {
           }}
         >
           {lgs
-            ? 'LGS · 13 Haz 2026'
+            ? 'LGS · 13 Haz 2027'
             : baglam.sinavModu === 'gecis'
-              ? 'TYT · 20 Haz 2026 (hazırlık)'
-              : 'TYT · 20 Haz 2026'}
+              ? 'TYT · 20 Haz 2027 (hazırlık)'
+              : 'TYT · 20 Haz 2027'}
         </div>
         {acil && (
           <span
@@ -146,7 +146,7 @@ export default function GeriSayimKart({ tur, sinif, s }) {
             textAlign: 'center',
           }}
         >
-          AYT · 21 Haz 2026 · <b style={{ color: s.text2 }}>{kalaniHesapla(AYT_TARIH).gun} gün</b>
+          AYT · 21 Haz 2027 · <b style={{ color: s.text2 }}>{kalaniHesapla(AYT_TARIH).gun} gün</b>
         </div>
       )}
     </div>

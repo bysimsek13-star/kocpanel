@@ -124,10 +124,13 @@ describe('useOkunmamis()', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 // useKocVeri hook
 // ─────────────────────────────────────────────────────────────────────────────
-import useKocVeri from '../koc/hooks/useKocVeri';
+import useKocVeri, { _testCacheTemizle } from '../koc/hooks/useKocVeri';
 
 describe('useKocVeri()', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    _testCacheTemizle();
+  });
 
   it('kocUid yoksa boş state döner', () => {
     // When kocUid is null, getir() returns early without setting yukleniyor=false

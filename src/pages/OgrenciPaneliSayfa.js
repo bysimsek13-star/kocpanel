@@ -14,8 +14,8 @@ const MufredatGoruntule = React.lazy(() => import('../ogrenci/MufredatGoruntule'
 const HaftalikProgramSayfasi = React.lazy(() => import('../koc/HaftalikProgram'));
 const DuyuruMerkezi = React.lazy(() => import('../components/DuyuruMerkezi'));
 
-const YKS_TARIH = new Date('2026-06-20');
-const LGS_TARIH = new Date('2026-06-13');
+const YKS_TARIH = new Date('2027-06-20');
+const LGS_TARIH = new Date('2027-06-13');
 
 function kalanGunHesapla(hedef) {
   const simdi = new Date();
@@ -280,7 +280,7 @@ export function OgrenciSayfaIcerigi({
       return (
         <>
           <GeriTusu baslik="Günlük soru çözümü" onNav={onNav} s={s} />
-          <GunlukSoruFormu ogrenciId={kullanici.uid} />
+          <GunlukSoruFormu ogrenciId={kullanici.uid} tur={userData?.tur} sinif={userData?.sinif} />
         </>
       );
     case 'denemeler':

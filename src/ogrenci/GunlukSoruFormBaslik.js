@@ -11,6 +11,7 @@ export default function GunlukSoruFormBaslik({
   setSureDk,
   minTarih,
   bugun,
+  yksOgrencisi,
   s,
 }) {
   return (
@@ -43,34 +44,36 @@ export default function GunlukSoruFormBaslik({
             }}
           />
         </div>
-        <div>
-          <div style={{ fontSize: 11, color: s.text3, marginBottom: 4 }}>Sınav seti</div>
-          <div style={{ display: 'flex', gap: 6 }}>
-            {['TYT', 'AYT'].map(t => (
-              <button
-                key={t}
-                type="button"
-                onClick={() => {
-                  setSinav(t);
-                  setVeriler({});
-                  setKonuDetay({});
-                }}
-                style={{
-                  padding: '8px 14px',
-                  borderRadius: 10,
-                  border: sinav === t ? `2px solid ${s.accent}` : `1px solid ${s.border}`,
-                  background: sinav === t ? s.accentSoft : s.surface2,
-                  color: sinav === t ? s.accent : s.text2,
-                  fontWeight: 700,
-                  fontSize: 12,
-                  cursor: 'pointer',
-                }}
-              >
-                {t}
-              </button>
-            ))}
+        {yksOgrencisi && (
+          <div>
+            <div style={{ fontSize: 11, color: s.text3, marginBottom: 4 }}>Sınav seti</div>
+            <div style={{ display: 'flex', gap: 6 }}>
+              {['TYT', 'AYT'].map(t => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => {
+                    setSinav(t);
+                    setVeriler({});
+                    setKonuDetay({});
+                  }}
+                  style={{
+                    padding: '8px 14px',
+                    borderRadius: 10,
+                    border: sinav === t ? `2px solid ${s.accent}` : `1px solid ${s.border}`,
+                    background: sinav === t ? s.accentSoft : s.surface2,
+                    color: sinav === t ? s.accent : s.text2,
+                    fontWeight: 700,
+                    fontSize: 12,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
         <div style={{ flex: 1, minWidth: 120 }}>
           <div style={{ fontSize: 11, color: s.text3, marginBottom: 4 }}>
             Süre (dk, isteğe bağlı)

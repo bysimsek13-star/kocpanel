@@ -71,11 +71,31 @@ export default function BugunSlotSatir({
             </span>
           )}
         </div>
-        <div style={{ fontSize: 13, fontWeight: 600, color: bitti ? s.text3 : s.text }}>
+        <div
+          style={{
+            fontSize: 13,
+            fontWeight: 600,
+            color: bitti ? s.text3 : s.text,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
           {slot.ders || '—'}
         </div>
         {slot.icerik && (
-          <div style={{ fontSize: 11, color: s.text3, marginTop: 1 }}>{slot.icerik}</div>
+          <div
+            style={{
+              fontSize: 11,
+              color: s.text3,
+              marginTop: 1,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {slot.icerik}
+          </div>
         )}
         {slot.ders && ogrenciTur && (
           <button

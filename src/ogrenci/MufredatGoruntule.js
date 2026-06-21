@@ -17,6 +17,7 @@ import { mufredatAnahtarlariniBelirle } from '../utils/ogrenciBaglam';
 import { normalizeKonuAdi } from '../utils/konuTakipUtils';
 import { dersiRenk } from './mufredatUtils';
 import { Chip, NodSatiri } from './MufredatDers';
+import DersKaynaklari from './DersKaynaklari';
 
 function dugumlerdenAgac(docs) {
   const harita = {};
@@ -422,6 +423,7 @@ export default function MufredatGoruntule({
                       />
                     ))}
                   </div>
+                  {!kocModu && <DersKaynaklari dersAdi={ders.ad} s={s} />}
                 </div>
               )}
             </div>

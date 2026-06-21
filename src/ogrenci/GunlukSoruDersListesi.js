@@ -1,5 +1,68 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { KONULAR, netHesapla } from '../data/konular';
+import { konulariBolumle } from './gunlukSoruUtils';
+
+function KonuSatir({ konu, kb, dersId, konuGuncelle, s }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '3px 0' }}>
+      <div
+        style={{
+          flex: 1,
+          minWidth: 100,
+          fontSize: 11,
+          color: s.text,
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {konu}
+      </div>
+      <input
+        type="number"
+        inputMode="numeric"
+        min="0"
+        max="50"
+        placeholder="Y"
+        title="Yanlış"
+        value={kb.yanlis || ''}
+        onChange={e => konuGuncelle(dersId, konu, 'yanlis', e.target.value)}
+        style={{
+          width: 44,
+          background: 'transparent',
+          border: `1px solid ${s.danger}`,
+          borderRadius: 6,
+          padding: '5px 4px',
+          color: s.danger,
+          fontSize: 12,
+          textAlign: 'center',
+          touchAction: 'manipulation',
+        }}
+      />
+      <input
+        type="number"
+        inputMode="numeric"
+        min="0"
+        max="50"
+        placeholder="B"
+        title="Boş"
+        value={kb.bos || ''}
+        onChange={e => konuGuncelle(dersId, konu, 'bos', e.target.value)}
+        style={{
+          width: 44,
+          background: 'transparent',
+          border: `1px solid ${s.border}`,
+          borderRadius: 6,
+          padding: '5px 4px',
+          color: s.text2,
+          fontSize: 12,
+          textAlign: 'center',
+          touchAction: 'manipulation',
+        }}
+      />
+    </div>
+  );
+}
 
 export default function GunlukSoruDersListesi({
   dersler,
@@ -9,6 +72,9 @@ export default function GunlukSoruDersListesi({
   konuGuncelle,
   s,
 }) {
+  const [acikBolumler, setAcikBolumler] = useState({});
+  const toggleBolum = key => setAcikBolumler(prev => ({ ...prev, [key]: !prev[key] }));
+
   return (
     <>
       {dersler.map(ders => {
@@ -17,9 +83,10 @@ export default function GunlukSoruDersListesi({
         const y = dy.y || 0;
         const b = dy.b || 0;
         const net = netHesapla(d, y);
-        const konuListesi = KONULAR[ders.id] || [];
-        const dersKonuDetay = konuDetay[ders.id] || {};
         const cozum = d + y + b;
+        const dersKonuDetay = konuDetay[ders.id] || {};
+        const bolumler = konulariBolumle(KONULAR[ders.id]);
+        const tekDuzBolum = bolumler.length === 1 && bolumler[0].bolumAd === '';
 
         return (
           <div
@@ -43,6 +110,7 @@ export default function GunlukSoruDersListesi({
                 </div>
               )}
             </div>
+
             <div
               style={{
                 display: 'grid',
@@ -86,78 +154,104 @@ export default function GunlukSoruDersListesi({
               ))}
             </div>
 
-            {konuListesi.length > 0 && (y > 0 || b > 0) && (
+            {bolumler.length > 0 && (y > 0 || b > 0) && (
               <div>
                 <div style={{ fontSize: 10, color: s.accent, marginBottom: 6, fontWeight: 700 }}>
                   KONU BAZLI (yanlış / boş)
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  {konuListesi.map(konu => {
-                    const kb = dersKonuDetay[konu] || { soru: 0, yanlis: 0, bos: 0 };
-                    return (
-                      <div
+
+                {tekDuzBolum ? (
+                  // LGS / flat format — doğrudan liste
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {bolumler[0].konular.map(konu => (
+                      <KonuSatir
                         key={konu}
-                        style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}
-                      >
-                        <div
-                          style={{
-                            flex: 1,
-                            minWidth: 120,
-                            fontSize: 11,
-                            color: s.text,
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                          }}
-                        >
-                          {konu}
+                        konu={konu}
+                        kb={dersKonuDetay[konu] || {}}
+                        dersId={ders.id}
+                        konuGuncelle={konuGuncelle}
+                        s={s}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  // TYT / AYT — bölüm chip'leri, tık → açılır
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    {bolumler.map(bolum => {
+                      const key = `${ders.id}|${bolum.bolumAd}`;
+                      const acik = acikBolumler[key];
+                      const topGirilen = bolum.konular.reduce(
+                        (sum, k) =>
+                          sum + (dersKonuDetay[k]?.yanlis || 0) + (dersKonuDetay[k]?.bos || 0),
+                        0
+                      );
+                      return (
+                        <div key={bolum.bolumAd}>
+                          <button
+                            type="button"
+                            onClick={() => toggleBolum(key)}
+                            style={{
+                              width: '100%',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              background: acik ? s.accentSoft : s.surface,
+                              border: `1px solid ${acik ? s.accent : s.border}`,
+                              borderRadius: 8,
+                              padding: '6px 10px',
+                              color: acik ? s.accent : s.text2,
+                              fontSize: 11,
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                              textAlign: 'left',
+                            }}
+                          >
+                            <span>{bolum.bolumAd}</span>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              {topGirilen > 0 && (
+                                <span
+                                  style={{
+                                    background: s.danger,
+                                    color: '#fff',
+                                    fontSize: 10,
+                                    fontWeight: 700,
+                                    borderRadius: 99,
+                                    padding: '1px 6px',
+                                  }}
+                                >
+                                  {topGirilen}
+                                </span>
+                              )}
+                              <span style={{ fontSize: 10 }}>{acik ? '▲' : '▼'}</span>
+                            </span>
+                          </button>
+                          {acik && (
+                            <div
+                              style={{
+                                paddingLeft: 8,
+                                paddingTop: 4,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: 2,
+                              }}
+                            >
+                              {bolum.konular.map(konu => (
+                                <KonuSatir
+                                  key={konu}
+                                  konu={konu}
+                                  kb={dersKonuDetay[konu] || {}}
+                                  dersId={ders.id}
+                                  konuGuncelle={konuGuncelle}
+                                  s={s}
+                                />
+                              ))}
+                            </div>
+                          )}
                         </div>
-                        <input
-                          type="number"
-                          inputMode="numeric"
-                          min="0"
-                          max="50"
-                          placeholder="Y"
-                          title="Yanlış"
-                          value={kb.yanlis || ''}
-                          onChange={e => konuGuncelle(ders.id, konu, 'yanlis', e.target.value)}
-                          style={{
-                            width: 48,
-                            background: s.inputBg ?? s.surface,
-                            border: `1px solid ${s.danger}`,
-                            borderRadius: 6,
-                            padding: '6px 4px',
-                            color: s.danger,
-                            fontSize: 12,
-                            textAlign: 'center',
-                            touchAction: 'manipulation',
-                          }}
-                        />
-                        <input
-                          type="number"
-                          inputMode="numeric"
-                          min="0"
-                          max="50"
-                          placeholder="B"
-                          title="Boş"
-                          value={kb.bos || ''}
-                          onChange={e => konuGuncelle(ders.id, konu, 'bos', e.target.value)}
-                          style={{
-                            width: 48,
-                            background: s.inputBg ?? s.surface,
-                            border: `1px solid ${s.inputBorder ?? s.border}`,
-                            borderRadius: 6,
-                            padding: '6px 4px',
-                            color: s.text2,
-                            fontSize: 12,
-                            textAlign: 'center',
-                            touchAction: 'manipulation',
-                          }}
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
           </div>

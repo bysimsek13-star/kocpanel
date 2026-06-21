@@ -5,12 +5,17 @@ import {
   browserSessionPersistence,
   inMemoryPersistence,
 } from 'firebase/auth';
-import { getFirestore, initializeFirestore, memoryLocalCache } from 'firebase/firestore';
+import {
+  getFirestore,
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+} from 'firebase/firestore';
 import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check';
 
 const firebaseConfig = {
   apiKey: 'AIzaSyDeHco3bRefSNYsRh3L490vB_XaZ739HZw',
-  authDomain: 'kocpaneli.firebaseapp.com',
+  authDomain: 'app.elsway.com.tr',
   projectId: 'kocpaneli',
   storageBucket: 'kocpaneli.firebasestorage.app',
   messagingSenderId: '12496447602',
@@ -52,7 +57,7 @@ export const auth = authInstance;
 let dbInstance;
 try {
   dbInstance = initializeFirestore(app, {
-    localCache: memoryLocalCache(),
+    localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
   });
 } catch (error) {
   console.warn(

@@ -6,23 +6,14 @@ import { useToast } from '../components/Toast';
 import { useMobil } from '../hooks/useMediaQuery';
 import { renkler } from '../data/konular';
 import { auditLog, AuditTip } from '../utils/auditLog';
-import { LoadingState, ConfirmDialog } from '../components/Shared';
+import { ConfirmDialog } from '../components/Shared';
 import { BildirimPaneli } from '../components/BildirimSistemi';
 import OgrenciDetay from '../koc/OgrenciDetay';
-import KocPerformansPaneli from '../admin/KocPerformansPaneli';
-import SistemDurumuPaneli from '../admin/SistemDurumuPaneli';
-import CanliOperasyonPaneli from '../admin/CanliOperasyonPaneli';
-import AuditLogSayfasi from '../admin/AuditLogSayfasi';
-import YasamDongusuSayfasi from '../admin/YasamDongusuSayfasi';
 import AdminOgrenciEkleModal from '../admin/AdminOgrenciEkleModal';
 import KocEkleModal from '../admin/KocEkleModal';
 import KocAtamaModal from '../admin/KocAtamaModal';
 import OgrenciDuzenleModal from '../admin/OgrenciDuzenleModal';
-import MufredatYonetimSayfasi from '../admin/MufredatYonetimSayfasi';
-import TurTopluSync from '../admin/TurTopluSync';
-import YoneticiKoclar from '../admin/YoneticiKoclar';
-import YoneticiOgrenciler from '../admin/YoneticiOgrenciler';
-import YoneticiIstatistik from '../admin/YoneticiIstatistik';
+import CrmKullaniciEkleModal from '../admin/CrmKullaniciEkleModal';
 import { getCallable, hataMesajiVer } from '../admin/adminHelpers';
 import {
   ADMIN_MENU_PATHS,
@@ -34,6 +25,7 @@ import useYoneticiVeri from './useYoneticiVeri';
 import AdminTopBar from './AdminTopBar';
 import AdminSolMenu from './AdminSolMenu';
 import AdminMobilNav from './AdminMobilNav';
+import YoneticiSayfaRouter from './YoneticiSayfaRouter';
 
 export { ADMIN_MENU_PATHS, adminSayfaAnahtariGetir };
 
@@ -51,6 +43,7 @@ export default function YoneticiPaneli() {
   const [islemYukleniyor, setIslemYukleniyor] = useState(false);
   const [kocEkleAcik, setKocEkleAcik] = useState(false);
   const [ogrenciEkleAcik, setOgrenciEkleAcik] = useState(false);
+  const [finansEkleAcik, setFinansEkleAcik] = useState(false);
   const [atamaModal, setAtamaModal] = useState(null);
   const [duzenleModal, setDuzenleModal] = useState(null);
   const [silOnay, setSilOnay] = useState(null);
@@ -74,19 +67,19 @@ export default function YoneticiPaneli() {
   useEffect(() => {
     setAktifSayfa(adminSayfaAnahtariGetir(location.pathname));
   }, [location.pathname]);
+
   useEffect(() => {
     if (location.pathname === '/admin' || location.pathname === '/admin/')
       navigate(ADMIN_MENU_PATHS.ana, { replace: true });
   }, [location.pathname, navigate]);
+
   useEffect(() => {
     const t = setTimeout(() => setOgrenciArama(ogrenciAramaGirdi.trim().toLowerCase()), 300);
     return () => clearTimeout(t);
   }, [ogrenciAramaGirdi]);
 
   const sayfayaGit = useCallback(
-    sayfa => {
-      navigate(ADMIN_MENU_PATHS[sayfa] || ADMIN_MENU_PATHS.ana);
-    },
+    sayfa => navigate(ADMIN_MENU_PATHS[sayfa] || ADMIN_MENU_PATHS.ana),
     [navigate]
   );
 
@@ -159,77 +152,6 @@ export default function YoneticiPaneli() {
       />
     );
 
-  const sayfaIcerigi = () => {
-    if (ilkYukleme && aktifSayfa === 'ana')
-      return <LoadingState mesaj="Veriler senkronize ediliyor..." />;
-    switch (aktifSayfa) {
-      case 'koclar':
-        return (
-          <YoneticiKoclar
-            koclar={koclar}
-            kocOgrenciSayisi={kocOgrenciSayisi}
-            setKocEkleAcik={setKocEkleAcik}
-            setSilOnay={setSilOnay}
-            islemYukleniyor={islemYukleniyor}
-            s={s}
-            mobil={mobil}
-          />
-        );
-      case 'ogrenciler':
-        return (
-          <YoneticiOgrenciler
-            filtreliOgrenciler={filtreliOgrenciler}
-            dahaFazlaVar={dahaFazlaVar}
-            ogrenciArama={ogrenciArama}
-            ogrenciAramaGirdi={ogrenciAramaGirdi}
-            setOgrenciAramaGirdi={setOgrenciAramaGirdi}
-            dahaFazlaYukle={dahaFazlaYukle}
-            ogrenciYukleniyor={ogrenciYukleniyor}
-            kocMap={kocMap}
-            setAtamaModal={setAtamaModal}
-            setDuzenleModal={setDuzenleModal}
-            setSeciliOgrenci={setSeciliOgrenci}
-            setOgrenciEkleAcik={setOgrenciEkleAcik}
-            islemYukleniyor={islemYukleniyor}
-            s={s}
-            mobil={mobil}
-            renkler={renkler}
-          />
-        );
-      case 'yasamdongusu':
-        return <YasamDongusuSayfasi s={s} mobil={mobil} kullanici={kullanici} />;
-      case 'auditlog':
-        return <AuditLogSayfasi s={s} mobil={mobil} />;
-      case 'performans':
-        return <KocPerformansPaneli koclar={koclar} ogrenciler={ogrenciler} />;
-      case 'canli':
-        return <CanliOperasyonPaneli />;
-      case 'sistem':
-        return <SistemDurumuPaneli />;
-      case 'mufredat':
-        return <MufredatYonetimSayfasi s={s} mobil={mobil} />;
-      case 'tursync':
-        return (
-          <TurTopluSync ogrenciler={ogrenciler} setOgrenciler={setOgrenciler} s={s} mobil={mobil} />
-        );
-      default:
-        return (
-          <YoneticiIstatistik
-            koclar={koclar}
-            dashboard={dashboard}
-            kocOgrenciSayisi={kocOgrenciSayisi}
-            sayfayaGit={sayfayaGit}
-            setOgrenciEkleAcik={setOgrenciEkleAcik}
-            setKocEkleAcik={setKocEkleAcik}
-            islemYukleniyor={islemYukleniyor}
-            s={s}
-            mobil={mobil}
-            renkler={renkler}
-          />
-        );
-    }
-  };
-
   const sayfaBasligi = aktifSayfa !== 'ana' ? MENU.find(m => m.key === aktifSayfa)?.label : '';
 
   return (
@@ -244,6 +166,9 @@ export default function YoneticiPaneli() {
       <BildirimPaneli acik={bildirimAcik} onKapat={() => setBildirimAcik(false)} />
 
       {kocEkleAcik && <KocEkleModal onKapat={() => setKocEkleAcik(false)} onEkle={verileriGetir} />}
+      {finansEkleAcik && (
+        <CrmKullaniciEkleModal onKapat={() => setFinansEkleAcik(false)} onEkle={verileriGetir} />
+      )}
       {ogrenciEkleAcik && (
         <AdminOgrenciEkleModal
           koclar={koclar}
@@ -285,6 +210,7 @@ export default function YoneticiPaneli() {
             sayfayaGit={sayfayaGit}
             kullanici={kullanici}
             s={s}
+            onFinansEkle={() => setFinansEkleAcik(true)}
           />
         )}
         <div style={{ flex: 1, minWidth: 0, paddingBottom: mobil ? 72 : 0 }}>
@@ -316,7 +242,35 @@ export default function YoneticiPaneli() {
               <div style={{ fontSize: 18, fontWeight: 700, color: s.text }}>{sayfaBasligi}</div>
             </div>
           )}
-          {sayfaIcerigi()}
+          <YoneticiSayfaRouter
+            aktifSayfa={aktifSayfa}
+            ilkYukleme={ilkYukleme}
+            s={s}
+            mobil={mobil}
+            kullanici={kullanici}
+            koclar={koclar}
+            ogrenciler={ogrenciler}
+            setOgrenciler={setOgrenciler}
+            filtreliOgrenciler={filtreliOgrenciler}
+            dahaFazlaVar={dahaFazlaVar}
+            ogrenciArama={ogrenciArama}
+            ogrenciAramaGirdi={ogrenciAramaGirdi}
+            setOgrenciAramaGirdi={setOgrenciAramaGirdi}
+            dahaFazlaYukle={dahaFazlaYukle}
+            ogrenciYukleniyor={ogrenciYukleniyor}
+            kocMap={kocMap}
+            kocOgrenciSayisi={kocOgrenciSayisi}
+            dashboard={dashboard}
+            setAtamaModal={setAtamaModal}
+            setDuzenleModal={setDuzenleModal}
+            setSeciliOgrenci={setSeciliOgrenci}
+            setOgrenciEkleAcik={setOgrenciEkleAcik}
+            setKocEkleAcik={setKocEkleAcik}
+            setSilOnay={setSilOnay}
+            islemYukleniyor={islemYukleniyor}
+            sayfayaGit={sayfayaGit}
+            renkler={renkler}
+          />
         </div>
       </div>
 

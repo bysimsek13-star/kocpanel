@@ -1,10 +1,12 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { useNavigate } from 'react-router-dom';
 import { ElsWayLogo } from '../components/Shared';
 import TemaSecici from '../components/TemaSecici';
 import { BildirimZili } from '../components/BildirimSistemi';
 
 export default function AdminTopBar({ kullanici, mobil, s, onBildirimToggle, onCikis }) {
+  const navigate = useNavigate();
   return (
     <div
       style={{
@@ -27,6 +29,23 @@ export default function AdminTopBar({ kullanici, mobil, s, onBildirimToggle, onC
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <TemaSecici variant="bar" onDarkBar />
+        {!mobil && (
+          <button
+            onClick={() => navigate('/crm')}
+            style={{
+              background: 'transparent',
+              border: `1px solid ${s.topBarBorder || s.border}`,
+              color: s.topBarMuted,
+              padding: '5px 12px',
+              borderRadius: 8,
+              cursor: 'pointer',
+              fontSize: 12,
+              fontWeight: 600,
+            }}
+          >
+            💰 CRM
+          </button>
+        )}
         <BildirimZili onClick={onBildirimToggle} />
         {!mobil && kullanici?.email && (
           <span

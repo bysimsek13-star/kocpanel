@@ -1,6 +1,15 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import PropTypes from 'prop-types';
-import { collection, getDocs, getDoc, updateDoc, doc } from 'firebase/firestore';
+import {
+  collection,
+  getDocs,
+  getDoc,
+  updateDoc,
+  doc,
+  query,
+  orderBy,
+  limit,
+} from 'firebase/firestore';
 import { db } from '../firebase';
 import { useTheme } from '../context/ThemeContext';
 import { useMobil } from '../hooks/useMediaQuery';
@@ -33,10 +42,34 @@ export default function VeliRaporlariSayfasi({ ogrenciler, onGeri }) {
           const haftaKey = haftaBaslangici();
           const [pvSnap, ds, cs, ms, rs] = await Promise.all([
             getDoc(doc(db, 'ogrenciler', o.id, 'program_v2', haftaKey)),
-            getDocs(collection(db, 'ogrenciler', o.id, 'denemeler')),
-            getDocs(collection(db, 'ogrenciler', o.id, 'calisma')),
-            getDocs(collection(db, 'ogrenciler', o.id, 'mesajlar')),
-            getDocs(collection(db, 'ogrenciler', o.id, 'veliRaporlari')),
+            getDocs(
+              query(
+                collection(db, 'ogrenciler', o.id, 'denemeler'),
+                orderBy('tarih', 'desc'),
+                limit(20)
+              )
+            ),
+            getDocs(
+              query(
+                collection(db, 'ogrenciler', o.id, 'calisma'),
+                orderBy('__name__', 'desc'),
+                limit(90)
+              )
+            ),
+            getDocs(
+              query(
+                collection(db, 'ogrenciler', o.id, 'mesajlar'),
+                orderBy('tarih', 'desc'),
+                limit(30)
+              )
+            ),
+            getDocs(
+              query(
+                collection(db, 'ogrenciler', o.id, 'veliRaporlari'),
+                orderBy('haftaBitis', 'desc'),
+                limit(12)
+              )
+            ),
           ]);
           const den = ds.docs
             .map(d => ({ id: d.id, ...d.data() }))

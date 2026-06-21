@@ -63,7 +63,7 @@ export default function KocVeriGirisiKart({ onNav }) {
         }}
       >
         {[
-          { v: `${bugunRutin}/${n}`, l: 'Rutin girdi', c: s.ok, d: 'Uyku / su / egzersiz' },
+          { v: `${bugunRutin}/${n}`, l: 'Rutin girdi', c: s.ok, d: 'Uyku / su' },
           { v: `${bugunSoru}/${n}`, l: 'Günlük soru', c: s.accent, d: 'Ders bazlı soru' },
           {
             v: `${bugunEksik}`,

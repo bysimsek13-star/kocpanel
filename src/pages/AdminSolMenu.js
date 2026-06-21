@@ -44,7 +44,7 @@ export function menuSatir(item, aktifSayfa, sayfayaGit, kapat, s) {
   );
 }
 
-export default function AdminSolMenu({ aktifSayfa, sayfayaGit, kullanici, s }) {
+export default function AdminSolMenu({ aktifSayfa, sayfayaGit, kullanici, s, onFinansEkle }) {
   return (
     <div
       style={{
@@ -71,9 +71,29 @@ export default function AdminSolMenu({ aktifSayfa, sayfayaGit, kullanici, s }) {
         </div>
         <div style={{ fontSize: 11, color: s.text3, marginTop: 2 }}>ElsWay Yönetici</div>
       </div>
+      {onFinansEkle && (
+        <button
+          onClick={onFinansEkle}
+          style={{
+            width: '100%',
+            marginBottom: 12,
+            padding: '8px 12px',
+            borderRadius: 8,
+            border: `1px dashed ${s.border}`,
+            background: 'transparent',
+            color: s.text2,
+            fontSize: 12,
+            fontWeight: 600,
+            cursor: 'pointer',
+            textAlign: 'left',
+          }}
+        >
+          + Finans Kullanıcısı Ekle
+        </button>
+      )}
       {[
-        { baslik: 'Yönetim', items: ['ana', 'koclar', 'ogrenciler', 'yasamdongusu'] },
-        { baslik: 'Analiz', items: ['performans', 'auditlog'] },
+        { baslik: 'Yönetim', items: ['ana', 'leads', 'koclar', 'ogrenciler', 'yasamdongusu'] },
+        { baslik: 'Analiz', items: ['performans', 'mali', 'auditlog'] },
         { baslik: 'Sistem', items: ['canli', 'sistem', 'mufredat', 'tursync'] },
       ].map(grup => (
         <div key={grup.baslik} style={{ marginBottom: 14 }}>
@@ -103,4 +123,5 @@ AdminSolMenu.propTypes = {
   sayfayaGit: PropTypes.func.isRequired,
   kullanici: PropTypes.object,
   s: PropTypes.object.isRequired,
+  onFinansEkle: PropTypes.func,
 };

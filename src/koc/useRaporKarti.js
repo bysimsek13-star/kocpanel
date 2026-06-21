@@ -174,21 +174,35 @@ export function useRaporKarti({ ogrenci, data, onTelefonGuncelle }) {
   };
 
   const yazdirRapor = rapor => {
-    if (onizleme) {
-      window.print();
-      return;
-    }
-    // Kaydedilmiş rapordan yeni pencere aç (KocRaporu.js gibi)
-    if (!rapor) return;
-    const metin = raporMetniOlustur(rapor, ogrenci.isim);
+    const metin = onizleme || (rapor ? raporMetniOlustur(rapor, ogrenci.isim) : '');
+    if (!metin) return;
+    const tarihStr = new Date().toLocaleDateString('tr-TR', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
     const w = window.open('', '_blank');
     w.document.write(
-      `<html><head><title>Koç Raporu</title>` +
-        `<style>body{font-family:sans-serif;padding:32px;white-space:pre-wrap;font-size:14px;line-height:1.7}</style></head>` +
-        `<body>${metin.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</body></html>`
+      `<!DOCTYPE html><html lang="tr"><head>` +
+        `<meta charset="utf-8">` +
+        `<title>Koç Raporu — ${ogrenci.isim}</title>` +
+        `<style>` +
+        `*{box-sizing:border-box;margin:0;padding:0}` +
+        `body{font-family:'Segoe UI',Arial,sans-serif;color:#1e293b;background:#fff}` +
+        `.header{background:#4F46E5;color:#fff;padding:24px 32px}` +
+        `.logo{font-size:22px;font-weight:800;letter-spacing:-0.03em}` +
+        `.ogrenci{font-size:14px;margin-top:4px;opacity:0.85}` +
+        `.content{padding:32px;white-space:pre-wrap;font-size:14px;line-height:1.8;max-width:700px}` +
+        `.footer{border-top:1px solid #e2e8f0;padding:16px 32px;font-size:11px;color:#94a3b8}` +
+        `@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}.header{background:#4F46E5!important}}` +
+        `</style></head><body>` +
+        `<div class="header"><div class="logo">ElsWay</div><div class="ogrenci">${ogrenci.isim} · ${tarihStr}</div></div>` +
+        `<div class="content">${metin.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>` +
+        `<div class="footer">elsway.com.tr</div>` +
+        `</body></html>`
     );
     w.document.close();
-    w.print();
+    setTimeout(() => w.print(), 400);
   };
 
   return {
