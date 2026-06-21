@@ -113,7 +113,8 @@ async function testleriCalistir() {
       const buyukDosyalar = dosyalar
         .map(d => ({ ad: d, boyut: fs.statSync(path.join(buildDir, d)).size }))
         .filter(d => d.boyut > 600 * 1024)
-        .filter(d => !d.ad.includes('VideoGorusme')); // Agora zaten lazy, beklenen
+        .filter(d => !d.ad.includes('VideoGorusme'))  // Agora lazy, beklenen
+        .filter(d => !d.ad.includes('vendor-firebase')); // Firebase SDK her zaman ~600KB
 
       if (buyukDosyalar.length === 0) {
         logGecti('Bundle boyutları normal (< 600 KB, VideoGorusme hariç)');
