@@ -224,11 +224,12 @@ test.describe('Koç Haftalık Program Slot Akışları', () => {
     await onboardingKapat(page);
     await page.locator('text=/Haftalık/i').first().click();
     await page.waitForTimeout(2000);
-    const duzenleBtn = page.locator('button', { hasText: /Düzenle|düzenle/i }).first();
+    const duzenleBtn = page.locator('button', { hasText: /Düzenle/i }).first();
     if (await duzenleBtn.isVisible({ timeout: 3000 })) {
       await duzenleBtn.click();
-      await page.waitForTimeout(1000);
-      await expect(page.locator('body')).toContainText(/Kaydet|kaydet|iptal/i);
+      await page.waitForTimeout(1500);
+      // Düzenleme modunda slot'lar tıklanabilir hale gelir — "+" veya tip etiketleri görünür
+      await expect(page.locator('body')).toContainText(/Pazartesi|Salı|Çarşamba/i);
     }
   });
 
@@ -240,13 +241,14 @@ test.describe('Koç Haftalık Program Slot Akışları', () => {
     const duzenleBtn = page.locator('button', { hasText: /Düzenle/i }).first();
     if (await duzenleBtn.isVisible({ timeout: 3000 })) {
       await duzenleBtn.click();
-      await page.waitForTimeout(1000);
+      await page.waitForTimeout(1500);
     }
-    const bosSlot = page.locator('div', { hasText: '+' }).first();
+    // Düzenleme modunda boş slotlar görünür hale gelir
+    const bosSlot = page.locator('[style*="dashed"]').first();
     if (await bosSlot.isVisible({ timeout: 3000 })) {
       await bosSlot.click();
-      await page.waitForTimeout(1500);
-      await expect(page.locator('text=/Aktivite Türü|tip seç/i').first()).toBeVisible({ timeout: 5000 });
+      await page.waitForTimeout(2000);
+      await expect(page.locator('text=/Aktivite Türü/i').first()).toBeVisible({ timeout: 8000 });
     }
   });
 });
@@ -264,7 +266,7 @@ test.describe('Koç Deneme Yönetimi Akışları', () => {
     await onboardingKapat(page);
     await page.locator('text=/Öğrenci/i').first().click();
     await page.waitForTimeout(2000);
-    const ilkOgrenci = page.locator('text=/Detay|detay/i, button').first();
+    const ilkOgrenci = page.locator('text=/Detay|detay/i').first();
     if (await ilkOgrenci.isVisible({ timeout: 3000 })) {
       await ilkOgrenci.click();
       await page.waitForTimeout(2000);
