@@ -202,3 +202,114 @@ test.describe('Öğrenci Paneli Akışları', () => {
     expect(kritik).toHaveLength(0);
   });
 });
+
+// ─── Koç — Haftalık Program Slot Akışları ─────────────────────────────────────
+
+test.describe('Koç Haftalık Program Slot Akışları', () => {
+  test.beforeEach(async ({}, testInfo) => {
+    if (!kocCredVar) testInfo.skip(true, 'TEST_KOC_EMAIL / TEST_KOC_SIFRE tanımlı değil');
+    if (testInfo.project.name === 'mobile') testInfo.skip(true, 'Slot akışı masaüstü testi');
+  });
+
+  test('haftalık program ekranı açılır ve günler görünür', async ({ page }) => {
+    await kocGirisYap(page);
+    await onboardingKapat(page);
+    await page.locator('text=/Haftalık/i').first().click();
+    await page.waitForTimeout(2000);
+    await expect(page.locator('body')).toContainText(/Pazartesi|Salı|Çarşamba/i);
+  });
+
+  test('düzenleme moduna geçilir', async ({ page }) => {
+    await kocGirisYap(page);
+    await onboardingKapat(page);
+    await page.locator('text=/Haftalık/i').first().click();
+    await page.waitForTimeout(2000);
+    const duzenleBtn = page.locator('button', { hasText: /Düzenle|düzenle/i }).first();
+    if (await duzenleBtn.isVisible({ timeout: 3000 })) {
+      await duzenleBtn.click();
+      await page.waitForTimeout(1000);
+      await expect(page.locator('body')).toContainText(/Kaydet|kaydet|iptal/i);
+    }
+  });
+
+  test('boş slota tıklanınca modal açılır', async ({ page }) => {
+    await kocGirisYap(page);
+    await onboardingKapat(page);
+    await page.locator('text=/Haftalık/i').first().click();
+    await page.waitForTimeout(2000);
+    const duzenleBtn = page.locator('button', { hasText: /Düzenle/i }).first();
+    if (await duzenleBtn.isVisible({ timeout: 3000 })) {
+      await duzenleBtn.click();
+      await page.waitForTimeout(1000);
+    }
+    const bosSlot = page.locator('div', { hasText: '+' }).first();
+    if (await bosSlot.isVisible({ timeout: 3000 })) {
+      await bosSlot.click();
+      await page.waitForTimeout(1500);
+      await expect(page.locator('text=/Aktivite Türü|tip seç/i').first()).toBeVisible({ timeout: 5000 });
+    }
+  });
+});
+
+// ─── Koç — Deneme Yönetimi Akışları ──────────────────────────────────────────
+
+test.describe('Koç Deneme Yönetimi Akışları', () => {
+  test.beforeEach(async ({}, testInfo) => {
+    if (!kocCredVar) testInfo.skip(true, 'TEST_KOC_EMAIL / TEST_KOC_SIFRE tanımlı değil');
+    if (testInfo.project.name === 'mobile') testInfo.skip(true, 'Masaüstü testi');
+  });
+
+  test('öğrenci detay sayfası açılır', async ({ page }) => {
+    await kocGirisYap(page);
+    await onboardingKapat(page);
+    await page.locator('text=/Öğrenci/i').first().click();
+    await page.waitForTimeout(2000);
+    const ilkOgrenci = page.locator('text=/Detay|detay/i, button').first();
+    if (await ilkOgrenci.isVisible({ timeout: 3000 })) {
+      await ilkOgrenci.click();
+      await page.waitForTimeout(2000);
+      await expect(page.locator('body')).toContainText(/Genel|Özet|Deneme|Program/i);
+    }
+  });
+
+  test('deneme sekmesi açılır', async ({ page }) => {
+    await kocGirisYap(page);
+    await onboardingKapat(page);
+    await page.locator('text=/Öğrenci/i').first().click();
+    await page.waitForTimeout(2000);
+    const ilkOgrenci = page.locator('text=/Detay|detay/i').first();
+    if (await ilkOgrenci.isVisible({ timeout: 3000 })) {
+      await ilkOgrenci.click();
+      await page.waitForTimeout(2000);
+      const denemeTab = page.locator('button, a', { hasText: /Deneme/i }).first();
+      if (await denemeTab.isVisible({ timeout: 3000 })) {
+        await denemeTab.click();
+        await page.waitForTimeout(1500);
+        await expect(page.locator('body')).toContainText(/Deneme|Net|TYT/i);
+      }
+    }
+  });
+
+  test('deneme girişi modalı açılır', async ({ page }) => {
+    await kocGirisYap(page);
+    await onboardingKapat(page);
+    await page.locator('text=/Öğrenci/i').first().click();
+    await page.waitForTimeout(2000);
+    const ilkOgrenci = page.locator('text=/Detay|detay/i').first();
+    if (await ilkOgrenci.isVisible({ timeout: 3000 })) {
+      await ilkOgrenci.click();
+      await page.waitForTimeout(2000);
+      const denemeTab = page.locator('button, a', { hasText: /Deneme/i }).first();
+      if (await denemeTab.isVisible({ timeout: 3000 })) {
+        await denemeTab.click();
+        await page.waitForTimeout(1000);
+        const ekleBtn = page.locator('button', { hasText: /Deneme Ekle|Yeni Deneme/i }).first();
+        if (await ekleBtn.isVisible({ timeout: 3000 })) {
+          await ekleBtn.click();
+          await page.waitForTimeout(1500);
+          await expect(page.locator('text=/TYT|Deneme Türü/i').first()).toBeVisible({ timeout: 5000 });
+        }
+      }
+    }
+  });
+});

@@ -63,13 +63,17 @@ jobs:
         run: npx playwright install chromium --with-deps
 
       - name: E2E testleri çalıştır
-        run: npx playwright test e2e/smoke_deploy.spec.js e2e/navigasyon.spec.js e2e/giris.spec.js e2e/guvenlik.spec.js e2e/koc_akislari.spec.js
+        run: npx playwright test e2e/smoke_deploy.spec.js e2e/navigasyon.spec.js e2e/giris.spec.js e2e/guvenlik.spec.js e2e/responsive.spec.js e2e/koc_akislari.spec.js e2e/ogrenci_akislari.spec.js e2e/veli_akislari.spec.js e2e/admin_akislari.spec.js
         env:
           BASE_URL: https://kocpaneli.web.app
           TEST_KOC_EMAIL: ${{ secrets.TEST_KOC_EMAIL }}
           TEST_KOC_SIFRE: ${{ secrets.TEST_KOC_SIFRE }}
           TEST_OGRNC_EMAIL: ${{ secrets.TEST_OGRNC_EMAIL }}
           TEST_OGRNC_SIFRE: ${{ secrets.TEST_OGRNC_SIFRE }}
+          TEST_VELI_EMAIL: ${{ secrets.TEST_VELI_EMAIL }}
+          TEST_VELI_SIFRE: ${{ secrets.TEST_VELI_SIFRE }}
+          TEST_ADMIN_EMAIL: ${{ secrets.TEST_ADMIN_EMAIL }}
+          TEST_ADMIN_SIFRE: ${{ secrets.TEST_ADMIN_SIFRE }}
 
       - name: Playwright raporunu sakla
         uses: actions/upload-artifact@v4
