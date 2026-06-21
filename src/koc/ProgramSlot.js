@@ -25,9 +25,9 @@ export function SlotKutu({
       <div
         onClick={duzenleme ? onClick : undefined}
         style={{
+          height: '100%',
           borderRadius: 14,
           padding: '12px 14px',
-          minHeight: 70,
           border: `1.5px dashed ${duzenleme ? (slotKopya ? s.accent : s.border) : 'transparent'}`,
           background: duzenleme ? (slotKopya ? `${s.accent}08` : s.surface2) : 'transparent',
           cursor: duzenleme ? 'pointer' : 'default',
@@ -53,19 +53,20 @@ export function SlotKutu({
   return (
     <div
       style={{
+        height: '100%',
         borderRadius: 14,
         overflow: 'hidden',
         border: `1.5px solid ${tip.renk}30`,
         background: tamamlandi ? s.surface2 : tip.acikRenk,
         opacity: tamamlandi ? 0.6 : 1,
-        transition: 'all .2s',
+        transition: 'opacity .2s, background .2s, border-color .2s',
         cursor: duzenleme ? 'pointer' : onToggle ? 'pointer' : 'default',
       }}
       onClick={duzenleme ? onClick : undefined}
     >
       <div style={{ height: 4, background: tamamlandi ? s.success : tip.renk }} />
 
-      <div style={{ padding: '10px 12px' }}>
+      <div style={{ padding: '10px 12px', overflow: 'hidden' }}>
         <div
           style={{
             display: 'flex',
@@ -111,6 +112,9 @@ export function SlotKutu({
               fontWeight: 700,
               color: tamamlandi ? s.text3 : s.text,
               marginBottom: 2,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
             }}
           >
             {slot.ders}
@@ -124,6 +128,7 @@ export function SlotKutu({
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
+              display: 'block',
             }}
           >
             {slot.icerik}
@@ -131,7 +136,14 @@ export function SlotKutu({
         )}
 
         <div
-          style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}
+          style={{
+            marginTop: 6,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 5,
+            flexWrap: 'nowrap',
+            overflow: 'hidden',
+          }}
         >
           <div
             style={{
@@ -181,7 +193,7 @@ export function SlotKutu({
             </div>
           )}
           {duzenleme && (
-            <div style={{ marginLeft: 'auto', display: 'flex', gap: 4 }}>
+            <div style={{ marginLeft: 'auto', display: 'flex', gap: 4, flexShrink: 0 }}>
               {onKopyala && (
                 <div
                   onClick={e => {
@@ -277,31 +289,40 @@ export function GunKolonu({
           </div>
         )}
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: '0 4px' }}>
+      <div
+        style={{
+          display: 'grid',
+          gridAutoRows: '100px',
+          gap: 8,
+          padding: '0 4px',
+          overflow: 'hidden',
+        }}
+      >
         {slotlar.map((slot, i) => (
-          <SlotKutu
-            key={i}
-            slot={slot}
-            index={i}
-            duzenleme={duzenleme}
-            onClick={() => {
-              if (duzenleme && !slot.tip && slotKopya) {
-                onYapistir(gunAdi, i);
-              } else {
-                onSlotClick(gunAdi, i);
+          <div key={i} style={{ overflow: 'hidden', minHeight: 0 }}>
+            <SlotKutu
+              slot={slot}
+              index={i}
+              duzenleme={duzenleme}
+              onClick={() => {
+                if (duzenleme && !slot.tip && slotKopya) {
+                  onYapistir(gunAdi, i);
+                } else {
+                  onSlotClick(gunAdi, i);
+                }
+              }}
+              tamamlandi={!!tamamlandiMap?.[i]}
+              onToggle={!duzenleme && slot.tip ? () => onToggle(gunAdi, i) : undefined}
+              onVideoAc={onVideoAc}
+              onKopyala={duzenleme && slot.tip ? () => onKopyala(slot) : undefined}
+              onHizliSil={duzenleme && slot.tip ? () => onHizliSil(gunAdi, i) : undefined}
+              onYapistir={
+                duzenleme && !slot.tip && slotKopya ? () => onYapistir(gunAdi, i) : undefined
               }
-            }}
-            tamamlandi={!!tamamlandiMap?.[i]}
-            onToggle={!duzenleme && slot.tip ? () => onToggle(gunAdi, i) : undefined}
-            onVideoAc={onVideoAc}
-            onKopyala={duzenleme && slot.tip ? () => onKopyala(slot) : undefined}
-            onHizliSil={duzenleme && slot.tip ? () => onHizliSil(gunAdi, i) : undefined}
-            onYapistir={
-              duzenleme && !slot.tip && slotKopya ? () => onYapistir(gunAdi, i) : undefined
-            }
-            slotKopya={slotKopya}
-            s={s}
-          />
+              slotKopya={slotKopya}
+              s={s}
+            />
+          </div>
         ))}
       </div>
     </div>

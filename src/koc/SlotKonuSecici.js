@@ -56,6 +56,7 @@ export default function SlotKonuSecici({
   s,
 }) {
   const [aramaQuery, setAramaQuery] = useState('');
+  const [acik, setAcik] = useState(false);
 
   const tumKonular = useMemo(
     () => (dersId ? konulariBulById(dersId) : konulariBul(ders)),
@@ -83,86 +84,106 @@ export default function SlotKonuSecici({
   if (!tumKonular.length) return null;
 
   return (
-    <div style={{ marginTop: 8 }}>
-      <div style={{ fontSize: 10, fontWeight: 600, color: s.text3, marginBottom: 5 }}>
-        Müfredattan seç{secili.size > 0 ? ` · ${secili.size} seçili` : ''}
-      </div>
-
-      <input
-        value={aramaQuery}
-        onChange={e => setAramaQuery(e.target.value)}
-        placeholder="Konularda ara..."
+    <div style={{ marginTop: 6 }}>
+      <button
+        type="button"
+        onClick={() => setAcik(v => !v)}
         style={{
-          width: '100%',
-          boxSizing: 'border-box',
-          background: s.surface2,
-          border: `1px solid ${s.border}`,
-          borderRadius: 8,
-          padding: '7px 10px',
-          color: s.text,
-          fontSize: 12,
-          outline: 'none',
-          marginBottom: 5,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          padding: '4px 0',
+          fontSize: 11,
+          fontWeight: 600,
+          color: secili.size > 0 ? s.accent : s.text3,
         }}
-      />
+      >
+        <span>{acik ? '▲' : '▼'}</span>
+        Müfredattan seç{secili.size > 0 ? ` · ${secili.size} seçili` : ''}
+      </button>
 
-      {konular.length === 0 ? (
-        <div style={{ fontSize: 11, color: s.text3, padding: '6px 2px' }}>Eşleşen konu yok</div>
-      ) : (
-        <div
-          style={{
-            maxHeight: 160,
-            overflowY: 'auto',
-            border: `1px solid ${s.border}`,
-            borderRadius: 10,
-            background: s.surface2,
-          }}
-        >
-          {konular.map((k, i) => {
-            const isaretli = secili.has(k);
-            return (
-              <button
-                key={i}
-                type="button"
-                onClick={() => konuToggle(k)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  width: '100%',
-                  textAlign: 'left',
-                  padding: '8px 12px',
-                  fontSize: 12,
-                  fontWeight: isaretli ? 600 : 400,
-                  cursor: 'pointer',
-                  border: 'none',
-                  borderBottom: i < konular.length - 1 ? `1px solid ${s.border}` : 'none',
-                  background: isaretli ? `${s.accent}18` : 'transparent',
-                  color: isaretli ? s.accent : s.text,
-                }}
-              >
-                <span
-                  style={{
-                    width: 14,
-                    height: 14,
-                    borderRadius: 4,
-                    border: `1.5px solid ${isaretli ? s.accent : s.border}`,
-                    background: isaretli ? s.accent : 'transparent',
-                    flexShrink: 0,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: 9,
-                    color: '#fff',
-                  }}
-                >
-                  {isaretli ? '✓' : ''}
-                </span>
-                {vurgula(k, aramaQuery)}
-              </button>
-            );
-          })}
-        </div>
+      {acik && (
+        <>
+          <input
+            value={aramaQuery}
+            onChange={e => setAramaQuery(e.target.value)}
+            placeholder="Konularda ara..."
+            style={{
+              width: '100%',
+              boxSizing: 'border-box',
+              background: s.surface2,
+              border: `1px solid ${s.border}`,
+              borderRadius: 8,
+              padding: '6px 10px',
+              color: s.text,
+              fontSize: 12,
+              outline: 'none',
+              marginTop: 5,
+              marginBottom: 4,
+            }}
+          />
+          {konular.length === 0 ? (
+            <div style={{ fontSize: 11, color: s.text3, padding: '4px 2px' }}>Eşleşen konu yok</div>
+          ) : (
+            <div
+              style={{
+                maxHeight: 140,
+                overflowY: 'auto',
+                border: `1px solid ${s.border}`,
+                borderRadius: 10,
+                background: s.surface2,
+              }}
+            >
+              {konular.map((k, i) => {
+                const isaretli = secili.has(k);
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => konuToggle(k)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      width: '100%',
+                      textAlign: 'left',
+                      padding: '7px 12px',
+                      fontSize: 12,
+                      fontWeight: isaretli ? 600 : 400,
+                      cursor: 'pointer',
+                      border: 'none',
+                      borderBottom: i < konular.length - 1 ? `1px solid ${s.border}` : 'none',
+                      background: isaretli ? `${s.accent}18` : 'transparent',
+                      color: isaretli ? s.accent : s.text,
+                    }}
+                  >
+                    <span
+                      style={{
+                        width: 14,
+                        height: 14,
+                        borderRadius: 4,
+                        border: `1.5px solid ${isaretli ? s.accent : s.border}`,
+                        background: isaretli ? s.accent : 'transparent',
+                        flexShrink: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 9,
+                        color: '#fff',
+                      }}
+                    >
+                      {isaretli ? '✓' : ''}
+                    </span>
+                    {vurgula(k, aramaQuery)}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </>
       )}
     </div>
   );

@@ -33,8 +33,11 @@ describe('SlotKonuSecici', () => {
   it('Matematik konularından birine tıklayınca onToggle çağrılır', () => {
     const onToggle = vi.fn();
     renderSade(<SlotKonuSecici ders="Matematik" onToggle={onToggle} s={mockS} />);
-    const butonlar = screen.getAllByRole('button');
-    fireEvent.click(butonlar[0]);
+    // Önce toggle'a tıkla — liste açılır
+    fireEvent.click(screen.getByRole('button'));
+    // Sonra açılan listeden ilk konuya tıkla
+    const konuButonlari = screen.getAllByRole('button');
+    fireEvent.click(konuButonlari[1]);
     expect(onToggle).toHaveBeenCalledWith(expect.any(String));
   });
 
@@ -75,6 +78,8 @@ describe('SlotKonuSecici', () => {
 
   it('arama inputuna yazınca liste filtrelenir', () => {
     renderSade(<SlotKonuSecici ders="" dersId="mat" onToggle={vi.fn()} s={mockS} />);
+    // Toggle'a tıkla — liste açılır
+    fireEvent.click(screen.getByRole('button'));
     const aramaInput = screen.getByPlaceholderText('Konularda ara...');
     fireEvent.change(aramaInput, { target: { value: 'xyzbilinmez' } });
     expect(screen.getByText('Eşleşen konu yok')).toBeTruthy();
