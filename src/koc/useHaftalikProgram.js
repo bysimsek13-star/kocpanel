@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   doc,
   getDoc,
+  onSnapshot,
   setDoc,
   serverTimestamp,
   getDocs,
@@ -65,28 +66,31 @@ export function useHaftalikProgram({ ogrenciler, ogrenciProp, readOnly, initialO
     []
   );
 
-  const yukle = useCallback(async () => {
+  // Anlık dinleme: öğrenci slot işaretlediğinde koç ekranı güncellenir
+  useEffect(() => {
     if (!secilenOgrenci) return;
     setYukleniyor(true);
-    try {
-      const snap = await getDoc(doc(db, 'ogrenciler', secilenOgrenci.id, 'program_v2', haftaKey));
-      if (snap.exists()) {
-        const v = snap.data();
-        setHafta(v.hafta || bosHafta());
-        setTamamlandiMap(v.tamamlandi || {});
-      } else {
-        setHafta(bosHafta());
-        setTamamlandiMap({});
+    const ref = doc(db, 'ogrenciler', secilenOgrenci.id, 'program_v2', haftaKey);
+    const vazgec = onSnapshot(
+      ref,
+      snap => {
+        if (snap.exists()) {
+          const v = snap.data();
+          setHafta(v.hafta || bosHafta());
+          setTamamlandiMap(v.tamamlandi || {});
+        } else {
+          setHafta(bosHafta());
+          setTamamlandiMap({});
+        }
+        setYukleniyor(false);
+      },
+      e => {
+        console.error(e);
+        setYukleniyor(false);
       }
-    } catch (e) {
-      console.error(e);
-    }
-    setYukleniyor(false);
+    );
+    return vazgec;
   }, [secilenOgrenci, haftaKey]);
-
-  useEffect(() => {
-    yukle();
-  }, [yukle]);
 
   const kaydet = async yeniHafta => {
     if (!secilenOgrenci || readOnly) return;
