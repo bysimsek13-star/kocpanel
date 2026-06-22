@@ -106,20 +106,19 @@ describe('oturumBitir', () => {
     expect(setDoc).not.toHaveBeenCalled();
   });
 
-  it('rol ogrenci ise ogrenciler koleksiyonu için doc() çağrılır', async () => {
-    const { doc } = await import('firebase/firestore');
+  it('ogrenci rolünde aktivite koleksiyonuna yazar', async () => {
+    const { setDoc } = await import('firebase/firestore');
     vi.clearAllMocks();
     await oturumBitir('uid123', 30, 'ogrenci');
-    const ogrenciCagrisi = doc.mock.calls.some(c => c.includes('ogrenciler'));
-    expect(ogrenciCagrisi).toBe(true);
+    // gunlukDakika artık CF tarafından yönetilir — sadece aktivite subcollection güncellenir
+    expect(setDoc).toHaveBeenCalledTimes(1);
   });
 
-  it('rol veli ise ogrenciler koleksiyonu için doc() çağrılmaz', async () => {
-    const { doc } = await import('firebase/firestore');
+  it('rol veli ise de aktivite koleksiyonuna yazar', async () => {
+    const { setDoc } = await import('firebase/firestore');
     vi.clearAllMocks();
     await oturumBitir('uid123', 30, 'veli');
-    const ogrenciCagrisi = doc.mock.calls.some(c => c.includes('ogrenciler'));
-    expect(ogrenciCagrisi).toBe(false);
+    expect(setDoc).toHaveBeenCalledTimes(1);
   });
 });
 

@@ -15,11 +15,10 @@ export async function aktiflikKaydet(uid, rol) {
       { tarih: bugun, girisSayisi: increment(1), sonGiris: serverTimestamp() },
       { merge: true }
     );
-    // ogrenciler/{uid} — sadece öğrenci rolünde güncelle (getDoc kaldırıldı)
+    // ogrenciler/{uid} — sadece sonAktif güncellenir (girisSayisi CF tarafından yönetilir)
     if (rol === 'ogrenci') {
       await updateDoc(doc(db, 'ogrenciler', uid), {
         sonAktif: serverTimestamp(),
-        girisSayisi: increment(1),
       });
     }
   } catch (e) {
@@ -32,7 +31,7 @@ export async function aktiflikKaydet(uid, rol) {
   }
 }
 
-export async function oturumBitir(uid, sureDakika, rol) {
+export async function oturumBitir(uid, sureDakika, _rol) {
   if (!uid || !sureDakika || sureDakika < 1) return;
   const bugun = bugunStr();
   try {
@@ -44,11 +43,7 @@ export async function oturumBitir(uid, sureDakika, rol) {
       },
       { merge: true }
     );
-    if (rol === 'ogrenci') {
-      await updateDoc(doc(db, 'ogrenciler', uid), {
-        gunlukDakika: increment(Math.round(sureDakika)),
-      });
-    }
+    // gunlukDakika CF tarafından yönetilir — client yazımı rules tarafından bloklanır
   } catch (e) {
     logIstemciHatasi({
       error: e,
