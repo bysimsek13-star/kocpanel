@@ -2,9 +2,15 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Giriş Ekranı', () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto('/giris');
+    // SW güncellemesi deploy sonrası ERR_ABORTED verebilir — tekrar dene
+    try {
+      await page.goto('/giris');
+    } catch {
+      await page.waitForTimeout(2000);
+      await page.goto('/giris');
+    }
     // Firebase auth init bitmeden form görünmez — bekle
-    await page.waitForSelector('input[type="email"]', { timeout: 10000 });
+    await page.waitForSelector('input[type="email"]', { timeout: 15000 });
   });
 
   test('giriş sayfası yüklenir', async ({ page }) => {

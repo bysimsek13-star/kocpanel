@@ -5,7 +5,13 @@ const OGRNC_SIFRE = process.env.TEST_OGRNC_SIFRE;
 const credVar = OGRNC_EMAIL && OGRNC_SIFRE;
 
 async function girisYap(page) {
-  await page.goto('/giris');
+  // SW güncellemesi ERR_ABORTED verebilir — tekrar dene
+  try {
+    await page.goto('/giris');
+  } catch {
+    await page.waitForTimeout(2000);
+    await page.goto('/giris');
+  }
   await page.waitForSelector('input[type="email"]', { timeout: 10000 });
   await page.locator('input[type="email"]').fill(OGRNC_EMAIL);
   await page.locator('input[type="password"]').fill(OGRNC_SIFRE);
@@ -79,10 +85,15 @@ test.describe('Öğrenci Paneli Akışları', () => {
     await girisYap(page);
     // Auth tam oturumdan sonra git — aksi hâlde guard /ogrenci'ye redirect eder
     await page.waitForTimeout(2000);
-    await page.goto('/ogrenci/mufredat', { waitUntil: 'commit' });
+    // SW reload ERR_ABORTED verebilir — tekrar dene
+    try {
+      await page.goto('/ogrenci/mufredat', { waitUntil: 'commit' });
+    } catch {
+      await page.waitForTimeout(2000);
+      await page.goto('/ogrenci/mufredat', { waitUntil: 'commit' });
+    }
     // Guard yönlendirmesi olabilir — URL ne olursa olsun içerik bekle
-    await page.waitForTimeout(3000);
-    await expect(page.locator('body')).toContainText(/Matematik|Türkçe|Fizik|ders|konu/i);
+    await expect(page.locator('body')).toContainText(/Matematik|Türkçe|Fizik|ders|konu/i, { timeout: 10000 });
   });
 
   // ─── Mesajlar ───────────────────────────────────────────────────────────────

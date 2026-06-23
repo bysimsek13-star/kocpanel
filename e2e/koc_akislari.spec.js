@@ -11,7 +11,13 @@ const kocCredVar    = KOC_EMAIL && KOC_SIFRE;
 const ogrenciCredVar = OGRNC_EMAIL && OGRNC_SIFRE;
 
 async function kocGirisYap(page) {
-  await page.goto('/giris');
+  // SW güncellemesi ERR_ABORTED verebilir — tekrar dene
+  try {
+    await page.goto('/giris');
+  } catch {
+    await page.waitForTimeout(2000);
+    await page.goto('/giris');
+  }
   await page.waitForSelector('input[type="email"]', { timeout: 10000 });
   await page.locator('input[type="email"]').fill(KOC_EMAIL);
   await page.locator('input[type="password"]').fill(KOC_SIFRE);
@@ -20,7 +26,12 @@ async function kocGirisYap(page) {
 }
 
 async function ogrenciGirisYap(page) {
-  await page.goto('/giris');
+  try {
+    await page.goto('/giris');
+  } catch {
+    await page.waitForTimeout(2000);
+    await page.goto('/giris');
+  }
   await page.waitForSelector('input[type="email"]', { timeout: 10000 });
   await page.locator('input[type="email"]').fill(OGRNC_EMAIL);
   await page.locator('input[type="password"]').fill(OGRNC_SIFRE);
@@ -36,10 +47,12 @@ async function onboardingKapat(page) {
         'button:has-text("atla"), button:has-text("Atla"), button:has-text("sonra"), button:has-text("Kapat")'
       )
       .first();
-    if (await skipBtn.isVisible({ timeout: 3000 })) {
+    // Onboarding Firestore kontrolü async — 8s bekle (onceki 3s yetersizdi)
+    try {
+      await skipBtn.waitFor({ state: 'visible', timeout: 8000 });
       await skipBtn.click({ force: true });
-      await page.waitForTimeout(1000);
-    }
+      await page.waitForTimeout(1500);
+    } catch {}
     // Overlay hâlâ varsa ESC ile kapat
     await page.keyboard.press('Escape');
     await page.waitForTimeout(500);
@@ -123,14 +136,14 @@ test.describe('Koç Paneli Akışları', () => {
     if (testInfo.project.name === 'mobile') testInfo.skip(true, 'Mobil menü farklı');
     await kocGirisYap(page);
     await onboardingKapat(page);
-    // Desktop: Kaynak kütüphanesi → Video & Playlist filtresi
+    // Desktop: Kaynak kütüphanesi → Video & Playlist filtresi (lazy chunk bekle)
     await page.locator('text=Kaynak kütüphanesi').first().click();
-    await page.waitForTimeout(2000);
-    await page.locator('button', { hasText: /Video.*Playlist/i }).first().click();
+    await page.locator('button').filter({ hasText: /Video.*Playlist/i }).first().waitFor({ state: 'visible', timeout: 10000 });
+    await page.locator('button').filter({ hasText: /Video.*Playlist/i }).first().click();
     await page.waitForTimeout(1000);
     // Birleşik görünümde Video Kaynaklar ve Playlistler bölümleri görünmeli
-    await expect(page.locator('text=/Video Kaynaklar/i').first()).toBeVisible();
-    await expect(page.locator('text=/Playlistler/i').first()).toBeVisible();
+    await expect(page.locator('text=/Video Kaynaklar/i').first()).toBeVisible({ timeout: 8000 });
+    await expect(page.locator('text=/Playlistler/i').first()).toBeVisible({ timeout: 5000 });
   });
 
   test('video & playlist görünümünde playlist ekle butonu var', async ({ page }, testInfo) => {
@@ -138,23 +151,21 @@ test.describe('Koç Paneli Akışları', () => {
     await kocGirisYap(page);
     await onboardingKapat(page);
     await page.locator('text=Kaynak kütüphanesi').first().click();
-    await page.waitForTimeout(2000);
-    await page.locator('button', { hasText: /Video.*Playlist/i }).first().click();
+    await page.locator('button').filter({ hasText: /Video.*Playlist/i }).first().waitFor({ state: 'visible', timeout: 10000 });
+    await page.locator('button').filter({ hasText: /Video.*Playlist/i }).first().click();
     await page.waitForTimeout(1000);
     // Playlist Ekle butonu görünmeli
-    await expect(page.locator('button', { hasText: /Playlist Ekle/i }).first()).toBeVisible();
+    await expect(page.locator('button', { hasText: /Playlist Ekle/i }).first()).toBeVisible({ timeout: 8000 });
   });
 
   test('playlist sayfasında sınıf grup tabları görünür', async ({ page }, testInfo) => {
     if (testInfo.project.name === 'mobile') testInfo.skip(true, 'Mobil menü farklı');
     await kocGirisYap(page);
     await onboardingKapat(page);
-    // Desktop: sol menü → Video playlistler
+    // Desktop: sol menü → Video playlistler (lazy chunk yüklenene kadar bekle)
     await page.locator('text=Video playlistler').first().click();
-    await page.waitForTimeout(2000);
-    // Grup tablarından en az ikisi görünmeli
-    await expect(page.locator('button', { hasText: 'TYT' }).first()).toBeVisible();
-    await expect(page.locator('button', { hasText: /8\. Sınıf/i }).first()).toBeVisible();
+    await expect(page.locator('button', { hasText: 'TYT' }).first()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('button', { hasText: /8\. Sınıf/i }).first()).toBeVisible({ timeout: 5000 });
   });
 
   test('playlist grup seçilince ders grid gelir', async ({ page }, testInfo) => {
@@ -162,11 +173,9 @@ test.describe('Koç Paneli Akışları', () => {
     await kocGirisYap(page);
     await onboardingKapat(page);
     await page.locator('text=Video playlistler').first().click();
-    await page.waitForTimeout(2000);
+    await page.locator('button', { hasText: 'TYT' }).first().waitFor({ state: 'visible', timeout: 10000 });
     await page.locator('button', { hasText: 'TYT' }).first().click();
-    await page.waitForTimeout(1000);
-    // Ders grid'inden en az biri görünmeli
-    await expect(page.locator('button', { hasText: 'Matematik' }).first()).toBeVisible();
+    await expect(page.locator('button', { hasText: 'Matematik' }).first()).toBeVisible({ timeout: 8000 });
   });
 });
 
@@ -215,8 +224,7 @@ test.describe('Koç Haftalık Program Slot Akışları', () => {
     await kocGirisYap(page);
     await onboardingKapat(page);
     await page.locator('text=/Haftalık/i').first().click();
-    await page.waitForTimeout(2000);
-    await expect(page.locator('body')).toContainText(/Pazartesi|Salı|Çarşamba/i);
+    await expect(page.locator('body')).toContainText(/Pazartesi|Salı|Çarşamba/i, { timeout: 10000 });
   });
 
   test('düzenleme moduna geçilir', async ({ page }) => {
