@@ -47,10 +47,18 @@ const selSt = s => ({
   fontSize: 12,
 });
 
-export default function LeadTakipSayfasi({ s, mobil, koclar, ogrenciEkleAcik_Ac }) {
+export default function LeadTakipSayfasi({ s, mobil, crmKullanicilari, ogrenciEkleAcik_Ac }) {
   const toast = useToast();
-  const { leads, yukleniyor, leadEkle, leadGuncelle, gorusmeEkle, gorevEkle, gorevTamamla } =
-    useCrm();
+  const {
+    leads,
+    yukleniyor,
+    leadEkle,
+    leadGuncelle,
+    leadSil,
+    gorusmeEkle,
+    gorevEkle,
+    gorevTamamla,
+  } = useCrm();
   const { gorevler: tumGorevler } = useTumGorevler();
 
   const [aktifTab, setAktifTab] = useState('dashboard');
@@ -65,8 +73,9 @@ export default function LeadTakipSayfasi({ s, mobil, koclar, ogrenciEkleAcik_Ac 
   });
 
   const sorumlular = useMemo(
-    () => koclar.map(k => ({ id: k.id, label: k.isim || k.email?.split('@')[0] || k.id })),
-    [koclar]
+    () =>
+      crmKullanicilari.map(k => ({ id: k.id, label: k.isim || k.email?.split('@')[0] || k.id })),
+    [crmKullanicilari]
   );
 
   const filtreliLeads = useMemo(() => {
@@ -295,8 +304,8 @@ export default function LeadTakipSayfasi({ s, mobil, koclar, ogrenciEkleAcik_Ac 
                   </div>
                   <input
                     type="checkbox"
-                    checked={false}
-                    onChange={() => handleGorevTamamla(g.leadId, g.id)}
+                    checked={!!g.tamamlandi}
+                    onChange={() => !g.tamamlandi && handleGorevTamamla(g.leadId, g.id)}
                     style={{ accentColor: renk, width: 15, height: 15, cursor: 'pointer' }}
                   />
                 </div>
@@ -321,6 +330,11 @@ export default function LeadTakipSayfasi({ s, mobil, koclar, ogrenciEkleAcik_Ac 
           onKapat={() => setSeciliLead(null)}
           onKademeGuncelle={kademe => leadGuncelle(seciliLeadGuncel.id, { kademe })}
           onDurumGuncelle={durum => leadGuncelle(seciliLeadGuncel.id, { durum })}
+          onLeadGuncelle={data => leadGuncelle(seciliLeadGuncel.id, data)}
+          onLeadSil={async () => {
+            await leadSil(seciliLeadGuncel.id);
+            setSeciliLead(null);
+          }}
           onGorusmeEkle={data => gorusmeEkle(seciliLeadGuncel.id, data)}
           onGorevEkle={data => gorevEkle(seciliLeadGuncel.id, seciliLeadGuncel.adSoyad, data)}
           onGorevTamamla={gorevId => gorevTamamla(seciliLeadGuncel.id, gorevId)}
@@ -336,6 +350,6 @@ export default function LeadTakipSayfasi({ s, mobil, koclar, ogrenciEkleAcik_Ac 
 LeadTakipSayfasi.propTypes = {
   s: PropTypes.object.isRequired,
   mobil: PropTypes.bool,
-  koclar: PropTypes.array.isRequired,
+  crmKullanicilari: PropTypes.array.isRequired,
   ogrenciEkleAcik_Ac: PropTypes.func.isRequired,
 };

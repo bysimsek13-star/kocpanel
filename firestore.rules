@@ -59,8 +59,8 @@ service cloud.firestore {
         (isKoc() && isActive() && resource.data.kocId == request.auth.uid) ||
         // Koç admin kullanıcılarını okuyabilir (bildirim göndermek için)
         (isKoc() && isActive() && resource.data.rol == 'admin') ||
-        // Finans rolü koçları okuyabilir (lead sorumlu dropdown için)
-        (isFinans() && resource.data.rol == 'koc')
+        // Finans rolü CRM sorumlu dropdown için admin ve finans kullanıcılarını okuyabilir
+        (isFinans() && (resource.data.rol == 'admin' || resource.data.rol == 'finans' || resource.data.rol == 'koc'))
       );
 
       allow create: if isAdmin()

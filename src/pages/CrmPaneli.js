@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { db } from '../firebase';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { useMobil } from '../hooks/useMediaQuery';
@@ -24,6 +26,14 @@ export default function CrmPaneli() {
 
   const yetkili = isAdmin || rol === 'finans';
   const { koclar, ogrenciler, verileriGetir } = useYoneticiVeri(yetkili);
+  const [crmKullanicilari, setCrmKullanicilari] = useState([]);
+
+  useEffect(() => {
+    if (!yetkili) return;
+    getDocs(query(collection(db, 'kullanicilar'), where('rol', 'in', ['admin', 'finans'])))
+      .then(snap => setCrmKullanicilari(snap.docs.map(d => ({ id: d.id, ...d.data() }))))
+      .catch(() => {});
+  }, [yetkili]);
 
   return (
     <div style={{ minHeight: '100vh', background: s.bg, fontFamily: 'Inter, sans-serif' }}>
@@ -105,7 +115,7 @@ export default function CrmPaneli() {
           <LeadTakipSayfasi
             s={s}
             mobil={mobil}
-            koclar={koclar}
+            crmKullanicilari={crmKullanicilari}
             ogrenciEkleAcik_Ac={() => setOgrenciEkleAcik(true)}
           />
         )}
